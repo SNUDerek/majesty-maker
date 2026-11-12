@@ -7,7 +7,9 @@
 
 import { fatigueCeiling, melancholyCeiling, purseProtectionPct, type ConditionState } from './conditions.js';
 import type { RulesConfig } from './config.js';
-import type { DerivedStats, GetDerivedStats, SolarAspect } from './types.js';
+import { getCalendar } from './calendar.js';
+import { solarAspect, upcomingCriticalPeriods } from './astrology.js';
+import type { DerivedStats, GetDerivedStats } from './types.js';
 
 export type ConditionStats = Pick<DerivedStats, 'fatigueCeiling' | 'melancholyCeiling' | 'purseProtectionPct'>;
 
@@ -19,35 +21,19 @@ export function getConditionStats(state: Pick<ConditionState, 'stats'>): Conditi
   };
 }
 
-function aspectAtWeek(week: number, config: RulesConfig): SolarAspect {
-  const distance = Math.floor(week / config.calendar.weeksPerMonth) % config.calendar.monthsPerYear;
-  for (const aspect of ['return', 'opposition', 'trine', 'square'] as const) {
-    if (config.astrology.solar.distances[aspect].includes(distance)) return aspect;
-  }
-  return 'none';
-}
-
 /**
  * Current aspects use elapsedWeeks. Pilgrimage resolution separately uses
  * segmentEntryWeek for its locked lunar phase. Reminders exclude the active
  * period and periods starting at or after the deadline.
  */
 export const getDerivedStats: GetDerivedStats<RulesConfig> = (state, config) => {
-  const week = state.elapsedWeeks;
-  const lunarPhase = config.astrology.lunarPhaseByWeek[week % config.calendar.weeksPerMonth];
-  if (lunarPhase === undefined) throw new RangeError('Calendar week has no configured lunar phase');
+  const calendar = getCalendar(state, config);
   const result: DerivedStats = {
     ...getConditionStats(state),
-    solarAspect: aspectAtWeek(week, config),
-    lunarPhase,
+    solarAspect: solarAspect(calendar.solarDistance, config),
+    lunarPhase: calendar.lunarPhase,
   };
-  for (let next = week + 1; next < config.calendar.totalWeeks; next++) {
-    const aspect = aspectAtWeek(next, config);
-    if (aspect !== aspectAtWeek(next - 1, config) &&
-        (aspect === 'return' || aspect === 'opposition' || aspect === 'square')) {
-      result.nextCriticalSolarPeriod = { aspect, startsInWeeks: next - week };
-      break;
-    }
-  }
+  const next = upcomingCriticalPeriods(state, calendar.weeksRemaining, config)[0];
+  if (next) result.nextCriticalSolarPeriod = next;
   return result;
 };
