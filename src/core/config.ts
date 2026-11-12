@@ -12,6 +12,7 @@
  * simulation adapter or by tests).
  */
 
+import { UINT32_RANGE } from './rng.js';
 import type { Estate, JobId, LunarPhase, RestId, TutorId, ActivityId, ZodiacSign } from './types.js';
 
 // ---------------------------------------------------------------------------
@@ -150,7 +151,8 @@ const rulesConfigSchema = object({
   calendar: object({
     totalWeeks: positive,
     weeksPerMonth: positive,
-    monthsPerYear: positive,
+    /** Zodiac birth-month mapping uses the twelve-month civil year. */
+    monthsPerYear: int(12, 12),
     startYear: int(),
     startAge: nonNegative,
     deadlineAge: positive,
@@ -194,7 +196,7 @@ const rulesConfigSchema = object({
         success: object({
           coin: nonNegative,
           /** Sides of an extra Coin die (0 = none), e.g. Alehouse +d10. */
-          coinDie: nonNegative,
+          coinDie: int(0, UINT32_RANGE),
           gainStat: oneOf(ESTATES),
           gain: nonNegative,
           fatigue: nonNegative,
@@ -249,7 +251,7 @@ const rulesConfigSchema = object({
     matchupPct: object({ advantage: percent, neutral: percent, disadvantage: percent }),
     successMin: int(0, 100),
     successMax: int(0, 100),
-    rewardCoinDie: positive,
+    rewardCoinDie: int(1, UINT32_RANGE),
     failurePenalty: nonNegative,
   }),
   route: object({
@@ -458,8 +460,9 @@ function semanticErrors(config: RulesConfig): string[] {
   if (new Set(beaten.map(([, target]) => target)).size !== ESTATES.length) {
     errors.push('encounters.beats: each Estate must be beaten by exactly one other');
   }
-  if (Object.values(encounters.distribution).every((weight) => weight === 0)) {
-    errors.push('encounters.distribution: at least one weight must be positive');
+  const threatWeight = Object.values(encounters.distribution).reduce((sum, weight) => sum + weight, 0);
+  if (!Number.isSafeInteger(threatWeight) || threatWeight <= 0 || threatWeight > UINT32_RANGE) {
+    errors.push('encounters.distribution: total weight must be in [1, 2^32]');
   }
 
   if (route.roadBonus.length !== route.regularSegments) {
@@ -500,7 +503,7 @@ function semanticErrors(config: RulesConfig): string[] {
   if (items.acquisition === 'test_table' && rewardWeight === 0) {
     errors.push('items.testRewardTable: total weight must be positive when acquisition is test_table');
   }
-  if (!Number.isSafeInteger(rewardWeight) || rewardWeight > 0x1_0000_0000) {
+  if (!Number.isSafeInteger(rewardWeight) || rewardWeight > UINT32_RANGE) {
     errors.push('items.testRewardTable: total weight must fit in the RNG range (2^32)');
   }
 

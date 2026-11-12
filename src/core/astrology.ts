@@ -6,15 +6,13 @@ import type {
   ModifierSet, SolarAspect,
 } from './types.js';
 
-const canonicalDistances = { return: [0], opposition: [6], trine: [4, 8], square: [3, 9] };
-
-/** Configured aspect at a birth-relative month distance (canonical 0..11 by default). */
-export function solarAspect(distance: number, config?: RulesConfig): SolarAspect {
-  const months = config?.calendar.monthsPerYear ?? 12;
+/** Configured aspect at a birth-relative month distance in [0, monthsPerYear). */
+export function solarAspect(distance: number, config: RulesConfig): SolarAspect {
+  const months = config.calendar.monthsPerYear;
   if (!Number.isSafeInteger(distance) || distance < 0 || distance >= months) {
     throw new RangeError(`solar distance must be an integer in [0, ${months - 1}]`);
   }
-  const distances = config?.astrology.solar.distances ?? canonicalDistances;
+  const distances = config.astrology.solar.distances;
   for (const aspect of ['return', 'opposition', 'trine', 'square'] as const) {
     if (distances[aspect].includes(distance)) return aspect;
   }

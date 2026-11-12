@@ -5,6 +5,7 @@ import {
   d100,
   d4,
   drawFrom,
+  drawWeighted,
   next,
   pick,
   rollInt,
@@ -173,5 +174,23 @@ describe('ambient randomness', () => {
     pick(1, [1, 2, 3]);
     drawFrom(createRngStreams(1), 'rewards', d4);
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+describe('drawWeighted', () => {
+  const invalidEntries: (readonly (readonly [string, number])[])[] = [
+    [], [['x', 0]], [['x', -1]], [['x', 0.5]], [['x', NaN]],
+    [['x', Infinity]], [['x', 2 ** 32], ['y', 1]],
+  ];
+  it.each(invalidEntries.map(entries => ({ entries })))('rejects invalid weights: $entries', ({ entries }) => {
+    expect(() => drawWeighted(0, entries)).toThrow(RangeError);
+  });
+
+  it('preserves rejection sampling and skips zero-weight entries', () => {
+    const draw = rollInt(4, 1, 3 * 2 ** 30);
+    expect(drawWeighted(4, [['excluded', 0], ['only', 3 * 2 ** 30]])).toEqual({
+      value: 'only', state: draw.state,
+    });
+    expect(draw.state).not.toBe(next(4).state);
   });
 });

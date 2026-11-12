@@ -31,7 +31,7 @@ export type RngStreamName = (typeof RNG_STREAM_NAMES)[number];
 /** Independent generator state per named substream. */
 export type RngStreams = Readonly<Record<RngStreamName, RngState>>;
 
-const UINT32_RANGE = 0x1_0000_0000;
+export const UINT32_RANGE = 0x1_0000_0000;
 
 function toUint32(seed: number): RngState {
   if (!Number.isSafeInteger(seed)) {
@@ -131,4 +131,23 @@ export function drawFrom<T>(
 ): { readonly value: T; readonly streams: RngStreams } {
   const result = draw(streams[name]);
   return { value: result.value, streams: { ...streams, [name]: result.state } };
+}
+
+/** Draw from ordered relative weights; zero weights exclude entries. Always consumes a draw. */
+export function drawWeighted<T>(
+  state: RngState,
+  entries: readonly (readonly [T, number])[],
+): Draw<T> {
+  const total = entries.reduce((sum, [, weight]) => sum + weight, 0);
+  if (entries.some(([, weight]) => !Number.isSafeInteger(weight) || weight < 0) ||
+      !Number.isSafeInteger(total) || total <= 0 || total > UINT32_RANGE) {
+    throw new RangeError('Weights must be non-negative integers with a total in [1, 2^32]');
+  }
+  const draw = rollInt(state, 1, total);
+  let remaining = draw.value;
+  for (const [value, weight] of entries) {
+    remaining -= weight;
+    if (remaining <= 0) return { value, state: draw.state };
+  }
+  throw new RangeError('Invalid weighted distribution');
 }

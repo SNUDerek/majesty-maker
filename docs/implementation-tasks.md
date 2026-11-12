@@ -135,6 +135,7 @@ Everyone works on M0 together or in order (T0.1 → T0.2 + T0.4 → T0.3). T0.2 
     }
     ```
   - **Integer-math rule:** store multipliers as integer percentages and compute `floor(base * p1 * p2 … / 100^n)` in integer arithmetic. This guarantees "floor once" with no float drift (for example, `1.1 * 10` in IEEE floats is `11.000000000000002`).
+  - Contract hardening before C1/C2: `RngStreams` is defined in `rng.ts`, derived from `RNG_STREAM_NAMES`, and re-exported by `types.ts`; replace streams rather than mutating individual fields. `wipeout.cause` also accepts `'both'` when both burdens reach their ceilings.
   - `DerivedStats`, `CalendarInfo`, and the signatures of `createCampaign`, `getAvailableActions`, `applyAction`, `getDerivedStats`, `getCalendar`.
 - **Acceptance:** compiles, and every lane owner has signed off. After the freeze, changes need a short note in the PR so other lanes can adapt.
 
@@ -162,7 +163,7 @@ Everyone works on M0 together or in order (T0.1 → T0.2 + T0.4 → T0.3). T0.2 
     | `failure.purseProtection.appliesToLabFailures` | false | tbd (see §9 Q2) |
     | `items.acquisition` | `'disabled'` | tbd |
   - `hashConfig(config)`: a stable hash from canonical JSON with sorted keys. Use a small pure FNV-1a or similar so core stays free of Node crypto.
-  - `validateConfig()`: segment count matches the road-bonus array length, percentages are non-negative, and so on.
+  - `validateConfig()`: segment count matches the road-bonus array length, percentages are non-negative, and so on. Calendar years must have twelve months to match zodiac birth months. Encounter-weight totals must be in [1, 2^32]; job extra Coin dice support 0 (disabled) through 2^32 sides, and encounter reward dice support 1 through 2^32 sides.
   - `loadConfig(json)` plus merging of named variants on top of the default.
 - **Acceptance:** the default config validates, the hash is stable across runs and key orderings, and the unresolved list is non-empty and matches the table above.
 
@@ -209,7 +210,7 @@ Everyone works on M0 together or in order (T0.1 → T0.2 + T0.4 → T0.3). T0.2 
     - Full Moon: B/O activity surge (config, default 0).
     - Waning: paid-rest recovery 150%, and Rest at Home too if the config flag is set.
   - Multiple multipliers on the same quantity multiply together (for example, Square plus Waxing gives 130 × 110). Each `ModifierSet` records its `sources`.
-    - A3 contract note: `ModifierSet.factors` preserves the original integer percentages; use `applyModifier(baseMagnitude, modifiers, quantity)` to floor once. Scalar percentage fields are floored summaries for traces and backwards compatibility, not the calculation source when factors exist. This matters for experimental values such as 133 × 110 = 146.3%.
+    - A3 contract note: `solarAspect(distance, config)` requires config; there is no separate hardcoded default. Exact percentage arithmetic uses BigInt intermediates and returns a safe integer number, including for long compounding streaks. `ModifierSet.factors` preserves the original integer percentages; use `applyModifier(baseMagnitude, modifiers, quantity)` to floor once. Scalar percentage fields are floored summaries for traces and backwards compatibility, not the calculation source when factors exist. This matters for experimental values such as 133 × 110 = 146.3%.
     - Experimental compounding uses optional `ModifierContext.waxingStreak` as the number of prior consecutive repeats; the current repeat applies the configured Waxing factor `waxingStreak + 1` times. Single mode always applies it once.
   - `upcomingCriticalPeriods(state, lookaheadWeeks)` returns reminders for Return, Opposition, and Square periods (thematic §4 says the player should be warned before them).
     - A3 signature follows A1's config-aware calendar: `upcomingCriticalPeriods(state, lookaheadWeeks, config)`. Results include future starts within the inclusive horizon and exclude the active period and starts at or after the deadline. `getDerivedStats` shares this implementation.
@@ -305,7 +306,7 @@ Everyone works on M0 together or in order (T0.1 → T0.2 + T0.4 → T0.3). T0.2 
     - Medical fee `min(50, treasury)`.
     - Burdens reset per config.
     - One convalescence week, if any remain.
-    - Emit `wipeout{cause: 'fatigue'|'melancholy'|'coin'}`.
+    - Emit `wipeout{cause: 'fatigue'|'melancholy'|'both'|'coin'}`; use `both` when both burdens have reached their ceilings.
   - The checkpoint (`furthestWaystation`) is only ever incremented.
 - **Acceptance:** scenario tests for:
   - Lab penalty exactly equal to carried Coin (survives at 0).

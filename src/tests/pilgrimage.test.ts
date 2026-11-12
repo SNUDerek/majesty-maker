@@ -90,3 +90,15 @@ describe('B3 encounter deck and draw', () => {
     });
   });
 });
+
+it('preserves the pre-refactor seed-123 threat sequence', () => {
+  let state = 123;
+  const values = Array.from({ length: 10 }, () => {
+    const draw = drawThreat(state, config.encounters.distribution);
+    state = draw.state;
+    return draw.value;
+  });
+  expect(values).toEqual(['oratores', 'bellatores', 'oratores', 'laboratores', 'laboratores',
+    'oratores', 'oratores', 'bellatores', 'bellatores', 'laboratores']);
+  expect(state).toBe(1135789069);
+});
