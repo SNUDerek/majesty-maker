@@ -165,7 +165,7 @@ export type CoinSource =
   | 'wipeout_lost'
   | 'medical_fee';
 
-export type StatSource = 'tutor' | 'tutor_opposing' | 'zodiac' | 'item';
+export type StatSource = 'tutor' | 'tutor_opposing' | 'job' | 'zodiac' | 'item';
 
 export type BurdenSource =
   | 'tutor'

@@ -40,8 +40,16 @@ const stablesEvent: GameEvent = {
   automatic: true,
 };
 
+const jobStatGain: GameEvent = {
+  week: 0,
+  type: 'stat_changed',
+  estate: 'laboratores',
+  amount: 1,
+  source: 'job',
+};
+
 describe('types contract', () => {
   it('compiles the documented usage patterns', () => {
-    expect([applyStub, beginDescriptor, train, stablesEvent]).toHaveLength(4);
+    expect([applyStub, beginDescriptor, train, stablesEvent, jobStatGain]).toHaveLength(5);
   });
 });
