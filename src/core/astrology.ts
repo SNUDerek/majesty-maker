@@ -6,7 +6,7 @@ import type {
   ModifierSet, SolarAspect,
 } from './types.js';
 
-/** Configured aspect at a birth-relative month distance (canonical 0..11 by default). */
+/** Configured aspect at a birth-relative month distance in [0, monthsPerYear). */
 export function solarAspect(distance: number, config: RulesConfig): SolarAspect {
   const months = config.calendar.monthsPerYear;
   if (!Number.isSafeInteger(distance) || distance < 0 || distance >= months) {
