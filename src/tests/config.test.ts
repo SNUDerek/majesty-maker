@@ -128,6 +128,10 @@ describe('unresolved-parameter register', () => {
       'failure.homeCollapse': { status: 'tbd', value: { forcedWeek: true, recovery: 15 } },
       'failure.purseProtection.appliesToLabFailures': { status: 'tbd', value: false },
       'items.acquisition': { status: 'tbd', value: 'disabled' },
+      'items.testRewardTable': {
+        status: 'experimental',
+        value: { theriac: 1, st_johns_wort: 1, metheglin: 1, gambeson: 1, saints_relic: 1, weighted_coin: 1 },
+      },
     };
 
     expect(unresolved.map(({ path, status, value }) => [path, { status, value }])).toEqual(
