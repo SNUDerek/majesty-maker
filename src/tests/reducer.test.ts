@@ -317,7 +317,7 @@ describe('getAvailableActions (home)', () => {
     expect(types(getAvailableActions(start({ elapsedWeeks: 4, treasury: 15 }), config))).not.toContain('banquet');
   });
 
-  it('the pilgrimage descriptor carries the fee, carry range and carriable items (C4: no final gauntlet yet)', () => {
+  it('the pilgrimage descriptor carries the fee, carry range and carriable items and final flag', () => {
     const state = start({ treasury: 50, furthestWaystation: 4, inventory: { weighted_coin: 1, metheglin: 2, theriac: 1 } });
     expect(getAvailableActions(state, config).at(-1)).toEqual({
       type: 'BEGIN_PILGRIMAGE', minCarry: 0, maxCarry: 40, fee: 10, isFinal: false,
@@ -326,7 +326,7 @@ describe('getAvailableActions (home)', () => {
     const noSlots = withOverrides(config, { items: { maxEquipment: 0, maxConsumables: 0 } });
     expect(getAvailableActions(state, noSlots).at(-1)).toMatchObject({ equipmentIds: [], consumableIds: [] });
     const final = start({ treasury: 50, furthestWaystation: 5 });
-    expect(getAvailableActions(final, config).map((a) => a.type)).not.toContain('BEGIN_PILGRIMAGE');
+    expect(getAvailableActions(final, config).at(-1)).toMatchObject({ type: 'BEGIN_PILGRIMAGE', isFinal: true, maxCarry: 40 });
   });
 
   it('every offered home action applies cleanly (random walk, invariants each step)', () => {

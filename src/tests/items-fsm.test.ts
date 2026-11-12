@@ -246,6 +246,38 @@ describe('New Moon skip (Q3: once per segment, Q9: carried fee, counts toward N)
   });
 });
 
+describe('items and skipping in the final gauntlet', () => {
+  it('loads both slots when departing for the final checkpoint', () => {
+    const home = ruleState({
+      elapsedWeeks: ENTRY.new,
+      furthestWaystation: config.route.regularSegments,
+      inventory: { saints_relic: 1, metheglin: 1 },
+    });
+    expect(getAvailableActions(home, config)).toContainEqual(expect.objectContaining({
+      type: 'BEGIN_PILGRIMAGE', isFinal: true,
+      equipmentIds: ['saints_relic'], consumableIds: ['metheglin'],
+    }));
+    const r = run(home, [{ type: 'BEGIN_PILGRIMAGE', carry: 5, equipmentId: 'saints_relic', consumableId: 'metheglin' }]);
+    expect(r.final.inventory).toEqual({});
+    expect(r.final.pilgrimage).toMatchObject({ isFinal: true, equipmentId: 'saints_relic', consumableId: 'metheglin' });
+  });
+
+  it('skipping the last final encounter wins and returns unused slot items', () => {
+    const state = onRoad(ENTRY.new, {
+      segmentIndex: config.route.regularSegments, isFinal: true,
+      encounterIndex: config.route.finalEncounters - 1, currentThreat: 'oratores',
+      carriedCoin: SKIP_FEE, departureCarriedCoin: SKIP_FEE,
+      equipmentId: 'saints_relic', consumableId: 'metheglin',
+    });
+    const r = run(state, [{ type: 'SKIP_ENCOUNTER' }], skipping);
+    expect(r.final).toMatchObject({ phase: 'victory', outcome: 'victory', elapsedWeeks: state.elapsedWeeks });
+    expect(r.final.inventory).toEqual({ saints_relic: 1, metheglin: 1 });
+    expect(r.final.rng).toEqual(state.rng);
+    expect(eventsOfType(r.events, 'victory')).toHaveLength(1);
+    expect(getAvailableActions(r.final, skipping)).toEqual([]);
+  });
+});
+
 describe('random walks with items and skipping', () => {
   const variant = withOverrides(skipping, {
     startingState: { startingInventory: Object.fromEntries(Object.keys(config.items.catalog).map((id) => [id, 3])) },
@@ -262,7 +294,7 @@ describe('random walks with items and skipping', () => {
     const types = new Set<string>();
     for (let step = 0; step < 3000 && state.phase !== 'defeat' && state.phase !== 'victory'; step++) {
       const offered = getAvailableActions(state, variant);
-      if (offered.length === 0) break; // the final gauntlet waits for C4
+      expect(offered.length).toBeGreaterThan(0);
       const choice: AvailableAction = pick(offered);
       const action: GameAction = choice.type === 'BEGIN_PILGRIMAGE'
         ? {

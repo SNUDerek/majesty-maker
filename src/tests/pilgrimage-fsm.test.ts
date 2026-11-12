@@ -134,14 +134,13 @@ describe('departure (§7)', () => {
     expect(rejection(state, { type: 'BEGIN_PILGRIMAGE', carry: 0 })).toBe('INVALID_ACTION');
   });
 
-  it('is refused with no week left, from the road, with a bad carry, or at the final (C4)', () => {
+  it('is refused with no week left, from the road, or with a bad carry', () => {
     expect(rejection(ruleState({ elapsedWeeks: 96 }), { type: 'BEGIN_PILGRIMAGE', carry: 0 })).toBe('DEADLINE_REACHED');
     expect(beginPilgrimageDescriptor(ruleState({ elapsedWeeks: 96 }), config)).toBeNull();
     expect(rejection(onRoad(ENTRY.waxing, { currentThreat: 'oratores' }), { type: 'BEGIN_PILGRIMAGE', carry: 0 }))
       .toBe('INVALID_PHASE');
     expect(rejection(ruleState(), { type: 'BEGIN_PILGRIMAGE', carry: -1 })).toBe('INVALID_ACTION');
     expect(rejection(ruleState(), { type: 'BEGIN_PILGRIMAGE', carry: 1.5 })).toBe('INVALID_ACTION');
-    expect(rejection(ruleState({ furthestWaystation: 5 }), { type: 'BEGIN_PILGRIMAGE', carry: 0 })).toBe('INVALID_ACTION');
   });
 });
 
@@ -384,12 +383,13 @@ describe('retreat, waystations and checkpoints (§7)', () => {
     expect(r.events.every((event) => event.week === r.initial.elapsedWeeks)).toBe(true);
   });
 
-  it('no new segment at week 96, and none past the last regular segment (C4)', () => {
+  it('no new segment at week 96; the last waystation continues into the final gauntlet (C4)', () => {
     const late = onRoad(95, { stage: 'waystation_decision', encounterIndex: 5 }, { furthestWaystation: 1 });
     expect(rejection(late, { type: 'CONTINUE_SEGMENT' })).toBe('DEADLINE_REACHED');
     expect(pilgrimageActions(late, config)).toEqual([{ type: 'RETURN_HOME' }]);
     const last = onRoad(ENTRY.waxing, { segmentIndex: 4, stage: 'waystation_decision', encounterIndex: 5 }, { furthestWaystation: 5 });
-    expect(rejection(last, { type: 'CONTINUE_SEGMENT' })).toBe('INVALID_ACTION');
+    expect(pilgrimageActions(last, config)).toEqual([{ type: 'RETURN_HOME' }, { type: 'CONTINUE_SEGMENT' }]);
+    expect(run(last, [{ type: 'CONTINUE_SEGMENT' }]).final.pilgrimage).toMatchObject({ isFinal: true, segmentIndex: 5 });
   });
 
   it('a wipeout never rolls the checkpoint back', () => {
