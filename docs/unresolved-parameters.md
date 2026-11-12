@@ -27,5 +27,6 @@ Values that aren't listed here are confirmed (tech doc §10).
 | `failure.homeCollapse` | `{ forcedWeek: true, recovery: 15 }` | tbd | Provisional forced convalescence week with −15 Fatigue / −15 Melancholy (tech §4). | Q13 |
 | `failure.purseProtection.appliesToLabFailures` | `false` | tbd | The thematic doc applies Purse Protection to failed Laboratores encounters; the tech doc applies it only on wipeout. | Q2 |
 | `items.acquisition` | `"disabled"` | tbd | Drop rates are undecided; items are off for baseline runs. | — |
+| `items.testRewardTable` | Equal weight (1) for each of the six items | experimental | B2 fixture: one item per explicit reward call in `test_table` mode, with no production drop rate implied. Reward timing belongs to C3. | — |
 
 Open questions are numbered as in `docs/implementation-tasks.md` §9. Some open questions are about rule logic rather than a single config value, so they are not listed above. These are Q6 (Full Moon versus Gambeson order), Q8 (where consumables can be used), Q10 (how the Relic bonus applies) and Q11 (whether Opposition affects job failures). The modules that implement those rules own them.

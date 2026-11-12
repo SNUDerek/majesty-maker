@@ -274,7 +274,15 @@
   "items": {
     "acquisition": "disabled",
     "maxEquipment": 1,
-    "maxConsumables": 1
+    "maxConsumables": 1,
+    "testRewardTable": {
+      "theriac": 1,
+      "st_johns_wort": 1,
+      "metheglin": 1,
+      "gambeson": 1,
+      "saints_relic": 1,
+      "weighted_coin": 1
+    }
   },
   "provenance": {
     "route.regularSegments": {
@@ -336,6 +344,10 @@
     "failure.purseProtection.appliesToLabFailures": {
       "status": "tbd",
       "note": "Thematic doc applies it to failed Laboratores encounters; tech doc to wipeout only (Q2)."
+    },
+    "items.testRewardTable": {
+      "status": "experimental",
+      "note": "B2 test fixture: one uniformly sampled item per explicit reward call; no production drop rate implied. Used only in test_table mode."
     },
     "items.acquisition": {
       "status": "tbd",
