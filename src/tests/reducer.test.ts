@@ -279,7 +279,8 @@ describe('§9 invalid actions leave the state untouched', () => {
     ['unknown job', {}, { type: 'WORK', job: 'mine' as never }, 'INVALID_ACTION'],
     ['unknown action type', {}, { type: 'DANCE' } as never, 'INVALID_ACTION'],
     ['BEGIN_PILGRIMAGE while a convalescence is pending', { pendingConvalescence: 'home_collapse', melancholy: 80 }, { type: 'BEGIN_PILGRIMAGE', carry: 0 }, 'INVALID_ACTION'],
-    ['BEGIN_PILGRIMAGE with items, until C3', { inventory: { gambeson: 1 } }, { type: 'BEGIN_PILGRIMAGE', carry: 0, equipmentId: 'gambeson' }, 'INVALID_ACTION'],
+    ['BEGIN_PILGRIMAGE with an item not in the inventory', {}, { type: 'BEGIN_PILGRIMAGE', carry: 0, equipmentId: 'gambeson' }, 'ITEM_UNAVAILABLE'],
+    ['BEGIN_PILGRIMAGE with equipment in the consumable slot', { inventory: { gambeson: 1 } }, { type: 'BEGIN_PILGRIMAGE', carry: 0, consumableId: 'gambeson' }, 'INVALID_ITEM'],
     ['after the deadline', { phase: 'defeat', outcome: 'deadline', elapsedWeeks: 96 }, restHome, 'CAMPAIGN_FINISHED'],
     ['after victory', { phase: 'victory', outcome: 'victory', elapsedWeeks: 50, furthestWaystation: 5 }, stables, 'CAMPAIGN_FINISHED'],
     ['home at the deadline week', { elapsedWeeks: 96 }, stables, 'DEADLINE_REACHED'],
@@ -316,15 +317,14 @@ describe('getAvailableActions (home)', () => {
     expect(types(getAvailableActions(start({ elapsedWeeks: 4, treasury: 15 }), config))).not.toContain('banquet');
   });
 
-  it('the pilgrimage descriptor carries the fee, carry range and final flag (no items until C3)', () => {
-    // C3 adds carriable item ids; until then none are offered, so every offered action applies cleanly.
-    const items = withOverrides(config, { items: { maxEquipment: 1, maxConsumables: 1 } });
+  it('the pilgrimage descriptor carries the fee, carry range and carriable items and final flag', () => {
     const state = start({ treasury: 50, furthestWaystation: 4, inventory: { weighted_coin: 1, metheglin: 2, theriac: 1 } });
-    expect(getAvailableActions(state, items).at(-1)).toEqual({
+    expect(getAvailableActions(state, config).at(-1)).toEqual({
       type: 'BEGIN_PILGRIMAGE', minCarry: 0, maxCarry: 40, fee: 10, isFinal: false,
-      equipmentIds: [], consumableIds: [],
+      equipmentIds: ['weighted_coin'], consumableIds: ['metheglin', 'theriac'],
     });
-    // C4: at the final checkpoint the departure is the final gauntlet.
+    const noSlots = withOverrides(config, { items: { maxEquipment: 0, maxConsumables: 0 } });
+    expect(getAvailableActions(state, noSlots).at(-1)).toMatchObject({ equipmentIds: [], consumableIds: [] });
     const final = start({ treasury: 50, furthestWaystation: 5 });
     expect(getAvailableActions(final, config).at(-1)).toMatchObject({ type: 'BEGIN_PILGRIMAGE', isFinal: true, maxCarry: 40 });
   });
