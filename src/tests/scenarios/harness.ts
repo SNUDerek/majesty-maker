@@ -7,8 +7,8 @@
  *   calendar, conditions, encounter, items) directly and run today.
  * - Engine scenarios drive the public API (`createCampaign` / `applyAction`
  *   from `src/core/index.ts`) through `scenario()`. They are written
- *   test-first against the T0.2 contracts and are gated on the capability
- *   probes below. Each block switches on automatically when its C-task lands:
+ *   test-first against the T0.2 contracts and use explicit readiness flags
+ *   below. Enable each flag when its C-task lands:
  *   C1 home, C2 pilgrimage FSM, C3 items, C4 final gauntlet.
  *
  * Engine assumption, the one thing T0.2 does not pin down: encounter checks
@@ -156,6 +156,9 @@ const forcedCache = new Map<string, RngState>();
  * is 95) and 1 always succeeds (successMin is 5).
  */
 export function forcedRolls(...rolls: number[]): RngState {
+  if (rolls.length > 3 || rolls.some((roll) => !Number.isInteger(roll) || roll < 1 || roll > 100)) {
+    throw new RangeError('forcedRolls expects at most three integer d100 rolls in [1, 100]');
+  }
   const key = rolls.join(',');
   const cached = forcedCache.get(key);
   if (cached !== undefined) return cached;
@@ -284,45 +287,22 @@ export function coinDelta(
 }
 
 // ---------------------------------------------------------------------------
-// Capability probes: which C-tasks have landed
+// Engine readiness: enable each suite when its implementation lands.
 // ---------------------------------------------------------------------------
 
-function probe(check: (e: Engine) => boolean): boolean {
-  if (!engine) return false;
-  try {
-    return check(engine);
-  } catch {
-    return false;
-  }
-}
+/**
+ * Explicit flags keep a regression from silently turning a suite back off.
+ * C2, C3 and C4 owners must enable their flag in the same PR as the feature.
+ * Until then, the rule-level scenarios remain active.
+ */
+export const ENGINE_SUITES = {
+  pilgrimage: false, // C2
+  items: false, // C3
+  final: false, // C4
+} as const;
 
-/** C1: home actions work. */
-export const hasHome = probe(({ createCampaign, applyAction }) => {
-  const state = createCampaign({ ...DEFAULT_OPTIONS }, defaultConfig);
-  return applyAction(state, { type: 'REST', rest: 'rest_home' }, defaultConfig).state.elapsedWeeks === 1;
-});
-
-/** C2: a pilgrimage can be entered. */
-export const hasPilgrimage = hasHome && probe(({ createCampaign, applyAction }) => {
-  const state = createCampaign({ ...DEFAULT_OPTIONS }, defaultConfig);
-  const next = applyAction(state, { type: 'BEGIN_PILGRIMAGE', carry: 0 }, defaultConfig).state;
-  return next.phase === 'pilgrimage' && next.pilgrimage !== undefined;
-});
-
-/** C3: items move into the pilgrimage slots. */
-export const hasItems = hasPilgrimage && probe(({ createCampaign, applyAction }) => {
-  const state = { ...createCampaign({ ...DEFAULT_OPTIONS }, defaultConfig), inventory: { weighted_coin: 1 } };
-  const next = applyAction(
-    state, { type: 'BEGIN_PILGRIMAGE', carry: 0, equipmentId: 'weighted_coin' }, defaultConfig,
-  ).state;
-  return next.pilgrimage?.equipmentId === 'weighted_coin' && (next.inventory.weighted_coin ?? 0) === 0;
-});
-
-/** C4: the final gauntlet opens once every waystation is reached. */
-export const hasFinal = hasPilgrimage && probe(({ createCampaign, applyAction }) => {
-  const state = {
-    ...createCampaign({ ...DEFAULT_OPTIONS }, defaultConfig),
-    furthestWaystation: defaultConfig.route.regularSegments,
-  };
-  return applyAction(state, { type: 'BEGIN_PILGRIMAGE', carry: 0 }, defaultConfig).state.pilgrimage?.isFinal === true;
-});
+/** The presence of the public API enables C1, regardless of its behavior. */
+export const hasHome = engine !== null;
+export const hasPilgrimage = hasHome && ENGINE_SUITES.pilgrimage;
+export const hasItems = hasHome && ENGINE_SUITES.items;
+export const hasFinal = hasHome && ENGINE_SUITES.final;
