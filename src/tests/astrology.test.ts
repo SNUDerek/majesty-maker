@@ -118,6 +118,15 @@ describe('stacking and configurable lunar effects', () => {
     }
   });
 
+  it('rejects a Full Moon context whose kind does not match its activity', () => {
+    const variant: RulesConfig = { ...config, astrology: { ...config.astrology,
+      fullMoon: { ...config.astrology.fullMoon, surge: 25 } } };
+    expect(() => collectModifiers({ activityId: 'stables', kind: 'tutor', solar: 'none', lunar: 'full' }, variant))
+      .toThrow(RangeError);
+    expect(() => collectModifiers({ activityId: 'hermit', kind: 'job', solar: 'none', lunar: 'full' }, variant))
+      .toThrow(RangeError);
+  });
+
   it('makes Waning home recovery opt-in', () => {
     const variant: RulesConfig = { ...config, astrology: { ...config.astrology,
       waning: { ...config.astrology.waning, appliesToRestAtHome: true } } };

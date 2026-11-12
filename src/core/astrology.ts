@@ -97,6 +97,10 @@ export function collectModifiers(ctx: ModifierContext, config: RulesConfig): Mod
     for (let i = 0; i < count; i++) gainAndPayout(waxing.bonusPct);
     result.sources.push('lunar:waxing');
   } else if (ctx.lunar === 'full' && isActivity && fullMoon.surge !== 0) {
+    const table: Record<string, unknown> = isTutor ? config.classes.tutors : config.jobs.definitions;
+    if (!Object.hasOwn(table, ctx.activityId)) {
+      throw new RangeError(`${ctx.activityId} is not a configured ${ctx.kind}`);
+    }
     const estate = isTutor
       ? config.classes.tutors[ctx.activityId as keyof typeof config.classes.tutors].target
       : config.jobs.definitions[ctx.activityId as keyof typeof config.jobs.definitions].success.gainStat;
