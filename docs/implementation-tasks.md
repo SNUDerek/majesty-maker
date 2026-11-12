@@ -284,6 +284,14 @@ Everyone works on M0 together or in order (T0.1 → T0.2 + T0.4 → T0.3). T0.2 
   - `applyAction(state, action, config)`: works on a `structuredClone`, validates the phase and action, and on any `RuleError` throws (or returns a `Result`) with **the input state untouched and no RNG consumed**.
   - Home flow follows tech §5 steps 1–6: resolve the activity, clamp, check collapse, advance the week once, set `lastWeeklyActivityId`, then handle collapse. A home collapse makes the **next** week a forced convalescence: it is auto-applied, recovers −15/−15, and emits `convalescence`. That avoids chained collapses. Then check the deadline, which sets `phase = 'defeat'` and `outcome = 'deadline'`.
   - `getAvailableActions(state, config)` for home: every affordable activity, and `BEGIN_PILGRIMAGE` if treasury ≥ fee and weeks remain. The carry amount is a parameter; expose `{type, minCarry: 0, maxCarry}` so bots can pick a value.
+- **Decisions (C1):**
+  - A convalescence week is not a weekly activity. It clears `lastWeeklyActivityId` and `waxingStreak`.
+  - `waxingStreak` counts prior consecutive repeats.
+  - `homeCollapse.forcedWeek: false` recovers immediately, without spending a week.
+  - If one recovery leaves a burden collapsed (variants only), `pendingConvalescence` stays set, and `REST rest_home` is then the only legal action. It is resolved as another convalescence week.
+  - Until C2 lands, `BEGIN_PILGRIMAGE` is offered but rejected with `INVALID_ACTION`.
+  - Review clarification: if a free automatic recovery (`forcedWeek: false`) leaves a collapse pending, subsequent `REST rest_home` actions each consume a convalescence week. This also guarantees deadline progress with zero recovery.
+  - Starting burdens at or above their derived ceiling create a pending home convalescence, so the initial state satisfies D1 and only recovery is available.
 - **Acceptance:** a 96-week Stables-only scripted run ends in `deadline` with the correct treasury. Invalid actions (wrong phase, unaffordable, after the deadline) leave the state deep-equal to the input. Forced-convalescence tests cover collapse in week 95 and week 96.
 
 ### C2 Pilgrimage state machine
