@@ -308,6 +308,8 @@ Everyone works on M0 together or in order (T0.1 → T0.2 + T0.4 → T0.3). T0.2 
   ```
   - **Treasury/carried accounting:** the departure fee and carried Coin both come out of the treasury in one transaction. `earnedCoin` is tracked separately from `departureCarriedCoin` so a retreat applies loot retention only to what was earned (the recommended rule).
   - **Week accounting:** each segment entry spends one week, including `CONTINUE_SEGMENT`. Entry is refused when `elapsedWeeks >= 96`. The lunar phase is locked at segment entry (`segmentEntryWeek`).
+  - **C2 integration:** threat draws and d100 checks consume `rng.encounters`; successful encounter Coin rewards consume `rng.rewards`. A first threat is revealed atomically with entry, and its `encounter_drawn` event uses the pre-entry week, matching `pilgrimage_started` and `week_spent`. Departure is unavailable while convalescence is pending, including through the direct pilgrimage API.
+  - **Retreat accounting:** penalties spend earned Coin first. Apply loot retention to `max(0, carriedCoin - departureCarriedCoin)`, so already-spent earnings are not forfeited again and the remaining departure stake is protected from loot forfeiture. The separate retreat toll may still spend the stake.
   - **Wipeout:**
     - Retained carried Coin = `floor(preLethalCarried × purseProtectionPct / 100)`, computed *before* the lethal cost; that amount goes back to the treasury.
     - Earned loot and the carried consumable are lost. Equipment returns to inventory.

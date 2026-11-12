@@ -1,7 +1,25 @@
-/** Pure encounter generation (B3); segment transitions are implemented by C2. */
+/** Pilgrimage: encounter generation (B3) and the segment state machine (C2). */
 import type { RulesConfig } from './config.js';
-import { drawWeighted, type Draw, type RngState } from './rng.js';
-import type { Estate } from './types.js';
+import { d100, drawFrom, drawWeighted, rollInt, type Draw, type RngState } from './rng.js';
+import { getCalendar } from './calendar.js';
+import { clampTreasury, collapseCause, purseProtectionPct } from './conditions.js';
+import { encounterOdds, failurePenalty, isEncounterSuccess } from './encounter.js';
+import { getItem } from './items.js';
+import { applyIntegerPercent } from './math.js';
+import {
+  RuleError,
+  type ActionResult,
+  type AvailableAction,
+  type CampaignState,
+  type CoinAccount,
+  type CoinSource,
+  type Estate,
+  type GameAction,
+  type GameEvent,
+  type LunarPhase,
+  type PilgrimageStage,
+  type PilgrimageState,
+} from './types.js';
 
 // Fixed order makes seeded draws independent of JSON property insertion order.
 const THREAT_ORDER = ['bellatores', 'oratores', 'laboratores'] as const satisfies readonly Estate[];
@@ -17,4 +35,530 @@ export function drawThreat(
   distribution: RulesConfig['encounters']['distribution'],
 ): Draw<Estate> {
   return drawWeighted(state, THREAT_ORDER.map((estate) => [estate, distribution[estate]] as const));
+}
+
+// ===========================================================================
+// C2: pilgrimage state machine (tech §7)
+// ===========================================================================
+//
+// Pure transitions over CampaignState. The C1 reducer dispatches
+// BEGIN_PILGRIMAGE and every in-pilgrimage action here, and appends
+// `pilgrimageActions` / `beginPilgrimageDescriptor` to `getAvailableActions`.
+// Like the reducer, every transition validates and throws a `RuleError`
+// before returning, and never mutates its input.
+//
+// Stages:
+//   BEGIN_PILGRIMAGE (home) -> fee + carry out, week spent, threat drawn -> choose_approach
+//   CHOOSE_APPROACH -> d100 on rng.encounters
+//     success: +1d4 carried (rng.rewards) -> continue_or_retreat | waystation_decision
+//     failure: reroll_or_accept (unused reroll consumable carried) | penalty
+//   penalty -> wipeout (burden reaches its ceiling, or Coin cost > carried)
+//            | continue_or_retreat | waystation_decision
+//   ACCEPT_RESULT (reroll_or_accept) -> penalty
+//   CONTINUE_ENCOUNTER -> threat drawn -> choose_approach
+//   RETREAT -> loot forfeit + toll, bank, home (no extra week)
+//   RETURN_HOME (waystation) -> bank, home (no extra week)
+//   CONTINUE_SEGMENT (waystation) -> week spent, no fee, threat drawn -> choose_approach
+//
+// `encounter_reveal` is transient: the threat is revealed in the same action
+// that reaches it, because no player action exists between reveal and choice.
+// The convalescence week after a wipeout is applied in the same action, as for
+// a home collapse. Items in slots (C3), the New Moon skip (C3) and the final
+// gauntlet (C4) are rejected with INVALID_ACTION until those tasks land.
+
+export type PilgrimageAction = Extract<
+  GameAction,
+  {
+    type:
+      | 'BEGIN_PILGRIMAGE'
+      | 'CHOOSE_APPROACH'
+      | 'SKIP_ENCOUNTER'
+      | 'USE_CONSUMABLE'
+      | 'ACCEPT_RESULT'
+      | 'CONTINUE_ENCOUNTER'
+      | 'RETREAT'
+      | 'RETURN_HOME'
+      | 'CONTINUE_SEGMENT';
+  }
+>;
+
+const PILGRIMAGE_ACTION_TYPES: ReadonlySet<string> = new Set<PilgrimageAction['type']>([
+  'BEGIN_PILGRIMAGE', 'CHOOSE_APPROACH', 'SKIP_ENCOUNTER', 'USE_CONSUMABLE', 'ACCEPT_RESULT',
+  'CONTINUE_ENCOUNTER', 'RETREAT', 'RETURN_HOME', 'CONTINUE_SEGMENT',
+]);
+
+/** True for the actions `applyPilgrimageAction` handles (the reducer's dispatch test). */
+export function isPilgrimageAction(action: GameAction): action is PilgrimageAction {
+  return PILGRIMAGE_ACTION_TYPES.has(action.type);
+}
+
+/** Mutable working copy plus the event log for one transition. */
+class Transition {
+  readonly events: GameEvent[] = [];
+
+  constructor(public state: CampaignState, readonly config: RulesConfig) {}
+
+  get week(): number {
+    return this.state.elapsedWeeks;
+  }
+
+  get road(): PilgrimageState {
+    const road = this.state.pilgrimage;
+    if (road === undefined) throw new Error('Transition.road: not on a pilgrimage');
+    return road;
+  }
+
+  coin(account: CoinAccount, amount: number, source: CoinSource): void {
+    if (amount !== 0) this.events.push({ type: 'coin_changed', week: this.week, account, amount, source });
+  }
+
+  /** Moves `amount` carried Coin into the treasury (clamped at treasuryMax). */
+  bank(amount: number, source: CoinSource): void {
+    const road = this.road;
+    road.carriedCoin -= amount;
+    this.coin('carried', -amount, source);
+    const next = clampTreasury(this.state.treasury + amount, this.config);
+    this.coin('treasury', next - this.state.treasury, source);
+    this.state.treasury = next;
+  }
+
+  spendWeek(reason: 'segment_entry' | 'convalescence'): void {
+    this.events.push({ type: 'week_spent', week: this.week, reason });
+    this.state.elapsedWeeks += 1;
+  }
+
+  result(): ActionResult {
+    return { state: this.state, events: this.events };
+  }
+}
+
+function lengthOf(road: Pick<PilgrimageState, 'isFinal'>, config: RulesConfig): number {
+  return road.isFinal ? config.route.finalEncounters : config.route.encountersPerSegment;
+}
+
+/** The lunar phase locked at segment entry. */
+export function segmentLunarPhase(state: CampaignState, config: RulesConfig): LunarPhase {
+  const road = state.pilgrimage;
+  if (road === undefined) throw new RangeError('segmentLunarPhase: not on a pilgrimage');
+  return getCalendar({ ...state, elapsedWeeks: road.segmentEntryWeek }, config).lunarPhase;
+}
+
+function requireStage(state: CampaignState, action: PilgrimageAction, ...stages: PilgrimageStage[]): PilgrimageState {
+  if (state.phase !== 'pilgrimage' || state.pilgrimage === undefined) {
+    throw new RuleError('INVALID_PHASE', `${action.type} needs an active pilgrimage, but the phase is ${state.phase}`);
+  }
+  if (!stages.includes(state.pilgrimage.stage)) {
+    throw new RuleError('INVALID_STAGE', `${action.type} is not allowed at stage ${state.pilgrimage.stage}`);
+  }
+  return state.pilgrimage;
+}
+
+function requireWeek(state: CampaignState, config: RulesConfig): void {
+  if (state.elapsedWeeks >= config.calendar.totalWeeks) {
+    throw new RuleError('DEADLINE_REACHED', `no week remains to enter a segment (week ${state.elapsedWeeks})`);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Entry
+// ---------------------------------------------------------------------------
+
+/** Spends the entry week, locks the lunar phase and reveals the first threat. */
+function enterSegment(t: Transition, segmentIndex: number): void {
+  const road = t.road;
+  const entryWeek = t.week;
+  t.spendWeek('segment_entry');
+  Object.assign(road, { segmentIndex, encounterIndex: 0, skipUsed: false, segmentEntryWeek: entryWeek });
+  t.events.push({ type: 'pilgrimage_started', week: entryWeek, segmentIndex, isFinal: road.isFinal });
+  revealThreat(t, entryWeek);
+}
+
+function revealThreat(t: Transition, week = t.week): void {
+  const road = t.road;
+  const drawn = drawFrom(t.state.rng, 'encounters', (s) => drawThreat(s, t.config.encounters.distribution));
+  t.state.rng = drawn.streams;
+  for (const key of ['currentApproach', 'lastRoll', 'lastProbability', 'pendingFailure'] as const) delete road[key];
+  road.currentThreat = drawn.value;
+  road.stage = 'choose_approach';
+  t.events.push({ type: 'encounter_drawn', week, threat: drawn.value, encounterIndex: road.encounterIndex });
+}
+
+function begin(input: CampaignState, action: Extract<GameAction, { type: 'BEGIN_PILGRIMAGE' }>, config: RulesConfig): ActionResult {
+  if (input.phase !== 'home') {
+    throw new RuleError('INVALID_PHASE', `BEGIN_PILGRIMAGE starts from home, but the phase is ${input.phase}`);
+  }
+  requireWeek(input, config);
+  if (input.pendingConvalescence !== undefined) {
+    throw new RuleError('INVALID_ACTION', 'departure is unavailable while convalescence is pending');
+  }
+  if (input.furthestWaystation >= config.route.regularSegments) {
+    throw new RuleError('INVALID_ACTION', 'the final gauntlet is not implemented yet (C4)');
+  }
+  if (action.equipmentId !== undefined || action.consumableId !== undefined) {
+    throw new RuleError('INVALID_ACTION', 'carrying items is not implemented yet (C3)');
+  }
+  const { carry } = action;
+  if (!Number.isSafeInteger(carry) || carry < 0) {
+    throw new RuleError('INVALID_ACTION', `carry must be a non-negative integer, got ${String(carry)}`);
+  }
+  const fee = config.route.departureFee;
+  if (fee + carry > input.treasury) {
+    throw new RuleError('INSUFFICIENT_FUNDS', `departure needs ${fee} + ${carry} Coin, the treasury holds ${input.treasury}`);
+  }
+
+  const t = new Transition(structuredClone(input), config);
+  t.state.treasury -= fee + carry;
+  t.coin('treasury', -fee, 'departure_fee');
+  t.coin('treasury', -carry, 'carry_out');
+  t.coin('carried', carry, 'carry_out');
+  // A pilgrimage week is not a weekly activity: it breaks any Waxing repeat.
+  delete t.state.lastWeeklyActivityId;
+  t.state.waxingStreak = 0;
+  t.state.phase = 'pilgrimage';
+  t.state.pilgrimage = {
+    stage: 'encounter_reveal',
+    segmentIndex: input.furthestWaystation,
+    encounterIndex: 0,
+    carriedCoin: carry,
+    departureCarriedCoin: carry,
+    earnedCoin: 0,
+    skipUsed: false,
+    consumableUsed: false,
+    isFinal: false,
+    segmentEntryWeek: input.elapsedWeeks,
+  };
+  enterSegment(t, input.furthestWaystation);
+  return t.result();
+}
+
+// ---------------------------------------------------------------------------
+// Encounters
+// ---------------------------------------------------------------------------
+
+function chooseApproach(input: CampaignState, action: Extract<GameAction, { type: 'CHOOSE_APPROACH' }>, config: RulesConfig): ActionResult {
+  const current = requireStage(input, action, 'choose_approach');
+  const approach = action.estate;
+  if (!Object.hasOwn(input.stats, approach)) {
+    throw new RuleError('INVALID_ACTION', `unknown approach ${JSON.stringify(approach)}`);
+  }
+  if (current.currentThreat === undefined) throw new Error('choose_approach without a revealed threat');
+
+  const t = new Transition(structuredClone(input), config);
+  const road = t.road;
+  const threat = current.currentThreat;
+  const odds = encounterOdds(
+    {
+      stat: input.stats[approach],
+      approach,
+      threat,
+      lunar: segmentLunarPhase(input, config),
+      segmentIndex: road.segmentIndex,
+      isFinal: road.isFinal,
+      ...(road.equipmentId === undefined ? {} : { equipmentId: road.equipmentId }),
+    },
+    config,
+  );
+  const roll = drawFrom(t.state.rng, 'encounters', d100);
+  t.state.rng = roll.streams;
+  const success = isEncounterSuccess(odds.probability, roll.value);
+  Object.assign(road, { currentApproach: approach, lastRoll: roll.value, lastProbability: odds.probability });
+  t.events.push({
+    type: 'encounter_resolved', week: t.week, segmentIndex: road.segmentIndex, isFinal: road.isFinal,
+    encounterIndex: road.encounterIndex, threat, approach, success, probability: odds.probability, roll: roll.value,
+  });
+
+  if (success) {
+    const reward = drawFrom(t.state.rng, 'rewards', (s) => rollInt(s, 1, config.encounters.rewardCoinDie));
+    t.state.rng = reward.streams;
+    road.carriedCoin += reward.value;
+    road.earnedCoin += reward.value;
+    t.coin('carried', reward.value, 'encounter_reward');
+    advance(t);
+  } else if (canReroll(road, config)) {
+    road.stage = 'reroll_or_accept';
+    road.pendingFailure = true;
+  } else {
+    applyFailure(t);
+  }
+  return t.result();
+}
+
+function canReroll(road: PilgrimageState, config: RulesConfig): boolean {
+  return road.consumableId !== undefined && !road.consumableUsed &&
+    getItem(road.consumableId, config).effect === 'reroll_failed_check';
+}
+
+function acceptResult(input: CampaignState, action: PilgrimageAction, config: RulesConfig): ActionResult {
+  requireStage(input, action, 'reroll_or_accept');
+  const t = new Transition(structuredClone(input), config);
+  applyFailure(t);
+  return t.result();
+}
+
+/** Charges the failed approach's penalty, then wipes out or advances. */
+function applyFailure(t: Transition): void {
+  const { state, config } = t;
+  const road = t.road;
+  const approach = road.currentApproach;
+  if (approach === undefined) throw new Error('applyFailure without a chosen approach');
+  delete road.pendingFailure;
+  const penalty = failurePenalty(
+    {
+      approach,
+      lunar: segmentLunarPhase(state, config),
+      ...(road.equipmentId === undefined ? {} : { equipmentId: road.equipmentId }),
+      purseProtectionPct: purseProtectionPct(state.stats),
+    },
+    config,
+  );
+
+  if (penalty.resource === 'coin') {
+    if (penalty.amount > road.carriedCoin) {
+      wipeout(t, 'coin');
+      return;
+    }
+    road.carriedCoin -= penalty.amount;
+    t.coin('carried', -penalty.amount, 'laboratores_penalty');
+  } else if (penalty.amount > 0) {
+    state[penalty.resource] += penalty.amount;
+    t.events.push({
+      type: 'burden_changed', week: t.week, burden: penalty.resource, amount: penalty.amount, source: 'encounter_penalty',
+    });
+    const cause = collapseCause(state);
+    if (cause !== null) {
+      wipeout(t, cause);
+      return;
+    }
+  }
+  advance(t);
+}
+
+/** One resolved encounter: the index advances once, and the last one completes the segment. */
+function advance(t: Transition): void {
+  const road = t.road;
+  road.encounterIndex += 1;
+  if (road.encounterIndex < lengthOf(road, t.config)) {
+    road.stage = 'continue_or_retreat';
+    return;
+  }
+  if (road.isFinal) throw new Error('final gauntlet completion is not implemented yet (C4)');
+  const waystation = road.segmentIndex + 1;
+  // The checkpoint only ever grows (tech §7).
+  t.state.furthestWaystation = Math.max(t.state.furthestWaystation, waystation);
+  road.stage = 'waystation_decision';
+  t.events.push({ type: 'waystation_reached', week: t.week, waystation });
+}
+
+function continueEncounter(input: CampaignState, action: PilgrimageAction, config: RulesConfig): ActionResult {
+  requireStage(input, action, 'continue_or_retreat');
+  const t = new Transition(structuredClone(input), config);
+  revealThreat(t);
+  return t.result();
+}
+
+// ---------------------------------------------------------------------------
+// Leaving the road
+// ---------------------------------------------------------------------------
+
+/** Returns slot items to the inventory (an unused consumable too) and goes home. */
+function goHome(t: Transition, lostConsumable: boolean): void {
+  const road = t.road;
+  const inventory = t.state.inventory;
+  const giveBack = (itemId: string): void => {
+    inventory[itemId] = (inventory[itemId] ?? 0) + 1;
+    t.events.push({ type: 'item_changed', week: t.week, itemId, amount: 1, source: 'pilgrimage_slot_returned' });
+  };
+  if (road.equipmentId !== undefined) giveBack(road.equipmentId);
+  if (road.consumableId !== undefined && !road.consumableUsed) {
+    if (lostConsumable) {
+      t.events.push({ type: 'item_changed', week: t.week, itemId: road.consumableId, amount: 0, source: 'wipeout_lost' });
+    } else {
+      giveBack(road.consumableId);
+    }
+  }
+  t.state.phase = 'home';
+  delete t.state.pilgrimage;
+}
+
+/** Home with no week left is the deadline defeat (tech §3). */
+function checkDeadline(t: Transition): void {
+  const { totalWeeks } = t.config.calendar;
+  if (t.state.phase === 'home' && t.state.elapsedWeeks >= totalWeeks) {
+    t.state.phase = 'defeat';
+    t.state.outcome = 'deadline';
+    delete t.state.pendingConvalescence;
+    t.events.push({ type: 'deadline', week: totalWeeks });
+  }
+}
+
+function retreat(input: CampaignState, action: PilgrimageAction, config: RulesConfig): ActionResult {
+  requireStage(input, action, 'continue_or_retreat');
+  const t = new Transition(structuredClone(input), config);
+  const road = t.road;
+  t.events.push({ type: 'retreat', week: t.week, segmentIndex: road.segmentIndex });
+
+  // Only earned loot is reduced; Coin carried from home is protected (tech §7).
+  // Penalties spend earned Coin first. Historical earnings can exceed what is
+  // still in the purse, so do not forfeit already-spent loot a second time.
+  const remainingEarned = Math.max(0, road.carriedCoin - road.departureCarriedCoin);
+  const kept = applyIntegerPercent(remainingEarned, config.failure.retreatLootRetentionPct);
+  const forfeit = remainingEarned - kept;
+  road.carriedCoin -= forfeit;
+  t.coin('carried', -forfeit, 'retreat_loot_forfeit');
+
+  // Q7: the toll comes from carried Coin first, then the treasury, never below 0.
+  const toll = config.failure.retreatToll;
+  const fromCarried = Math.min(toll, road.carriedCoin);
+  road.carriedCoin -= fromCarried;
+  t.coin('carried', -fromCarried, 'retreat_toll');
+  const fromTreasury = Math.min(toll - fromCarried, t.state.treasury);
+  t.state.treasury -= fromTreasury;
+  t.coin('treasury', -fromTreasury, 'retreat_toll');
+
+  t.bank(road.carriedCoin, 'bank_carried');
+  goHome(t, false);
+  checkDeadline(t);
+  return t.result();
+}
+
+function returnHome(input: CampaignState, action: PilgrimageAction, config: RulesConfig): ActionResult {
+  requireStage(input, action, 'waystation_decision');
+  const t = new Transition(structuredClone(input), config);
+  t.bank(t.road.carriedCoin, 'bank_carried');
+  goHome(t, false);
+  checkDeadline(t);
+  return t.result();
+}
+
+function continueSegment(input: CampaignState, action: PilgrimageAction, config: RulesConfig): ActionResult {
+  const road = requireStage(input, action, 'waystation_decision');
+  requireWeek(input, config);
+  const next = road.segmentIndex + 1;
+  if (next >= config.route.regularSegments) {
+    throw new RuleError('INVALID_ACTION', 'the final gauntlet is not implemented yet (C4)');
+  }
+  const t = new Transition(structuredClone(input), config);
+  enterSegment(t, next);
+  return t.result();
+}
+
+/**
+ * Wipeout (tech §7): Purse Protection keeps a share of the pre-lethal carried
+ * Coin, the rest and the unused consumable are lost, equipment comes home,
+ * the medical fee is min(max, treasury), burdens reset per config, and one
+ * convalescence week is spent if any remains.
+ */
+function wipeout(t: Transition, cause: 'fatigue' | 'melancholy' | 'both' | 'coin'): void {
+  const { config } = t;
+  const state = t.state;
+  const road = t.road;
+  t.events.push({ type: 'wipeout', week: t.week, cause });
+
+  const retained = applyIntegerPercent(road.carriedCoin, purseProtectionPct(state.stats));
+  const lost = road.carriedCoin - retained;
+  road.carriedCoin -= lost;
+  t.coin('carried', -lost, 'wipeout_lost');
+  t.bank(retained, 'wipeout_retained');
+
+  const fee = Math.min(config.failure.wipeoutMedicalFeeMax, state.treasury);
+  state.treasury -= fee;
+  t.coin('treasury', -fee, 'medical_fee');
+
+  goHome(t, true);
+
+  if (config.failure.wipeoutBurdenReset === 'zero') {
+    for (const burden of ['fatigue', 'melancholy'] as const) {
+      if (state[burden] !== 0) {
+        t.events.push({ type: 'burden_changed', week: t.week, burden, amount: -state[burden], source: 'wipeout_reset' });
+        state[burden] = 0;
+      }
+    }
+  }
+
+  for (let i = 0; i < config.failure.wipeoutConvalescenceWeeks; i++) {
+    if (state.elapsedWeeks >= config.calendar.totalWeeks) break; // bounded by the deadline
+    t.events.push({ type: 'convalescence', week: t.week, cause: 'wipeout' });
+    t.spendWeek('convalescence');
+  }
+  // With wipeoutBurdenReset 'unchanged' a burden can still be at its ceiling:
+  // the C1 reducer then allows only REST at home until it recovers.
+  if (collapseCause(state) !== null) state.pendingConvalescence = 'wipeout';
+  checkDeadline(t);
+}
+
+// ---------------------------------------------------------------------------
+// Public entry points
+// ---------------------------------------------------------------------------
+
+/** Applies BEGIN_PILGRIMAGE (from home) or an in-pilgrimage action. */
+export function applyPilgrimageAction(
+  input: CampaignState,
+  action: PilgrimageAction,
+  config: RulesConfig,
+): ActionResult {
+  if (input.phase === 'victory' || input.phase === 'defeat') {
+    throw new RuleError('CAMPAIGN_FINISHED', `the campaign has ended (${input.phase})`);
+  }
+  switch (action.type) {
+    case 'BEGIN_PILGRIMAGE':
+      return begin(input, action, config);
+    case 'CHOOSE_APPROACH':
+      return chooseApproach(input, action, config);
+    case 'ACCEPT_RESULT':
+      return acceptResult(input, action, config);
+    case 'CONTINUE_ENCOUNTER':
+      return continueEncounter(input, action, config);
+    case 'RETREAT':
+      return retreat(input, action, config);
+    case 'RETURN_HOME':
+      return returnHome(input, action, config);
+    case 'CONTINUE_SEGMENT':
+      return continueSegment(input, action, config);
+    case 'USE_CONSUMABLE':
+    case 'SKIP_ENCOUNTER':
+      requireStage(input, action, 'encounter_reveal', 'choose_approach', 'reroll_or_accept', 'continue_or_retreat', 'waystation_decision');
+      throw new RuleError('INVALID_ACTION', `${action.type} is not implemented yet (C3)`);
+    default:
+      throw new RuleError('INVALID_ACTION', `not a pilgrimage action: ${JSON.stringify((action as { type?: unknown }).type)}`);
+  }
+}
+
+/** The home-phase departure descriptor, or null when departure is impossible. */
+export function beginPilgrimageDescriptor(state: CampaignState, config: RulesConfig): AvailableAction | null {
+  const fee = config.route.departureFee;
+  if (state.phase !== 'home' || state.pendingConvalescence !== undefined
+    || state.elapsedWeeks >= config.calendar.totalWeeks || state.treasury < fee) return null;
+  if (state.furthestWaystation >= config.route.regularSegments) return null; // final gauntlet: C4
+  return {
+    type: 'BEGIN_PILGRIMAGE',
+    minCarry: 0,
+    maxCarry: state.treasury - fee,
+    fee,
+    isFinal: false,
+    equipmentIds: [], // C3
+    consumableIds: [], // C3
+  };
+}
+
+/** Legal actions at the current pilgrimage stage ([] outside a pilgrimage). */
+export function pilgrimageActions(state: CampaignState, config: RulesConfig): AvailableAction[] {
+  const road = state.pilgrimage;
+  if (state.phase !== 'pilgrimage' || road === undefined) return [];
+  switch (road.stage) {
+    case 'encounter_reveal':
+      return [];
+    case 'choose_approach':
+      return (['bellatores', 'oratores', 'laboratores'] as const).map((estate) => ({ type: 'CHOOSE_APPROACH', estate }));
+    case 'reroll_or_accept':
+      return [{ type: 'ACCEPT_RESULT' }];
+    case 'continue_or_retreat':
+      return [{ type: 'CONTINUE_ENCOUNTER' }, { type: 'RETREAT' }];
+    case 'waystation_decision': {
+      const actions: AvailableAction[] = [{ type: 'RETURN_HOME' }];
+      if (state.elapsedWeeks < config.calendar.totalWeeks && road.segmentIndex + 1 < config.route.regularSegments) {
+        actions.push({ type: 'CONTINUE_SEGMENT' });
+      }
+      return actions;
+    }
+  }
 }

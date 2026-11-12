@@ -30,9 +30,10 @@
  *  - `waxingStreak` counts prior consecutive repeats: it increments when an
  *    activity repeats the last one and resets to 0 otherwise.
  *
- * Pilgrimage actions belong to C2–C4. Until then `BEGIN_PILGRIMAGE` is
- * advertised by `getAvailableActions` (as the C1 contract requires) but
- * rejected by `applyAction` with `INVALID_ACTION`.
+ * Pilgrimage actions are delegated to the C2 state machine in
+ * `pilgrimage.ts` (`applyPilgrimageAction`, `pilgrimageActions`,
+ * `beginPilgrimageDescriptor`). Departure is refused while a convalescence
+ * is pending.
  */
 
 import { collectModifiers, solarAspect } from './astrology.js';
@@ -48,6 +49,7 @@ import {
   tutorCost,
   type ActivityResolution,
 } from './economy.js';
+import { applyPilgrimageAction, beginPilgrimageDescriptor, pilgrimageActions } from './pilgrimage.js';
 import { createRngStreams } from './rng.js';
 import {
   RuleError,
@@ -170,10 +172,8 @@ function isTerminal(state: CampaignState): boolean {
 // ---------------------------------------------------------------------------
 
 export const getAvailableActions: GetAvailableActions<RulesConfig> = (state, config) => {
-  if (state.phase !== 'home' || state.elapsedWeeks >= config.calendar.totalWeeks) {
-    // Pilgrimage actions are enumerated by C2; terminal phases allow nothing.
-    return [];
-  }
+  if (state.phase === 'pilgrimage') return pilgrimageActions(state, config);
+  if (state.phase !== 'home' || state.elapsedWeeks >= config.calendar.totalWeeks) return []; // terminal
   if (state.pendingConvalescence !== undefined) return [{ type: 'REST', rest: CONVALESCENCE_REST }];
 
   const actions: AvailableAction[] = [];
@@ -191,24 +191,9 @@ export const getAvailableActions: GetAvailableActions<RulesConfig> = (state, con
     }
   }
 
-  const fee = config.route.departureFee;
-  if (state.treasury >= fee) {
-    const carried = (kind: 'equipment' | 'consumable', max: number): string[] =>
-      max === 0
-        ? []
-        : Object.keys(state.inventory)
-          .filter((id) => (state.inventory[id] ?? 0) > 0 && config.items.catalog[id]?.kind === kind)
-          .sort();
-    actions.push({
-      type: 'BEGIN_PILGRIMAGE',
-      minCarry: 0,
-      maxCarry: state.treasury - fee,
-      fee,
-      isFinal: state.furthestWaystation >= config.route.regularSegments,
-      equipmentIds: carried('equipment', config.items.maxEquipment),
-      consumableIds: carried('consumable', config.items.maxConsumables),
-    });
-  }
+  // C2 owns the departure descriptor (items: C3, final gauntlet: C4).
+  const begin = beginPilgrimageDescriptor(state, config);
+  if (begin !== null) actions.push(begin);
   return actions;
 };
 
@@ -230,7 +215,7 @@ export const applyAction: ApplyAction<RulesConfig> = (input, action, config) => 
     if (!PILGRIMAGE_ACTIONS.has(action.type)) {
       throw new RuleError('INVALID_PHASE', `${action.type} is not allowed during a pilgrimage`);
     }
-    throw new RuleError('INVALID_ACTION', `${action.type}: the pilgrimage state machine is not implemented yet (C2)`);
+    return applyPilgrimageAction(input, action as Parameters<typeof applyPilgrimageAction>[1], config);
   }
 
   // Home phase.
@@ -241,7 +226,13 @@ export const applyAction: ApplyAction<RulesConfig> = (input, action, config) => 
     throw new RuleError('INVALID_PHASE', `${action.type} is only allowed during a pilgrimage`);
   }
   if (action.type === 'BEGIN_PILGRIMAGE') {
-    throw new RuleError('INVALID_ACTION', 'BEGIN_PILGRIMAGE: the pilgrimage state machine is not implemented yet (C2)');
+    if (input.pendingConvalescence !== undefined) {
+      throw new RuleError(
+        'INVALID_ACTION',
+        `a ${input.pendingConvalescence} convalescence is pending; only REST ${CONVALESCENCE_REST} is allowed`,
+      );
+    }
+    return applyPilgrimageAction(input, action, config);
   }
   return applyHomeAction(structuredClone(input), action as HomeAction, config);
 };

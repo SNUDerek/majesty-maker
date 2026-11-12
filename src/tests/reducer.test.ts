@@ -278,7 +278,8 @@ describe('§9 invalid actions leave the state untouched', () => {
     ['unknown tutor', {}, { type: 'TRAIN', tutor: 'bard' as never }, 'INVALID_ACTION'],
     ['unknown job', {}, { type: 'WORK', job: 'mine' as never }, 'INVALID_ACTION'],
     ['unknown action type', {}, { type: 'DANCE' } as never, 'INVALID_ACTION'],
-    ['BEGIN_PILGRIMAGE before C2', {}, { type: 'BEGIN_PILGRIMAGE', carry: 0 }, 'INVALID_ACTION'],
+    ['BEGIN_PILGRIMAGE while a convalescence is pending', { pendingConvalescence: 'home_collapse', melancholy: 80 }, { type: 'BEGIN_PILGRIMAGE', carry: 0 }, 'INVALID_ACTION'],
+    ['BEGIN_PILGRIMAGE with items, until C3', { inventory: { gambeson: 1 } }, { type: 'BEGIN_PILGRIMAGE', carry: 0, equipmentId: 'gambeson' }, 'INVALID_ACTION'],
     ['after the deadline', { phase: 'defeat', outcome: 'deadline', elapsedWeeks: 96 }, restHome, 'CAMPAIGN_FINISHED'],
     ['after victory', { phase: 'victory', outcome: 'victory', elapsedWeeks: 50, furthestWaystation: 5 }, stables, 'CAMPAIGN_FINISHED'],
     ['home at the deadline week', { elapsedWeeks: 96 }, stables, 'DEADLINE_REACHED'],
@@ -315,13 +316,17 @@ describe('getAvailableActions (home)', () => {
     expect(types(getAvailableActions(start({ elapsedWeeks: 4, treasury: 15 }), config))).not.toContain('banquet');
   });
 
-  it('the pilgrimage descriptor carries the fee, carry range, checkpoint and carriable items', () => {
+  it('the pilgrimage descriptor carries the fee and carry range (C2: no items yet, no final gauntlet)', () => {
+    // C3 adds carriable item ids and C4 the final gauntlet (isFinal at the last checkpoint);
+    // until then neither is offered, so every offered action applies cleanly.
     const items = withOverrides(config, { items: { maxEquipment: 1, maxConsumables: 1 } });
-    const state = start({ treasury: 50, furthestWaystation: 5, inventory: { weighted_coin: 1, metheglin: 2, theriac: 1 } });
+    const state = start({ treasury: 50, furthestWaystation: 4, inventory: { weighted_coin: 1, metheglin: 2, theriac: 1 } });
     expect(getAvailableActions(state, items).at(-1)).toEqual({
-      type: 'BEGIN_PILGRIMAGE', minCarry: 0, maxCarry: 40, fee: 10, isFinal: true,
-      equipmentIds: ['weighted_coin'], consumableIds: ['metheglin', 'theriac'],
+      type: 'BEGIN_PILGRIMAGE', minCarry: 0, maxCarry: 40, fee: 10, isFinal: false,
+      equipmentIds: [], consumableIds: [],
     });
+    const final = start({ treasury: 50, furthestWaystation: 5 });
+    expect(getAvailableActions(final, config).map((a) => a.type)).not.toContain('BEGIN_PILGRIMAGE');
   });
 
   it('every offered home action applies cleanly (random walk, invariants each step)', () => {
@@ -339,8 +344,12 @@ describe('getAvailableActions (home)', () => {
     }
   });
 
-  it('is empty in terminal phases and (until C2) during a pilgrimage', () => {
+  it('is empty in terminal phases and lists the stage actions during a pilgrimage', () => {
     expect(getAvailableActions(start({ phase: 'defeat', outcome: 'deadline', elapsedWeeks: 96 }), config)).toEqual([]);
-    expect(getAvailableActions(ruleState({ elapsedWeeks: 5, pilgrimage: {} }), config)).toEqual([]);
+    expect(getAvailableActions(ruleState({ elapsedWeeks: 5, pilgrimage: { currentThreat: 'oratores' } }), config)).toEqual([
+      { type: 'CHOOSE_APPROACH', estate: 'bellatores' },
+      { type: 'CHOOSE_APPROACH', estate: 'oratores' },
+      { type: 'CHOOSE_APPROACH', estate: 'laboratores' },
+    ]);
   });
 });

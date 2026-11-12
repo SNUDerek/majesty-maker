@@ -296,7 +296,7 @@ export function coinDelta(
  * Until then, the rule-level scenarios remain active.
  */
 export const ENGINE_SUITES = {
-  pilgrimage: false, // C2
+  pilgrimage: true, // C2
   items: false, // C3
   final: false, // C4
 } as const;
