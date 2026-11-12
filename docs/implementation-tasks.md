@@ -268,6 +268,7 @@ Everyone works on M0 together or in order (T0.1 → T0.2 + T0.4 → T0.3). T0.2 
 - **Depends on:** T0.4 (and T0.2 types). **Parallel with:** A-series, B1, B2.
 - **File:** `src/core/pilgrimage.ts` (draw section).
 - **Work:** `drawThreat(rng.encounters, config.encounters.distribution)`. The default is uniform over the three Estates. Weighted distributions and, later, concrete card lists from `content/encounters.json` are configurable. There is **no** adaptive countering of the player's build.
+  - B3 contract note: `drawThreat(state, distribution)` returns `Draw<Estate>` (`{ value, state }`), using relative non-negative integer weights and rejection-sampled tickets. Draws are with replacement in fixed Bellatores/Oratores/Laboratores order, independent of config key order. Zero weights exclude an Estate; even a deterministic distribution advances the stream. The caller stores the returned state in `rng.encounters` (or uses `drawFrom`). Weight totals must be in [1, 2^32], matching `rollInt`'s range. Concrete card lists remain future work.
 - **Acceptance:** a distribution test over 30k draws within tolerance, a weighted-config test, and identical sequences for the same seed.
 
 ---
