@@ -274,6 +274,11 @@ const rulesConfigSchema = object({
     acquisition: oneOf(['disabled', 'test_table'] as const),
     maxEquipment: nonNegative,
     maxConsumables: nonNegative,
+    /**
+     * Experimental weighted item rewards; sampled only in test_table mode.
+     * Weight 0 excludes an item (variants deep-merge maps, so they cannot delete keys).
+     */
+    testRewardTable: mapOf(nonNegative),
     /** Item id -> definition (from content/items.json). */
     catalog: mapOf(
       object({
@@ -484,6 +489,19 @@ function semanticErrors(config: RulesConfig): string[] {
     if (item.kind === 'equipment' && item.estate === null) {
       errors.push(`items.catalog.${itemId}: equipment effects need an estate`);
     }
+  }
+
+  for (const itemId of Object.keys(items.testRewardTable)) {
+    if (!Object.hasOwn(items.catalog, itemId)) {
+      errors.push(`items.testRewardTable.${itemId}: unknown item`);
+    }
+  }
+  const rewardWeight = Object.values(items.testRewardTable).reduce((sum, weight) => sum + weight, 0);
+  if (items.acquisition === 'test_table' && rewardWeight === 0) {
+    errors.push('items.testRewardTable: total weight must be positive when acquisition is test_table');
+  }
+  if (!Number.isSafeInteger(rewardWeight) || rewardWeight > 0x1_0000_0000) {
+    errors.push('items.testRewardTable: total weight must fit in the RNG range (2^32)');
   }
 
   for (const path of Object.keys(config.provenance)) {

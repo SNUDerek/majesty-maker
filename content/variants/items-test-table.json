@@ -1,0 +1,11 @@
+{
+  "items": {
+    "acquisition": "test_table"
+  },
+  "provenance": {
+    "items.acquisition": {
+      "status": "experimental",
+      "note": "Item-enabled test variant; reward timing belongs to the pilgrimage reducer."
+    }
+  }
+}
