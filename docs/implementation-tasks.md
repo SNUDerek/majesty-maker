@@ -358,6 +358,14 @@ Everyone works on M0 together or in order (T0.1 → T0.2 + T0.4 → T0.3). T0.2 
 - **File:** `src/tests/scenarios/*.test.ts`.
 - **Work:** the full list from tech §13 (empty purse, 1 Coin short, near-ceiling, final on the last week, wipeout on the last week, Weighted Coin, Relic, Metheglin, birthday across the year boundary, two consecutive Waxing activities), plus modifier-precedence combinations. A helper `scenario(stateOverrides, actions[], seed)` sets up each case.
 - **Acceptance:** all pass. Each test names the rule section it covers.
+- D2 implementation note (`src/tests/scenarios/`):
+  - `harness.ts` provides `scenario(stateOverrides, actions, seed, options?)`, `ruleState()` (a T0.2-shaped campaign built from config, for use before C1), and `forcedRolls(...d100s)`, which finds an RNG state whose next d100 draws are the given values.
+  - Two tiers per file: rule-level scenarios call the A/B modules and run now. Engine scenarios load `src/core/index.ts` when it exists and enable C1 whenever the API exists. C2–C4 owners must enable the corresponding `ENGINE_SUITES` flag in `harness.ts` in their implementation PR. Explicit readiness flags ensure broken behavior cannot silently disable a previously enabled suite. `engine-status.test.ts` checks the home contract directly.
+  - Contract the engine scenarios assume, beyond T0.2:
+    - Encounter checks, including the Metheglin reroll, draw d100 from `rng.encounters`.
+    - A home collapse's convalescence week is applied in the same `applyAction`.
+    - Events carry the pre-action week.
+    - Encounter states can be injected directly at `choose_approach` with `currentThreat` set.
 
 ### D3 Fuzz and determinism tests
 - **Depends on:** C3, C4. **Parallel with:** E3b, E5.
