@@ -1,4 +1,4 @@
-/** Pilgrimage: encounter generation (B3) and the segment state machine (C2). */
+/** Pilgrimage: encounter generation (B3), the segment state machine (C2) and the final gauntlet (C4). */
 import type { RulesConfig } from './config.js';
 import { d100, drawFrom, drawWeighted, rollInt, type Draw, type RngState } from './rng.js';
 import { getCalendar } from './calendar.js';
@@ -60,11 +60,19 @@ export function drawThreat(
 //   RETURN_HOME (waystation) -> bank, home (no extra week)
 //   CONTINUE_SEGMENT (waystation) -> week spent, no fee, threat drawn -> choose_approach
 //
+// Final gauntlet (C4, tech §8): once every regular waystation is reached
+// (`furthestWaystation === regularSegments`), BEGIN_PILGRIMAGE from home or
+// CONTINUE_SEGMENT from the last waystation enters segment `regularSegments`
+// with `isFinal`, `finalEncounters` and `finalRoadBonus`. It runs on the same
+// FSM; resolving its last encounter is immediate victory (carried Coin banked,
+// slot items returned, no week spent). A retreat or wipeout keeps the final
+// checkpoint, so it can be retried while weeks remain.
+//
 // `encounter_reveal` is transient: the threat is revealed in the same action
 // that reaches it, because no player action exists between reveal and choice.
 // The convalescence week after a wipeout is applied in the same action, as for
-// a home collapse. Items in slots (C3), the New Moon skip (C3) and the final
-// gauntlet (C4) are rejected with INVALID_ACTION until those tasks land.
+// a home collapse. Items in slots and the New Moon skip (C3) are rejected with
+// INVALID_ACTION until that task lands.
 
 export type PilgrimageAction = Extract<
   GameAction,
@@ -163,12 +171,23 @@ function requireWeek(state: CampaignState, config: RulesConfig): void {
 // Entry
 // ---------------------------------------------------------------------------
 
+/** True when the segment after the regular route is the final gauntlet. */
+function isFinalSegment(segmentIndex: number, config: RulesConfig): boolean {
+  return segmentIndex >= config.route.regularSegments;
+}
+
 /** Spends the entry week, locks the lunar phase and reveals the first threat. */
 function enterSegment(t: Transition, segmentIndex: number): void {
   const road = t.road;
   const entryWeek = t.week;
   t.spendWeek('segment_entry');
-  Object.assign(road, { segmentIndex, encounterIndex: 0, skipUsed: false, segmentEntryWeek: entryWeek });
+  Object.assign(road, {
+    segmentIndex,
+    encounterIndex: 0,
+    skipUsed: false,
+    isFinal: isFinalSegment(segmentIndex, t.config),
+    segmentEntryWeek: entryWeek,
+  });
   t.events.push({ type: 'pilgrimage_started', week: entryWeek, segmentIndex, isFinal: road.isFinal });
   revealThreat(t, entryWeek);
 }
@@ -190,9 +209,6 @@ function begin(input: CampaignState, action: Extract<GameAction, { type: 'BEGIN_
   requireWeek(input, config);
   if (input.pendingConvalescence !== undefined) {
     throw new RuleError('INVALID_ACTION', 'departure is unavailable while convalescence is pending');
-  }
-  if (input.furthestWaystation >= config.route.regularSegments) {
-    throw new RuleError('INVALID_ACTION', 'the final gauntlet is not implemented yet (C4)');
   }
   if (action.equipmentId !== undefined || action.consumableId !== undefined) {
     throw new RuleError('INVALID_ACTION', 'carrying items is not implemented yet (C3)');
@@ -224,7 +240,7 @@ function begin(input: CampaignState, action: Extract<GameAction, { type: 'BEGIN_
     earnedCoin: 0,
     skipUsed: false,
     consumableUsed: false,
-    isFinal: false,
+    isFinal: isFinalSegment(input.furthestWaystation, config), // set again by enterSegment
     segmentEntryWeek: input.elapsedWeeks,
   };
   enterSegment(t, input.furthestWaystation);
@@ -333,7 +349,10 @@ function applyFailure(t: Transition): void {
   advance(t);
 }
 
-/** One resolved encounter: the index advances once, and the last one completes the segment. */
+/**
+ * One resolved encounter: the index advances once, and the last one completes
+ * the segment (a waystation, or victory for the final gauntlet).
+ */
 function advance(t: Transition): void {
   const road = t.road;
   road.encounterIndex += 1;
@@ -341,7 +360,10 @@ function advance(t: Transition): void {
     road.stage = 'continue_or_retreat';
     return;
   }
-  if (road.isFinal) throw new Error('final gauntlet completion is not implemented yet (C4)');
+  if (road.isFinal) {
+    victory(t);
+    return;
+  }
   const waystation = road.segmentIndex + 1;
   // The checkpoint only ever grows (tech §7).
   t.state.furthestWaystation = Math.max(t.state.furthestWaystation, waystation);
@@ -360,8 +382,8 @@ function continueEncounter(input: CampaignState, action: PilgrimageAction, confi
 // Leaving the road
 // ---------------------------------------------------------------------------
 
-/** Returns slot items to the inventory (an unused consumable too) and goes home. */
-function goHome(t: Transition, lostConsumable: boolean): void {
+/** Returns slot items to the inventory (an unused consumable too) and leaves the road. */
+function leaveRoad(t: Transition, lostConsumable: boolean): void {
   const road = t.road;
   const inventory = t.state.inventory;
   const giveBack = (itemId: string): void => {
@@ -376,8 +398,25 @@ function goHome(t: Transition, lostConsumable: boolean): void {
       giveBack(road.consumableId);
     }
   }
-  t.state.phase = 'home';
   delete t.state.pilgrimage;
+}
+
+function goHome(t: Transition, lostConsumable: boolean): void {
+  leaveRoad(t, lostConsumable);
+  t.state.phase = 'home';
+}
+
+/**
+ * Final gauntlet completed (tech §8): immediate victory in the current week,
+ * with no week consumed after it. Carried Coin is banked and slot items come
+ * home so the terminal state's ledger is complete.
+ */
+function victory(t: Transition): void {
+  t.bank(t.road.carriedCoin, 'bank_carried');
+  leaveRoad(t, false);
+  t.state.phase = 'victory';
+  t.state.outcome = 'victory';
+  t.events.push({ type: 'victory', week: t.week });
 }
 
 /** Home with no week left is the deadline defeat (tech §3). */
@@ -433,10 +472,8 @@ function returnHome(input: CampaignState, action: PilgrimageAction, config: Rule
 function continueSegment(input: CampaignState, action: PilgrimageAction, config: RulesConfig): ActionResult {
   const road = requireStage(input, action, 'waystation_decision');
   requireWeek(input, config);
+  // The final gauntlet has no waystation, so the next segment is at most the final one.
   const next = road.segmentIndex + 1;
-  if (next >= config.route.regularSegments) {
-    throw new RuleError('INVALID_ACTION', 'the final gauntlet is not implemented yet (C4)');
-  }
   const t = new Transition(structuredClone(input), config);
   enterSegment(t, next);
   return t.result();
@@ -528,13 +565,12 @@ export function beginPilgrimageDescriptor(state: CampaignState, config: RulesCon
   const fee = config.route.departureFee;
   if (state.phase !== 'home' || state.pendingConvalescence !== undefined
     || state.elapsedWeeks >= config.calendar.totalWeeks || state.treasury < fee) return null;
-  if (state.furthestWaystation >= config.route.regularSegments) return null; // final gauntlet: C4
   return {
     type: 'BEGIN_PILGRIMAGE',
     minCarry: 0,
     maxCarry: state.treasury - fee,
     fee,
-    isFinal: false,
+    isFinal: isFinalSegment(state.furthestWaystation, config),
     equipmentIds: [], // C3
     consumableIds: [], // C3
   };
@@ -555,7 +591,8 @@ export function pilgrimageActions(state: CampaignState, config: RulesConfig): Av
       return [{ type: 'CONTINUE_ENCOUNTER' }, { type: 'RETREAT' }];
     case 'waystation_decision': {
       const actions: AvailableAction[] = [{ type: 'RETURN_HOME' }];
-      if (state.elapsedWeeks < config.calendar.totalWeeks && road.segmentIndex + 1 < config.route.regularSegments) {
+      // The next segment may be the final gauntlet (C4), which has no waystation of its own.
+      if (state.elapsedWeeks < config.calendar.totalWeeks) {
         actions.push({ type: 'CONTINUE_SEGMENT' });
       }
       return actions;
