@@ -134,15 +134,13 @@ describe('departure (§7)', () => {
     expect(rejection(state, { type: 'BEGIN_PILGRIMAGE', carry: 0 })).toBe('INVALID_ACTION');
   });
 
-  it('is refused with no week left, from the road, with a bad carry, or with items (C3) / at the final (C4)', () => {
+  it('is refused with no week left, from the road, with a bad carry, or at the final (C4)', () => {
     expect(rejection(ruleState({ elapsedWeeks: 96 }), { type: 'BEGIN_PILGRIMAGE', carry: 0 })).toBe('DEADLINE_REACHED');
     expect(beginPilgrimageDescriptor(ruleState({ elapsedWeeks: 96 }), config)).toBeNull();
     expect(rejection(onRoad(ENTRY.waxing, { currentThreat: 'oratores' }), { type: 'BEGIN_PILGRIMAGE', carry: 0 }))
       .toBe('INVALID_PHASE');
     expect(rejection(ruleState(), { type: 'BEGIN_PILGRIMAGE', carry: -1 })).toBe('INVALID_ACTION');
     expect(rejection(ruleState(), { type: 'BEGIN_PILGRIMAGE', carry: 1.5 })).toBe('INVALID_ACTION');
-    expect(rejection(ruleState({ inventory: { gambeson: 1 } }), { type: 'BEGIN_PILGRIMAGE', carry: 0, equipmentId: 'gambeson' }))
-      .toBe('INVALID_ACTION');
     expect(rejection(ruleState({ furthestWaystation: 5 }), { type: 'BEGIN_PILGRIMAGE', carry: 0 })).toBe('INVALID_ACTION');
   });
 });
@@ -441,9 +439,8 @@ describe('action validation and availability', () => {
       .toBe('CAMPAIGN_FINISHED');
   });
 
-  it('USE_CONSUMABLE and SKIP_ENCOUNTER wait for C3', () => {
-    const state = onRoad(ENTRY.waxing, { stage: 'continue_or_retreat', encounterIndex: 1, consumableId: 'theriac' });
-    expect(rejection(state, { type: 'USE_CONSUMABLE', itemId: 'theriac' })).toBe('INVALID_ACTION');
+  it('SKIP_ENCOUNTER is refused while the default config disables it (items: see items-fsm.test.ts)', () => {
+    const state = onRoad(ENTRY.new, { currentThreat: 'oratores', carriedCoin: 20, departureCarriedCoin: 20 });
     expect(rejection(state, { type: 'SKIP_ENCOUNTER' })).toBe('INVALID_ACTION');
   });
 
@@ -456,7 +453,7 @@ describe('action validation and availability', () => {
   it('offers exactly the stage actions', () => {
     expect(pilgrimageActions(onRoad(ENTRY.waxing, { currentThreat: 'oratores' }), config)).toHaveLength(3);
     expect(pilgrimageActions(onRoad(ENTRY.waxing, { currentThreat: 'oratores', consumableId: 'metheglin', stage: 'reroll_or_accept', pendingFailure: true, currentApproach: 'bellatores', lastRoll: 100, lastProbability: 50 }), config))
-      .toEqual([{ type: 'ACCEPT_RESULT' }]);
+      .toEqual([{ type: 'ACCEPT_RESULT' }, { type: 'USE_CONSUMABLE', itemId: 'metheglin' }]);
     expect(pilgrimageActions(ruleState(), config)).toEqual([]);
   });
 });

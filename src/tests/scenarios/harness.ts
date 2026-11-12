@@ -297,7 +297,7 @@ export function coinDelta(
  */
 export const ENGINE_SUITES = {
   pilgrimage: true, // C2
-  items: false, // C3
+  items: true, // C3
   final: false, // C4
 } as const;
 

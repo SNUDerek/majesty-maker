@@ -4,7 +4,7 @@ import { d100, drawFrom, drawWeighted, rollInt, type Draw, type RngState } from 
 import { getCalendar } from './calendar.js';
 import { clampTreasury, collapseCause, purseProtectionPct } from './conditions.js';
 import { encounterOdds, failurePenalty, isEncounterSuccess } from './encounter.js';
-import { getItem } from './items.js';
+import { canUseConsumable, consumableEffect, getItem } from './items.js';
 import { applyIntegerPercent } from './math.js';
 import {
   RuleError,
@@ -63,8 +63,18 @@ export function drawThreat(
 // `encounter_reveal` is transient: the threat is revealed in the same action
 // that reaches it, because no player action exists between reveal and choice.
 // The convalescence week after a wipeout is applied in the same action, as for
-// a home collapse. Items in slots (C3), the New Moon skip (C3) and the final
-// gauntlet (C4) are rejected with INVALID_ACTION until those tasks land.
+// a home collapse. The final gauntlet (C4) is rejected with INVALID_ACTION
+// until that task lands.
+//
+// C3 items and skipping:
+//   BEGIN_PILGRIMAGE may move one equipment and one consumable from the
+//   inventory into the slots. USE_CONSUMABLE follows B2's stage rules:
+//   Theriac/Wort at continue_or_retreat or waystation_decision, Metheglin only
+//   at reroll_or_accept, where it rerolls the same threat and approach. A used
+//   consumable stays in its slot with `consumableUsed`, so it is never
+//   returned or lost again. SKIP_ENCOUNTER (choose_approach, New Moon
+//   segments, once per segment, fee from carried Coin, off while
+//   `astrology.newMoon.skipFee` is null) counts the card as passed with no roll.
 
 export type PilgrimageAction = Extract<
   GameAction,
@@ -194,8 +204,20 @@ function begin(input: CampaignState, action: Extract<GameAction, { type: 'BEGIN_
   if (input.furthestWaystation >= config.route.regularSegments) {
     throw new RuleError('INVALID_ACTION', 'the final gauntlet is not implemented yet (C4)');
   }
-  if (action.equipmentId !== undefined || action.consumableId !== undefined) {
-    throw new RuleError('INVALID_ACTION', 'carrying items is not implemented yet (C3)');
+  const slots = [
+    ['equipment', action.equipmentId, config.items.maxEquipment],
+    ['consumable', action.consumableId, config.items.maxConsumables],
+  ] as const;
+  for (const [kind, itemId, max] of slots) {
+    if (itemId === undefined) continue;
+    if (typeof itemId !== 'string') throw new RuleError('INVALID_ITEM', `${kind} id must be a string`);
+    if (getItem(itemId, config).kind !== kind) {
+      throw new RuleError('INVALID_ITEM', `${itemId} is not ${kind === 'equipment' ? 'equipment' : 'a consumable'}`);
+    }
+    if (max < 1) throw new RuleError('INVALID_ACTION', `no ${kind} slot is configured (items.max*)`);
+    if ((input.inventory[itemId] ?? 0) < 1) {
+      throw new RuleError('ITEM_UNAVAILABLE', `${itemId} is not in the inventory`);
+    }
   }
   const { carry } = action;
   if (!Number.isSafeInteger(carry) || carry < 0) {
@@ -211,6 +233,13 @@ function begin(input: CampaignState, action: Extract<GameAction, { type: 'BEGIN_
   t.coin('treasury', -fee, 'departure_fee');
   t.coin('treasury', -carry, 'carry_out');
   t.coin('carried', carry, 'carry_out');
+  for (const [, itemId] of slots) {
+    if (itemId === undefined) continue;
+    const left = t.state.inventory[itemId]! - 1;
+    if (left === 0) delete t.state.inventory[itemId];
+    else t.state.inventory[itemId] = left;
+    t.events.push({ type: 'item_changed', week: t.week, itemId, amount: -1, source: 'pilgrimage_slot_out' });
+  }
   // A pilgrimage week is not a weekly activity: it breaks any Waxing repeat.
   delete t.state.lastWeeklyActivityId;
   t.state.waxingStreak = 0;
@@ -226,6 +255,8 @@ function begin(input: CampaignState, action: Extract<GameAction, { type: 'BEGIN_
     consumableUsed: false,
     isFinal: false,
     segmentEntryWeek: input.elapsedWeeks,
+    ...(action.equipmentId === undefined ? {} : { equipmentId: action.equipmentId }),
+    ...(action.consumableId === undefined ? {} : { consumableId: action.consumableId }),
   };
   enterSegment(t, input.furthestWaystation);
   return t.result();
@@ -244,14 +275,32 @@ function chooseApproach(input: CampaignState, action: Extract<GameAction, { type
   if (current.currentThreat === undefined) throw new Error('choose_approach without a revealed threat');
 
   const t = new Transition(structuredClone(input), config);
+  t.road.currentApproach = approach;
+  const success = rollEncounter(t);
+  if (success) {
+    reward(t);
+  } else if (canReroll(t.road, config)) {
+    t.road.stage = 'reroll_or_accept';
+    t.road.pendingFailure = true;
+  } else {
+    applyFailure(t);
+  }
+  return t.result();
+}
+
+/** Rolls d100 for the current threat and approach, records it, and reports success. */
+function rollEncounter(t: Transition): boolean {
+  const { state, config } = t;
   const road = t.road;
-  const threat = current.currentThreat;
+  const threat = road.currentThreat;
+  const approach = road.currentApproach;
+  if (threat === undefined || approach === undefined) throw new Error('rollEncounter needs a threat and an approach');
   const odds = encounterOdds(
     {
-      stat: input.stats[approach],
+      stat: state.stats[approach],
       approach,
       threat,
-      lunar: segmentLunarPhase(input, config),
+      lunar: segmentLunarPhase(state, config),
       segmentIndex: road.segmentIndex,
       isFinal: road.isFinal,
       ...(road.equipmentId === undefined ? {} : { equipmentId: road.equipmentId }),
@@ -261,26 +310,23 @@ function chooseApproach(input: CampaignState, action: Extract<GameAction, { type
   const roll = drawFrom(t.state.rng, 'encounters', d100);
   t.state.rng = roll.streams;
   const success = isEncounterSuccess(odds.probability, roll.value);
-  Object.assign(road, { currentApproach: approach, lastRoll: roll.value, lastProbability: odds.probability });
+  Object.assign(road, { lastRoll: roll.value, lastProbability: odds.probability });
   t.events.push({
     type: 'encounter_resolved', week: t.week, segmentIndex: road.segmentIndex, isFinal: road.isFinal,
     encounterIndex: road.encounterIndex, threat, approach, success, probability: odds.probability, roll: roll.value,
   });
+  return success;
+}
 
-  if (success) {
-    const reward = drawFrom(t.state.rng, 'rewards', (s) => rollInt(s, 1, config.encounters.rewardCoinDie));
-    t.state.rng = reward.streams;
-    road.carriedCoin += reward.value;
-    road.earnedCoin += reward.value;
-    t.coin('carried', reward.value, 'encounter_reward');
-    advance(t);
-  } else if (canReroll(road, config)) {
-    road.stage = 'reroll_or_accept';
-    road.pendingFailure = true;
-  } else {
-    applyFailure(t);
-  }
-  return t.result();
+/** A won encounter: +1d4 carried and earned Coin (rng.rewards), then advance. */
+function reward(t: Transition): void {
+  const road = t.road;
+  const drawn = drawFrom(t.state.rng, 'rewards', (s) => rollInt(s, 1, t.config.encounters.rewardCoinDie));
+  t.state.rng = drawn.streams;
+  road.carriedCoin += drawn.value;
+  road.earnedCoin += drawn.value;
+  t.coin('carried', drawn.value, 'encounter_reward');
+  advance(t);
 }
 
 function canReroll(road: PilgrimageState, config: RulesConfig): boolean {
@@ -353,6 +399,84 @@ function continueEncounter(input: CampaignState, action: PilgrimageAction, confi
   requireStage(input, action, 'continue_or_retreat');
   const t = new Transition(structuredClone(input), config);
   revealThreat(t);
+  return t.result();
+}
+
+// ---------------------------------------------------------------------------
+// Items and skipping (C3)
+// ---------------------------------------------------------------------------
+
+const ROAD_STAGES: PilgrimageStage[] = [
+  'encounter_reveal', 'choose_approach', 'reroll_or_accept', 'continue_or_retreat', 'waystation_decision',
+];
+
+function useConsumable(input: CampaignState, action: Extract<GameAction, { type: 'USE_CONSUMABLE' }>, config: RulesConfig): ActionResult {
+  const current = requireStage(input, action, ...ROAD_STAGES);
+  const { itemId } = action;
+  if (typeof itemId !== 'string') throw new RuleError('INVALID_ITEM', 'itemId must be a string');
+  getItem(itemId, config); // INVALID_ITEM for unknown ids
+  if (current.consumableId !== itemId) {
+    throw new RuleError('ITEM_UNAVAILABLE', `${itemId} is not in the consumable slot`);
+  }
+  if (current.consumableUsed) throw new RuleError('CONSUMABLE_ALREADY_USED', `${itemId} has already been used`);
+  if (!canUseConsumable(itemId, current.stage, config)) {
+    throw new RuleError('INVALID_STAGE', `${itemId} cannot be used at stage ${current.stage}`);
+  }
+
+  const t = new Transition(structuredClone(input), config);
+  const road = t.road;
+  const state = t.state;
+  const effect = consumableEffect(itemId, current.stage, state, config);
+  road.consumableUsed = true;
+  // The item left the inventory at departure; consuming it changes no count.
+  t.events.push({ type: 'item_changed', week: t.week, itemId, amount: 0, source: 'consumed' });
+
+  if (!effect.reroll) {
+    t.events.push({ type: 'consumable_used', week: t.week, itemId });
+    for (const burden of ['fatigue', 'melancholy'] as const) {
+      if (effect[burden] === 0) continue;
+      state[burden] += effect[burden];
+      t.events.push({ type: 'burden_changed', week: t.week, burden, amount: effect[burden], source: 'consumable' });
+    }
+    return t.result();
+  }
+
+  // Metheglin: the same threat and approach roll again. The first failure is
+  // never charged; the encounter index advances once, whatever the reroll.
+  delete road.pendingFailure;
+  const success = rollEncounter(t);
+  t.events.push({ type: 'reroll_used', week: t.week, itemId, roll: road.lastRoll! });
+  if (success) reward(t);
+  else applyFailure(t);
+  return t.result();
+}
+
+/** The New Moon bribe is configured, the segment is New Moon-locked and it is unused. */
+function skipBlocker(state: CampaignState, config: RulesConfig): string | null {
+  const fee = config.astrology.newMoon.skipFee;
+  if (fee === null) return 'encounter skipping is disabled (astrology.newMoon.skipFee is null)';
+  if (segmentLunarPhase(state, config) !== 'new') return 'encounters can be skipped only in a New Moon segment';
+  return null;
+}
+
+function skipEncounter(input: CampaignState, action: PilgrimageAction, config: RulesConfig): ActionResult {
+  const current = requireStage(input, action, 'choose_approach');
+  const blocker = skipBlocker(input, config);
+  if (blocker !== null) throw new RuleError('INVALID_ACTION', blocker);
+  if (current.skipUsed) throw new RuleError('SKIP_ALREADY_USED', 'the New Moon skip is once per segment');
+  const fee = config.astrology.newMoon.skipFee!;
+  if (fee > current.carriedCoin) {
+    throw new RuleError('INSUFFICIENT_FUNDS', `the skip costs ${fee} carried Coin, ${current.carriedCoin} carried`);
+  }
+
+  const t = new Transition(structuredClone(input), config);
+  const road = t.road;
+  road.carriedCoin -= fee;
+  t.coin('carried', -fee, 'skip_fee');
+  road.skipUsed = true;
+  t.events.push({ type: 'encounter_skipped', week: t.week, encounterIndex: road.encounterIndex, source: 'new_moon_bribe' });
+  // Q9: a skipped card counts toward the segment's N encounters.
+  advance(t);
   return t.result();
 }
 
@@ -515,9 +639,9 @@ export function applyPilgrimageAction(
     case 'CONTINUE_SEGMENT':
       return continueSegment(input, action, config);
     case 'USE_CONSUMABLE':
+      return useConsumable(input, action, config);
     case 'SKIP_ENCOUNTER':
-      requireStage(input, action, 'encounter_reveal', 'choose_approach', 'reroll_or_accept', 'continue_or_retreat', 'waystation_decision');
-      throw new RuleError('INVALID_ACTION', `${action.type} is not implemented yet (C3)`);
+      return skipEncounter(input, action, config);
     default:
       throw new RuleError('INVALID_ACTION', `not a pilgrimage action: ${JSON.stringify((action as { type?: unknown }).type)}`);
   }
@@ -529,14 +653,18 @@ export function beginPilgrimageDescriptor(state: CampaignState, config: RulesCon
   if (state.phase !== 'home' || state.pendingConvalescence !== undefined
     || state.elapsedWeeks >= config.calendar.totalWeeks || state.treasury < fee) return null;
   if (state.furthestWaystation >= config.route.regularSegments) return null; // final gauntlet: C4
+  const carriable = (kind: 'equipment' | 'consumable', max: number): string[] =>
+    max < 1 ? [] : Object.keys(state.inventory)
+      .filter((id) => (state.inventory[id] ?? 0) > 0 && getItem(id, config).kind === kind)
+      .sort();
   return {
     type: 'BEGIN_PILGRIMAGE',
     minCarry: 0,
     maxCarry: state.treasury - fee,
     fee,
     isFinal: false,
-    equipmentIds: [], // C3
-    consumableIds: [], // C3
+    equipmentIds: carriable('equipment', config.items.maxEquipment),
+    consumableIds: carriable('consumable', config.items.maxConsumables),
   };
 }
 
@@ -547,18 +675,32 @@ export function pilgrimageActions(state: CampaignState, config: RulesConfig): Av
   switch (road.stage) {
     case 'encounter_reveal':
       return [];
-    case 'choose_approach':
-      return (['bellatores', 'oratores', 'laboratores'] as const).map((estate) => ({ type: 'CHOOSE_APPROACH', estate }));
+    case 'choose_approach': {
+      const actions: AvailableAction[] = (['bellatores', 'oratores', 'laboratores'] as const)
+        .map((estate) => ({ type: 'CHOOSE_APPROACH', estate }));
+      const fee = config.astrology.newMoon.skipFee;
+      if (skipBlocker(state, config) === null && !road.skipUsed && fee !== null && road.carriedCoin >= fee) {
+        actions.push({ type: 'SKIP_ENCOUNTER' });
+      }
+      return actions;
+    }
     case 'reroll_or_accept':
-      return [{ type: 'ACCEPT_RESULT' }];
+      return [{ type: 'ACCEPT_RESULT' }, ...consumableActions(road, config)];
     case 'continue_or_retreat':
-      return [{ type: 'CONTINUE_ENCOUNTER' }, { type: 'RETREAT' }];
+      return [{ type: 'CONTINUE_ENCOUNTER' }, { type: 'RETREAT' }, ...consumableActions(road, config)];
     case 'waystation_decision': {
-      const actions: AvailableAction[] = [{ type: 'RETURN_HOME' }];
+      const actions: AvailableAction[] = [{ type: 'RETURN_HOME' }, ...consumableActions(road, config)];
       if (state.elapsedWeeks < config.calendar.totalWeeks && road.segmentIndex + 1 < config.route.regularSegments) {
         actions.push({ type: 'CONTINUE_SEGMENT' });
       }
       return actions;
     }
   }
+}
+
+/** USE_CONSUMABLE for the slot consumable when it is unused and usable at this stage. */
+function consumableActions(road: PilgrimageState, config: RulesConfig): AvailableAction[] {
+  const itemId = road.consumableId;
+  if (itemId === undefined || road.consumableUsed || !canUseConsumable(itemId, road.stage, config)) return [];
+  return [{ type: 'USE_CONSUMABLE', itemId }];
 }

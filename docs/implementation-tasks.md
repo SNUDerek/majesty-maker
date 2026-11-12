@@ -335,6 +335,12 @@ Everyone works on M0 together or in order (T0.1 → T0.2 + T0.4 → T0.3). T0.2 
   - A consumed item is removed exactly once and cannot be "lost" again on wipeout.
   - Saint's Relic and Weighted Coin hook into B1.
   - `SKIP_ENCOUNTER` (New Moon segments only, once per segment, fee from **carried** Coin, behind a config flag that defaults off) advances the index with no roll.
+- **Decisions (C3):**
+  - Slots: `items.maxEquipment` / `maxConsumables` of 0 disable that slot (`INVALID_ACTION`); any positive value means one slot, since the state holds one item of each. Wrong kind or unknown id is `INVALID_ITEM`; not in the inventory is `ITEM_UNAVAILABLE`. Departure emits `item_changed{-1, pilgrimage_slot_out}` at the entry week and deletes zero counts.
+  - A used consumable stays in its slot with `consumableUsed: true` and emits `item_changed{amount: 0, source: 'consumed'}` (it left the inventory at departure), so it is neither returned nor lost again. Wrong item `ITEM_UNAVAILABLE`, second use `CONSUMABLE_ALREADY_USED`, wrong stage `INVALID_STAGE`.
+  - Theriac/Wort emit `consumable_used` plus `burden_changed{source: 'consumable'}` (clamped, zero deltas omitted) and consume no RNG; they are offered at `continue_or_retreat` and `waystation_decision` (Q8).
+  - Metheglin rerolls d100 on `rng.encounters` with the same threat, approach, locked lunar phase and equipment, emitting a second `encounter_resolved` and then `reroll_used{roll}`. Success pays the 1d4 reward; failure charges the penalty once (and may wipe out).
+  - The skip is legal only at `choose_approach` (threat revealed, before a roll), in a segment whose locked lunar phase is New Moon, while `astrology.newMoon.skipFee` is non-null. Disabled or wrong moon is `INVALID_ACTION`; second use `SKIP_ALREADY_USED`; fee above carried Coin `INSUFFICIENT_FUNDS`. It consumes no RNG, emits `skip_fee` and `encounter_skipped`, and advances like a resolved card (so skipping the last card reaches the waystation). `skipUsed` resets on every segment entry.
 - **Acceptance:** the item scenarios from tech §13 (Weighted Coin, Relic versus a blue card, Metheglin reroll), plus: consumable lost on wipeout, equipment returned on wipeout, a used consumable not double-counted, and skip refused outside New Moon or when used a second time.
 
 ### C4 Final gauntlet and terminal states
