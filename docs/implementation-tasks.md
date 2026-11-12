@@ -224,6 +224,7 @@ Everyone works on M0 together or in order (T0.1 → T0.2 + T0.4 → T0.3). T0.2 
   3. Alehouse payout `10 + d10`. The d10 is drawn only on success; decide this and document it.
   4. Apply multipliers in integer-percent form, with one floor per quantity.
   5. Tutor: +gain to the target stat, −1 to the opposing stat (clamped at 0), cost 20 (or as modified), and burdens from `tutorBurden`.
+  - A4 contract note: the resolvers take `(state, activity, modifiers, rng, config)`, where `rng` is the full `RngStreams` (jobs draw from `jobs`). `deltas` are signed and already clamped against the input state (stats to [statMin, statMax], burdens at 0, treasury to [0, treasuryMax]), so C1 applies them with `applyActivityDeltas` and then checks collapse. Events carry `week = state.elapsedWeeks`, omit zero-amount changes, and do not include `week_spent`. Decision: the Alehouse d10 is drawn on the `jobs` stream only on success, after the d100. Stables reports `probability: 100, automatic: true` with no roll. The tutor's opposing-stat loss is not modified by astrology. `tutorCost`, `restCost` and `jobSuccessChance` are exported for `getAvailableActions` and traces.
 - **Acceptance:** one test per activity for success, failure, and every applicable aspect. An unaffordable tutor at 19 Coin is rejected with the RNG state unchanged. The Alehouse payout range is 11–20 under base modifiers.
 
 ---
