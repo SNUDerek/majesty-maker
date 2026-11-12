@@ -109,6 +109,14 @@ describe('isEncounterSuccess', () => {
   it('rejects rolls outside 1..100', () => {
     for (const roll of [0, 101, 2.5]) expect(() => isEncounterSuccess(50, roll)).toThrow(RangeError);
   });
+
+  it('rejects malformed probabilities instead of silently resolving the encounter', () => {
+    for (const probability of [NaN, Infinity, -Infinity, -1, 101, 50.5]) {
+      expect(() => isEncounterSuccess(probability, 50)).toThrow(RangeError);
+    }
+    expect(isEncounterSuccess(0, 1)).toBe(false);
+    expect(isEncounterSuccess(100, 100)).toBe(true);
+  });
 });
 
 describe('roadBonusFor', () => {
@@ -234,6 +242,17 @@ describe("equipmentProbabilityBonus (Saint's Relic, Q10)", () => {
 });
 
 describe('encounterOdds', () => {
+  it('uses B2 item hooks with configured equipment effects', () => {
+    const custom = withOverrides(config, { items: { catalog: {
+      saints_relic: { amount: 17, estate: 'laboratores' },
+      weighted_coin: { amount: 40 }, gambeson: { amount: 8 },
+    } } });
+    expect(equipmentProbabilityBonus('saints_relic', 'laboratores', custom)).toBe(17);
+    expect(equipmentProbabilityBonus('saints_relic', 'oratores', custom)).toBe(0);
+    expect(failurePenalty({ approach: 'laboratores', lunar: 'full', equipmentId: 'weighted_coin' }, custom).amount).toBe(6);
+    expect(failurePenalty({ approach: 'bellatores', lunar: 'full', equipmentId: 'gambeson' }, custom).amount).toBe(22);
+  });
+
   it('combines every term', () => {
     expect(encounterOdds({
       stat: 30, approach: 'laboratores', threat: 'oratores', lunar: 'full',

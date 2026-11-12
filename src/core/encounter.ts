@@ -2,9 +2,10 @@
  * B1 encounter math (tech §7): matchups, success probability, failure penalties
  * and road bonuses. Pure functions; every number comes from the rules config.
  */
-import type { ItemDefinition, RulesConfig } from './config.js';
+import type { RulesConfig } from './config.js';
+import { getItem, penaltyModifier, probabilityBonus } from './items.js';
 import { applyIntegerPercent } from './math.js';
-import { type Estate, type LunarPhase, RuleError } from './types.js';
+import { type Estate, type LunarPhase } from './types.js';
 
 export type Matchup = 'advantage' | 'neutral' | 'disadvantage';
 
@@ -96,6 +97,9 @@ export function encounterProbability(
 
 /** Roll-under check: an integer roll in 1..100 succeeds iff it is at most the probability. */
 export function isEncounterSuccess(probability: number, roll: number): boolean {
+  if (!Number.isSafeInteger(probability) || probability < 0 || probability > 100) {
+    throw new RangeError(`encounter probability must be an integer in [0, 100], got ${probability}`);
+  }
   if (!Number.isSafeInteger(roll) || roll < 1 || roll > 100) {
     throw new RangeError(`encounter roll must be an integer in [1, 100], got ${roll}`);
   }
@@ -121,18 +125,6 @@ export function roadBonusFor(segmentIndex: number, isFinal: boolean, config: Rul
   return bonus;
 }
 
-/** Looks up an equipment item; throws INVALID_ITEM for unknown ids or non-equipment. */
-function equipment(equipmentId: string | undefined, config: RulesConfig): ItemDefinition | undefined {
-  if (equipmentId === undefined) return undefined;
-  const catalog = config.items.catalog;
-  const item = Object.hasOwn(catalog, equipmentId) ? catalog[equipmentId] : undefined;
-  if (item === undefined) throw new RuleError('INVALID_ITEM', `unknown item '${equipmentId}'`);
-  if (item.kind !== 'equipment') {
-    throw new RuleError('INVALID_ITEM', `item '${equipmentId}' is a ${item.kind}, not equipment`);
-  }
-  return item;
-}
-
 /**
  * Flat success-probability points from equipment against `threat` (Saint's Relic:
  * +10 versus an Oratores threat). Points add to probability, not to the die (§9 Q10).
@@ -142,8 +134,7 @@ export function equipmentProbabilityBonus(
   threat: Estate,
   config: RulesConfig,
 ): number {
-  const item = equipment(equipmentId, config);
-  return item?.effect === 'success_bonus_vs_threat' && item.estate === threat ? item.amount : 0;
+  return probabilityBonus(equipmentId, threat, config);
 }
 
 /** Full pre-roll breakdown for one encounter. */
@@ -175,13 +166,14 @@ export function failurePenalty(input: FailurePenaltyInput, config: RulesConfig):
   const resource = PENALTY_RESOURCE[approach];
   const sources: string[] = [];
   const base = config.encounters.failurePenalty;
-  const item = equipment(input.equipmentId, config);
+  const modifier = penaltyModifier(input.equipmentId, approach, config);
+  const item = input.equipmentId === undefined ? undefined : getItem(input.equipmentId, config);
   const itemApplies = item !== undefined && item.estate === approach;
 
   if (resource === 'coin') {
     const percents: number[] = [];
     if (itemApplies && item.effect === 'coin_penalty_pct') {
-      percents.push(item.amount);
+      percents.push(modifier.coinPenaltyPct);
       sources.push(`item:${input.equipmentId}`);
     }
     if (config.failure.purseProtection.appliesToLabFailures) {
@@ -203,7 +195,7 @@ export function failurePenalty(input: FailurePenaltyInput, config: RulesConfig):
     sources.push('lunar:full');
   }
   if (itemApplies && item.effect === 'reduce_failure_fatigue' && resource === 'fatigue') {
-    amount = Math.max(0, amount - item.amount);
+    amount = Math.max(0, amount - modifier.fatigueReduction);
     sources.push(`item:${input.equipmentId}`);
   }
   return { resource, amount, sources };

@@ -250,7 +250,7 @@ Everyone works on M0 together or in order (T0.1 → T0.2 + T0.4 → T0.3). T0.2 
     - Unknown or non-equipment item ids throw `RuleError('INVALID_ITEM')`.
     - Extras for C2, C3 and the bots:
       - `isEncounterSuccess(prob, roll)`
-      - `equipmentProbabilityBonus` (Saint's Relic, Q10); B2 may move it behind its `probabilityBonus` hook.
+      - `equipmentProbabilityBonus` (Saint's Relic, Q10), delegating to B2's `probabilityBonus` hook; failure penalties also consume B2's `penaltyModifier` hook.
       - `encounterOdds(...)`, a full pre-roll breakdown.
 - **Acceptance:** an exhaustive 3×3 matchup test, probability clamp edges (stat 0 at −20 road gives 5; stat 100 at advantage +40 gives 95), and the penalty table, including the Full Moon × Gambeson interaction.
 
