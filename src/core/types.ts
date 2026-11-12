@@ -264,7 +264,13 @@ export interface ModifierContext {
   solar: SolarAspect;
   lunar: LunarPhase;
   previousActivityId?: ActivityId;
+  /** Prior consecutive repeats; used only by experimental compounding Waxing. */
+  waxingStreak?: number;
 }
+
+export type ModifierQuantity =
+  | 'statGainPct' | 'payoutPct' | 'costPct' | 'fatiguePct'
+  | 'melancholyPct' | 'recoveryPct';
 
 /** All multipliers are integer percentages; 100 means x1.0. */
 export interface ModifierSet {
@@ -276,6 +282,8 @@ export interface ModifierSet {
   melancholyPct: number;
   recoveryPct: number;
   sources: string[];
+  /** Exact integer factors for floor-once arithmetic; scalar fields are floored summaries. */
+  factors?: Partial<Record<ModifierQuantity, number[]>>;
 }
 
 export interface CalendarInfo {
