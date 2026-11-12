@@ -209,7 +209,10 @@ Everyone works on M0 together or in order (T0.1 → T0.2 + T0.4 → T0.3). T0.2 
     - Full Moon: B/O activity surge (config, default 0).
     - Waning: paid-rest recovery 150%, and Rest at Home too if the config flag is set.
   - Multiple multipliers on the same quantity multiply together (for example, Square plus Waxing gives 130 × 110). Each `ModifierSet` records its `sources`.
+    - A3 contract note: `ModifierSet.factors` preserves the original integer percentages; use `applyModifier(baseMagnitude, modifiers, quantity)` to floor once. Scalar percentage fields are floored summaries for traces and backwards compatibility, not the calculation source when factors exist. This matters for experimental values such as 133 × 110 = 146.3%.
+    - Experimental compounding uses optional `ModifierContext.waxingStreak` as the number of prior consecutive repeats; the current repeat applies the configured Waxing factor `waxingStreak + 1` times. Single mode always applies it once.
   - `upcomingCriticalPeriods(state, lookaheadWeeks)` returns reminders for Return, Opposition, and Square periods (thematic §4 says the player should be warned before them).
+    - A3 signature follows A1's config-aware calendar: `upcomingCriticalPeriods(state, lookaheadWeeks, config)`. Results include future starts within the inclusive horizon and exclude the active period and starts at or after the deadline. `getDerivedStats` shares this implementation.
 - **Acceptance:** a table-driven test over all 12 distances × 4 phases × 11 activities. Each combination is checked against a hand-written expectation for the known combos (Square+Waxing tutor, Opposition+Waxing job, Solar Return banquet in a Waning week).
 
 ### A4 Home activity resolution

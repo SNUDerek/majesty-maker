@@ -1,4 +1,5 @@
 import type { RulesConfig } from './config.js';
+import { getCalendar } from './calendar.js';
 import { applyIntegerPercent } from './math.js';
 import type {
   CampaignState, CriticalSolarPeriod, ModifierContext, ModifierQuantity,
@@ -20,30 +21,27 @@ export function solarAspect(distance: number, config?: RulesConfig): SolarAspect
   return 'none';
 }
 
-export function solarAspectAtWeek(week: number, config?: RulesConfig): SolarAspect {
-  const weeksPerMonth = config?.calendar.weeksPerMonth ?? 4;
-  const monthsPerYear = config?.calendar.monthsPerYear ?? 12;
-  return solarAspect(Math.floor(week / weeksPerMonth) % monthsPerYear, config);
-}
-
 /** Future period starts only, inclusive of lookahead, exclusive of the deadline. */
 export function upcomingCriticalPeriods(
-  state: Pick<CampaignState, 'elapsedWeeks'>,
+  state: CampaignState,
   lookaheadWeeks: number,
-  config?: RulesConfig,
+  config: RulesConfig,
 ): CriticalSolarPeriod[] {
   if (!Number.isSafeInteger(lookaheadWeeks) || lookaheadWeeks < 0) {
     throw new RangeError('lookaheadWeeks must be a non-negative safe integer');
   }
-  const totalWeeks = config?.calendar.totalWeeks ?? 96;
+  const calendar = getCalendar(state, config);
+  const totalWeeks = config.calendar.totalWeeks;
   const result: CriticalSolarPeriod[] = [];
   const end = Math.min(totalWeeks - 1, state.elapsedWeeks + lookaheadWeeks);
+  let previous = solarAspect(calendar.solarDistance, config);
   for (let week = state.elapsedWeeks + 1; week <= end; week++) {
-    const aspect = solarAspectAtWeek(week, config);
-    if (aspect !== solarAspectAtWeek(week - 1, config) &&
+    const aspect = solarAspect(getCalendar({ ...state, elapsedWeeks: week }, config).solarDistance, config);
+    if (aspect !== previous &&
         (aspect === 'return' || aspect === 'opposition' || aspect === 'square')) {
       result.push({ aspect, startsInWeeks: week - state.elapsedWeeks });
     }
+    previous = aspect;
   }
   return result;
 }
@@ -101,7 +99,7 @@ export function collectModifiers(ctx: ModifierContext, config: RulesConfig): Mod
   } else if (ctx.lunar === 'full' && isActivity && fullMoon.surge !== 0) {
     const estate = isTutor
       ? config.classes.tutors[ctx.activityId as keyof typeof config.classes.tutors].target
-      : config.jobs.activities[ctx.activityId as keyof typeof config.jobs.activities].success.gainStat;
+      : config.jobs.definitions[ctx.activityId as keyof typeof config.jobs.definitions].success.gainStat;
     if (fullMoon.surgeEstates.includes(estate)) {
       gainAndPayout(100 + fullMoon.surge);
       result.sources.push('lunar:full');
