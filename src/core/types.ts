@@ -344,4 +344,8 @@ export type GetDerivedStats<C extends RulesConfigContract = RulesConfigContract>
   state: CampaignState,
   rulesConfig: C,
 ) => DerivedStats;
-export type GetCalendar = (state: CampaignState) => CalendarInfo;
+/** Takes the config so calendar length, month size and lunar phases follow variants (A1 review). */
+export type GetCalendar<C extends RulesConfigContract = RulesConfigContract> = (
+  state: CampaignState,
+  rulesConfig: C,
+) => CalendarInfo;

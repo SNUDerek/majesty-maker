@@ -263,7 +263,7 @@ applyAction(state, action, rulesConfig): {
   events: GameEvent[];
 }
 getDerivedStats(state, rulesConfig): DerivedStats
-getCalendar(state): CalendarInfo
+getCalendar(state, rulesConfig): CalendarInfo
 ```
 
 `applyAction` must be deterministic given state (including RNG state), action and rules configuration. Do not call `Math.random()` or `Date.now()` in rule logic. Use a small documented seeded PRNG (such as Mulberry32 or xorshift32), and implement stable integer d4/d10/d100 draws. Tests should fix expected draws/sequences for reproducibility. Reject invalid actions with typed errors and leave the input state unchanged.
