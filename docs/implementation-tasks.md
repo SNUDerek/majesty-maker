@@ -374,6 +374,11 @@ Everyone works on M0 together or in order (T0.1 → T0.2 + T0.4 → T0.3). T0.2 
   - Determinism: the same seed and action list gives byte-identical state and events.
   - Atomicity: for random states, apply a random **invalid** action and assert deep equality with the input and no RNG change.
 - **Acceptance:** green in under ~30 s locally.
+- D3 implementation note (`src/tests/fuzz/`):
+  - `campaigns.test.ts` walks seeds 0–999 across all twelve signs, alternating blocks of twelve seeds between baseline rules and a test variant with starting items, test-table rewards, and a New Moon skip fee. Each campaign must reach victory or deadline; a bounded step count rejects loops and dead ends.
+  - Policy and invalid-action choices use separate seeded RNG states, never campaign streams. Departure descriptors are materialized with a uniform carry amount and optional equipment/consumable slots. Every visited state, including terminal states, receives a random invalid-action atomicity probe drawn from every concrete action `getAvailableActions` does not offer (wrong phase or pilgrimage stage, unaffordable, item not carried, skip already used) plus invalid departure parameters, so the probe also checks that the available-action list is complete. Every successful transition runs D1 invariants and checks input immutability.
+  - Recorded actions replay from a fresh campaign with byte-identical initial state and per-step state/events required. Failures include configuration, seed, sign, step, and action history for reproduction.
+  - The full engine suite uses D2's explicit C2–C4 readiness flags and automatically runs when all are enabled. Until those dependencies land, it is explicitly skipped; independent walker tests run now. Full-engine runtime acceptance remains to be verified after C3/C4 integration. Run with `npm test -- src/tests/fuzz`.
 
 ---
 
