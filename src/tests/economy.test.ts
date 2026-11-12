@@ -303,3 +303,47 @@ describe('invalid activity ids', () => {
     }
   });
 });
+
+
+describe('enabled experimental lunar bonuses', () => {
+  const variant: RulesConfig = {
+    ...config,
+    astrology: {
+      ...config.astrology,
+      newMoon: { ...config.astrology.newMoon, activityBonus: 25 },
+      fullMoon: { ...config.astrology.fullMoon, surge: 25 },
+    },
+  };
+
+  for (const [tutor, lunar, solar, estate, gain] of [
+    ['smuggler', 'new', 'square', 'laboratores', 8],
+    ['hedge_knight', 'full', 'return', 'bellatores', 7],
+    ['hermit', 'full', 'square', 'oratores', 8],
+  ] as const) {
+    it(`${tutor} combines enabled ${lunar} bonuses with ${solar}, flooring once`, () => {
+      const modifiers = collectModifiers({ activityId: tutor, kind: 'tutor', solar, lunar }, variant);
+      const result = resolveTutor(state, tutor, modifiers, rng, variant);
+      expect(result.deltas.stats[estate]).toBe(gain);
+      expect(result.deltas.treasury).toBe(-20);
+      expect(result.rng).toBe(rng);
+    });
+  }
+
+  for (const [job, lunar, estate] of [
+    ['alehouse', 'new', 'laboratores'],
+    ['village_watch', 'full', 'bellatores'],
+    ['scriptorium', 'full', 'oratores'],
+  ] as const) {
+    it(`${job} applies enabled ${lunar} bonuses only to successful growth and payout`, () => {
+      const modifiers = collectModifiers({ activityId: job, kind: 'job', solar: 'none', lunar }, variant);
+      const streams = streamsWhere((r) => r === 1);
+      const result = resolveJob(state, job, modifiers, streams, variant);
+      const baseCoin = job === 'alehouse' ? 10 + rollInt(d100(streams.jobs).state, 1, 10).value : 15;
+      expect(result.deltas.treasury).toBe(Math.floor(baseCoin * 125 / 100));
+      expect(result.deltas.stats[estate]).toBe(2);
+      const failed = resolveJob(state, job, modifiers, streamsWhere((r) => r === 100), variant);
+      expect(failed.deltas.treasury).toBe(0);
+      expect(failed.deltas.stats).toEqual({ bellatores: 0, oratores: 0, laboratores: 0 });
+    });
+  }
+});
