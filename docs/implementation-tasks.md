@@ -290,6 +290,8 @@ Everyone works on M0 together or in order (T0.1 → T0.2 + T0.4 → T0.3). T0.2 
   - `homeCollapse.forcedWeek: false` recovers immediately, without spending a week.
   - If one recovery leaves a burden collapsed (variants only), `pendingConvalescence` stays set, and `REST rest_home` is then the only legal action. It is resolved as another convalescence week.
   - Until C2 lands, `BEGIN_PILGRIMAGE` is offered but rejected with `INVALID_ACTION`.
+  - Review clarification: if a free automatic recovery (`forcedWeek: false`) leaves a collapse pending, subsequent `REST rest_home` actions each consume a convalescence week. This also guarantees deadline progress with zero recovery.
+  - Starting burdens at or above their derived ceiling create a pending home convalescence, so the initial state satisfies D1 and only recovery is available.
 - **Acceptance:** a 96-week Stables-only scripted run ends in `deadline` with the correct treasury. Invalid actions (wrong phase, unaffordable, after the deadline) leave the state deep-equal to the input. Forced-convalescence tests cover collapse in week 95 and week 96.
 
 ### C2 Pilgrimage state machine

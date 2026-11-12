@@ -71,6 +71,18 @@ describe('createCampaign', () => {
     expect(Object.values(stats).reduce((a, b) => a + b, 0)).toBe(50);
   });
 
+  it('requires convalescence when configured starting burdens already reach a ceiling', () => {
+    const burdened = withOverrides(config, { startingState: { fatigue: 77, melancholy: 75 } });
+    const initial = createCampaign(DEFAULT_OPTIONS, burdened);
+    assertInvariants(initial, burdened);
+    expect(initial.pendingConvalescence).toBe('home_collapse');
+    expect(getAvailableActions(initial, burdened)).toEqual([restHome]);
+    expect(rejection(initial, stables, burdened)).toBe('INVALID_ACTION');
+    const { state } = run(initial, [restHome], burdened);
+    expect(state).toMatchObject({ elapsedWeeks: 1, fatigue: 62, melancholy: 60 });
+    expect(state.pendingConvalescence).toBeUndefined();
+  });
+
   it('rejects malformed options', () => {
     expect(() => createCampaign({ ...DEFAULT_OPTIONS, seed: 1.5 }, config)).toThrow(RangeError);
     expect(() => createCampaign({ ...DEFAULT_OPTIONS, birthSign: 'ophiuchus' as ZodiacSign }, config)).toThrow(RangeError);
@@ -205,6 +217,34 @@ describe('§4 home collapse and forced convalescence', () => {
     expect(state.elapsedWeeks).toBe(5);
     expect(ofType(events, 'convalescence')).toEqual([{ type: 'convalescence', week: 5, cause: 'home_collapse' }]);
     expect(state).toMatchObject({ fatigue: 66, melancholy: 64 });
+  });
+
+  it('a free automatic recovery does not make subsequent pending rests free', () => {
+    const weakFree = withOverrides(config, {
+      failure: { homeCollapse: { forcedWeek: false, recovery: 3 } },
+    });
+    const collapsed = run(start({ elapsedWeeks: 4, ...edge }), [
+      { type: 'TRAIN', tutor: 'smuggler' },
+    ], weakFree).state;
+    expect(collapsed).toMatchObject({ elapsedWeeks: 5, pendingConvalescence: 'home_collapse' });
+    const { state, events } = run(collapsed, [restHome], weakFree);
+    expect(state).toMatchObject({ elapsedWeeks: 6, fatigue: 75, melancholy: 73 });
+    expect(state.pendingConvalescence).toBeUndefined();
+    expect(ofType(events, 'week_spent')).toEqual([{ type: 'week_spent', week: 5, reason: 'convalescence' }]);
+  });
+
+  it('zero recovery with a free automatic bout still reaches the deadline', () => {
+    const noRecovery = withOverrides(config, {
+      failure: { homeCollapse: { forcedWeek: false, recovery: 0 } },
+    });
+    const collapsed = run(start({ elapsedWeeks: 94, ...edge }), [
+      { type: 'TRAIN', tutor: 'smuggler' },
+    ], noRecovery).state;
+    expect(collapsed).toMatchObject({ elapsedWeeks: 95, pendingConvalescence: 'home_collapse' });
+    const { state, events } = run(collapsed, [restHome], noRecovery);
+    expect(state).toMatchObject({ elapsedWeeks: 96, phase: 'defeat', outcome: 'deadline' });
+    expect(state.pendingConvalescence).toBeUndefined();
+    expect(ofType(events, 'deadline')).toHaveLength(1);
   });
 
   describe('a recovery too small to clear the collapse (variant)', () => {

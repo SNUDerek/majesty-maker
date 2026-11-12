@@ -25,7 +25,8 @@
  *    with the default config, one action adds at most 15 to a burden and
  *    lowers a ceiling by at most 1), `pendingConvalescence` stays set and the
  *    only legal action is `REST rest_home`, which is resolved as another
- *    convalescence week. A pending wipeout convalescence (C2) works the same.
+ *    convalescence week, even when the initial automatic recovery was free.
+ *    A pending wipeout convalescence (C2) works the same.
  *  - `waxingStreak` counts prior consecutive repeats: it increments when an
  *    activity repeats the last one and resets to 0 otherwise.
  *
@@ -100,7 +101,7 @@ export const createCampaign: CreateCampaign<RulesConfig> = (options, config) => 
     stats[estate] = Math.min(start.statMax, Math.max(start.statMin, stats[estate]));
   }
 
-  return {
+  const state: CampaignState = {
     version: 1,
     seed,
     rng: createRngStreams(seed),
@@ -117,6 +118,10 @@ export const createCampaign: CreateCampaign<RulesConfig> = (options, config) => 
     phase: 'home',
     waxingStreak: 0,
   };
+  // Configured starting burdens may already reach a ceiling. Keep recovery
+  // mandatory, just as for a collapse left pending by a weak recovery.
+  if (collapseCause(state) !== null) state.pendingConvalescence = 'home_collapse';
+  return state;
 };
 
 // ---------------------------------------------------------------------------
@@ -253,7 +258,7 @@ function applyHomeAction(state: CampaignState, action: HomeAction, config: Rules
     }
     const cause = state.pendingConvalescence;
     delete state.pendingConvalescence;
-    convalesce(state, cause, events, config);
+    convalesce(state, cause, events, config, true);
     return { state: finishHomeWeek(state, events, config), events };
   }
 
@@ -297,8 +302,13 @@ function resolve(state: CampaignState, action: HomeAction, modifiers: ModifierSe
  * remains), recovers both burdens, and breaks the Waxing chain. Leaves
  * `pendingConvalescence` set if the burdens are still collapsed afterwards.
  */
-function convalesce(state: CampaignState, cause: ConvalescenceCause, events: GameEvent[], config: RulesConfig): void {
-  const { forcedWeek, recovery } = config.failure.homeCollapse;
+function convalesce(
+  state: CampaignState, cause: ConvalescenceCause, events: GameEvent[], config: RulesConfig,
+  pendingRest = false,
+): void {
+  const { recovery } = config.failure.homeCollapse;
+  // The automatic recovery may be free; a later REST still consumes a week.
+  const forcedWeek = pendingRest || config.failure.homeCollapse.forcedWeek;
   if (forcedWeek && state.elapsedWeeks >= config.calendar.totalWeeks) return; // bounded by the deadline
 
   const week = state.elapsedWeeks;
