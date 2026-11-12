@@ -1,7 +1,7 @@
 /** Pure item hooks (B2). Slot ownership, consumption and rerolls are handled by C3. */
 import type { ItemDefinition, RulesConfig } from './config.js';
 import { subtractMagnitude } from './conditions.js';
-import { rollInt, type Draw, type RngState } from './rng.js';
+import { drawWeighted, type Draw, type RngState } from './rng.js';
 import { RuleError, type Estate, type PilgrimageStage } from './types.js';
 
 export function getItem(itemId: string, config: RulesConfig): ItemDefinition {
@@ -82,12 +82,5 @@ export function startingInventory(config: RulesConfig): Record<string, number> {
 export function drawItemReward(state: RngState, config: RulesConfig): Draw<string | undefined> {
   if (config.items.acquisition === 'disabled') return { value: undefined, state };
   const entries = Object.entries(config.items.testRewardTable).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0);
-  const total = entries.reduce((sum, [, weight]) => sum + weight, 0);
-  const draw = rollInt(state, 1, total);
-  let remaining = draw.value;
-  for (const [itemId, weight] of entries) {
-    remaining -= weight;
-    if (remaining <= 0) return { value: itemId, state: draw.state };
-  }
-  throw new RangeError('Invalid test reward table');
+  return drawWeighted(state, entries);
 }

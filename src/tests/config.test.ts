@@ -154,6 +154,49 @@ describe('unresolved-parameter register', () => {
 });
 
 describe('validateConfig', () => {
+  it.each([0, 2 ** 32 + 1, Number.MAX_SAFE_INTEGER])('rejects unsupported threat totals: %s', (total) => {
+    expectConfigError(() => loadWith((r) => {
+      r.encounters.distribution = { bellatores: total, oratores: 0, laboratores: 0 };
+    }), 'encounters.distribution');
+    expectConfigError(() => withOverrides(loadContentConfig(), {
+      encounters: { distribution: { bellatores: total, oratores: 0, laboratores: 0 } },
+    }), 'encounters.distribution');
+  });
+
+  it('accepts full-range threats and dice, and disabled extra job dice', () => {
+    const config = loadWith((r) => {
+      r.encounters.distribution = { bellatores: 2 ** 32, oratores: 0, laboratores: 0 };
+      r.encounters.rewardCoinDie = 2 ** 32;
+      r.jobs.definitions.alehouse.success.coinDie = 2 ** 32;
+    });
+    expect(validateConfig(config)).toEqual([]);
+    expect(validateConfig(withOverrides(config, {
+      jobs: { definitions: { alehouse: { success: { coinDie: 0 } } } },
+    }))).toEqual([]);
+  });
+
+  it('rejects unsupported dice through loading and overrides', () => {
+    expectConfigError(() => loadWith((r) => {
+      r.jobs.definitions.alehouse.success.coinDie = 2 ** 32 + 1;
+    }), 'jobs.definitions.alehouse.success.coinDie');
+    expectConfigError(() => withOverrides(loadContentConfig(), {
+      jobs: { definitions: { alehouse: { success: { coinDie: 2 ** 32 + 1 } } } },
+    }), 'jobs.definitions.alehouse.success.coinDie');
+    for (const sides of [0, 2 ** 32 + 1]) {
+      expectConfigError(() => loadWith((r) => { r.encounters.rewardCoinDie = sides; }), 'encounters.rewardCoinDie');
+      expectConfigError(() => withOverrides(loadContentConfig(), {
+        encounters: { rewardCoinDie: sides },
+      }), 'encounters.rewardCoinDie');
+    }
+  });
+
+  it.each([10, 13])('rejects unsupported %s-month years', (monthsPerYear) => {
+    expectConfigError(() => loadWith((r) => { r.calendar.monthsPerYear = monthsPerYear; }), 'calendar.monthsPerYear');
+    expectConfigError(() => withOverrides(loadContentConfig(), {
+      calendar: { monthsPerYear },
+    }), 'calendar.monthsPerYear');
+  });
+
   it('rejects a road-bonus array that does not match the segment count', () => {
     expectConfigError(() => loadWith((r) => (r.route.regularSegments = 4)), 'route.roadBonus: has 5 entries');
   });

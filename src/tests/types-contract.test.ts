@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import type {
   ApplyAction,
   AvailableAction,
@@ -6,7 +6,18 @@ import type {
   GameAction,
   GameEvent,
   RulesConfigContract,
+  RngStreams,
+  GetCalendar,
+  GetDerivedStats,
 } from '../core/types';
+
+import { getCalendar } from '../core/calendar.js';
+import { getDerivedStats } from '../core/derived.js';
+import { resolveJob, resolveRest, resolveTutor, type ActivityResolution } from '../core/economy.js';
+import { drawThreat } from '../core/pilgrimage.js';
+import type { RulesConfig } from '../core/config.js';
+import type { Draw, RngStreams as GeneratorStreams, RngStreamName } from '../core/rng.js';
+import type { Estate } from '../core/types.js';
 
 // Compile-time contract checks; `npm run typecheck` fails if these regress.
 interface ConcreteConfig extends RulesConfigContract {
@@ -49,6 +60,21 @@ const jobStatGain: GameEvent = {
 };
 
 describe('types contract', () => {
+  it('keeps implemented APIs and RNG streams aligned with the shared contracts', () => {
+    expectTypeOf(getCalendar).toEqualTypeOf<GetCalendar<RulesConfig>>();
+    expectTypeOf(getDerivedStats).toEqualTypeOf<GetDerivedStats<RulesConfig>>();
+    expectTypeOf<CampaignState['rng']>().toEqualTypeOf<GeneratorStreams>();
+    expectTypeOf<RngStreams>().toEqualTypeOf<GeneratorStreams>();
+    expectTypeOf<keyof RngStreams>().toEqualTypeOf<RngStreamName>();
+    expectTypeOf<ReturnType<typeof drawThreat>>().toEqualTypeOf<Draw<Estate>>();
+    expectTypeOf<ActivityResolution['rng']>().toEqualTypeOf<RngStreams>();
+    expectTypeOf<ReturnType<typeof resolveJob>>().toEqualTypeOf<ActivityResolution>();
+    expectTypeOf<ReturnType<typeof resolveRest>>().toEqualTypeOf<ActivityResolution>();
+    expectTypeOf<ReturnType<typeof resolveTutor>>().toEqualTypeOf<ActivityResolution>();
+    const wipeout: GameEvent = { type: 'wipeout', week: 1, cause: 'both' };
+    expect(wipeout.cause).toBe('both');
+  });
+
   it('compiles the documented usage patterns', () => {
     expect([applyStub, beginDescriptor, train, stablesEvent, jobStatGain]).toHaveLength(5);
   });

@@ -1,4 +1,6 @@
 /** Shared, JSON-compatible contracts for the Hidden Scion rules engine. */
+import type { RngStreams } from './rng.js';
+export type { RngStreams } from './rng.js';
 
 export type Estate = 'bellatores' | 'oratores' | 'laboratores';
 
@@ -44,12 +46,6 @@ export type RestId = 'rest_home' | 'bathhouse' | 'shrine' | 'banquet';
 
 export type SolarAspect = 'return' | 'opposition' | 'trine' | 'square' | 'none';
 export type LunarPhase = 'new' | 'waxing' | 'full' | 'waning';
-
-export interface RngStreams {
-  jobs: number;
-  encounters: number;
-  rewards: number;
-}
 
 export interface PilgrimageState {
   stage: PilgrimageStage;
@@ -231,7 +227,8 @@ export type GameEvent =
   | (EventBase & { type: 'retreat'; segmentIndex: number })
   | (EventBase & {
       type: 'wipeout';
-      cause: 'fatigue' | 'melancholy' | 'coin';
+      /** Use both when both burdens have reached their ceilings. */
+      cause: 'fatigue' | 'melancholy' | 'both' | 'coin';
     })
   | (EventBase & { type: 'victory' })
   | (EventBase & { type: 'deadline' });

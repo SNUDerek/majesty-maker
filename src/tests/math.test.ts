@@ -25,7 +25,20 @@ describe('applyIntegerPercent', () => {
     expect(() => applyIntegerPercent(10, -50)).toThrow(RangeError);
   });
 
-  it('rejects products beyond the safe-integer range', () => {
-    expect(() => applyIntegerPercent(9999, 200, 200, 200, 200, 200, 200)).toThrow(RangeError);
+  it('supports large intermediate products when the result is safe', () => {
+    expect(applyIntegerPercent(9999, 200, 200, 200, 200, 200, 200)).toBe(639936);
+    expect(applyIntegerPercent(Number.MAX_SAFE_INTEGER, 100, 100)).toBe(Number.MAX_SAFE_INTEGER);
+    expect(applyIntegerPercent(5, ...Array<number>(95).fill(110))).toBe(42783);
+    expect(applyIntegerPercent(5, ...Array<number>(95).fill(110), 0)).toBe(0);
+  });
+
+  it('preserves floor semantics for negative bases', () => {
+    expect(applyIntegerPercent(-15, 50)).toBe(-8);
+    expect(applyIntegerPercent(-10, 50)).toBe(-5);
+  });
+
+  it('rejects an unsafe final result', () => {
+    expect(() => applyIntegerPercent(Number.MAX_SAFE_INTEGER, 200)).toThrow(RangeError);
+    expect(() => applyIntegerPercent(-Number.MAX_SAFE_INTEGER, 200)).toThrow(RangeError);
   });
 });

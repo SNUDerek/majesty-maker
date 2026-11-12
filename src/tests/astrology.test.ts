@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { applyModifier, collectModifiers, solarAspect, upcomingCriticalPeriods } from '../core/astrology.js';
 import { getDerivedStats } from '../core/derived.js';
-import type { RulesConfig } from '../core/config.js';
+import { withOverrides, type RulesConfig } from '../core/config.js';
 import type { ActivityId, CampaignState, LunarPhase, ModifierContext, SolarAspect } from '../core/types.js';
 import { loadContentConfig } from './support/config.js';
 
@@ -26,7 +26,7 @@ const state: CampaignState = {
 
 describe('canonical astrology matrix', () => {
   for (const [distance, aspect] of aspects.entries()) {
-    it(`classifies solar distance ${distance}`, () => expect(solarAspect(distance)).toBe(aspect));
+    it(`classifies solar distance ${distance}`, () => expect(solarAspect(distance, config)).toBe(aspect));
     for (const lunar of phases) {
       for (const [activityId, kind] of activities) {
         it(`${distance}/${lunar}/${activityId}`, () => {
@@ -92,6 +92,15 @@ describe('stacking and configurable lunar effects', () => {
       waxing: { ...config.astrology.waxing, mode: 'compounding' } } };
     const mods = collectModifiers({ ...tutor, waxingStreak: 2 }, variant);
     expect(applyModifier(1000, mods, 'statGainPct')).toBe(1730);
+  });
+
+  it.each([6, 8, 94])('supports a long compounding streak with %s prior repeats', (waxingStreak) => {
+    const variant = withOverrides(config, { astrology: { waxing: { mode: 'compounding' } } });
+    const mods = collectModifiers({ ...tutor, waxingStreak }, variant);
+    // Independent exact expression: Square 130%, followed by one factor per repeat.
+    const expected = Number(7n * 130n * 110n ** BigInt(waxingStreak + 1) /
+      100n ** BigInt(waxingStreak + 2));
+    expect(applyModifier(7, mods, 'statGainPct')).toBe(expected);
   });
 
   it('enables New Moon bonuses only for configured activities', () => {
@@ -169,6 +178,6 @@ describe('critical period reminders', () => {
 
   it('rejects invalid horizons and solar distances', () => {
     for (const horizon of [-1, 0.5, Infinity]) expect(() => upcomingCriticalPeriods(state, horizon, config)).toThrow(RangeError);
-    for (const distance of [-1, 12, 0.5]) expect(() => solarAspect(distance)).toThrow(RangeError);
+    for (const distance of [-1, 12, 0.5]) expect(() => solarAspect(distance, config)).toThrow(RangeError);
   });
 });

@@ -159,3 +159,16 @@ describe('B2 experimental item rewards', () => {
     }
   });
 });
+
+it('preserves the pre-refactor seed-123 item sequence', () => {
+  const enabled = loadContentConfig('variants/items-test-table.json');
+  let state = 123;
+  const values = Array.from({ length: 10 }, () => {
+    const draw = drawItemReward(state, enabled);
+    state = draw.state;
+    return draw.value;
+  });
+  expect(values).toEqual(['theriac', 'st_johns_wort', 'theriac', 'weighted_coin', 'weighted_coin',
+    'theriac', 'metheglin', 'gambeson', 'st_johns_wort', 'weighted_coin']);
+  expect(state).toBe(1135789069);
+});
