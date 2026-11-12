@@ -18,7 +18,8 @@ function fixtureEngine(): Engine {
     createCampaign: (options, config) => ruleState({ birthSign: options.birthSign }, options.seed, config),
     getAvailableActions: (state) => state.phase === 'home' ? [rest, work] : [],
     applyAction: (state, action, config) => {
-      if (state.phase !== 'home' || (action.type !== 'REST' && action.type !== 'WORK')) {
+      const offered = [rest, work].some((legal) => JSON.stringify(legal) === JSON.stringify(action));
+      if (state.phase !== 'home' || !offered) {
         throw new RuleError('INVALID_ACTION', 'fixture rejection');
       }
       const next = structuredClone(state);
@@ -73,6 +74,27 @@ describe('D3 walker infrastructure', () => {
     for (const phase of ['pilgrimage', 'victory', 'defeat'] as const) {
       expect(invalidActions({ ...home, phase }, [])).toContainEqual(rest);
     }
+  });
+
+  it('probes every unoffered concrete action, including wrong pilgrimage stages', () => {
+    const offered: AvailableAction[] = [
+      { type: 'CONTINUE_ENCOUNTER' }, { type: 'RETREAT' },
+      { type: 'USE_CONSUMABLE', itemId: 'theriac' },
+    ];
+    const state = { ...ruleState(), phase: 'pilgrimage' as const };
+    const invalid = invalidActions(state, offered, ['theriac', 'metheglin']);
+    for (const action of offered) expect(invalid).not.toContainEqual(action);
+    expect(invalid).toEqual(expect.arrayContaining([
+      { type: 'CHOOSE_APPROACH', estate: 'oratores' },
+      { type: 'SKIP_ENCOUNTER' }, { type: 'ACCEPT_RESULT' },
+      { type: 'RETURN_HOME' }, { type: 'CONTINUE_SEGMENT' },
+      { type: 'USE_CONSUMABLE', itemId: 'metheglin' },
+      { type: 'TRAIN', tutor: 'smuggler' },
+      { type: 'BEGIN_PILGRIMAGE', carry: 0 },
+    ]));
+    // Unaffordable home activities are probed when not offered.
+    expect(invalidActions(ruleState(), [rest])).toContainEqual({ type: 'REST', rest: 'banquet' });
+    expect(invalidActions(ruleState(), [rest])).not.toContainEqual(rest);
   });
 
   it('records full campaigns, checks every state including terminal, and replays identical bytes', () => {
@@ -165,7 +187,7 @@ describe('D3 walker infrastructure', () => {
       },
     }, DEFAULT_OPTIONS, defaultConfig, 5)).toThrow(/did not terminate within 5/);
     expect(() => walkCampaign({
-      ...engine, getAvailableActions: () => [rest],
+      ...engine, getAvailableActions: (state) => state.phase === 'home' ? [rest, work] : [rest],
     }, DEFAULT_OPTIONS, defaultConfig)).toThrow(/terminal state offers actions/);
   });
 });

@@ -4,7 +4,7 @@ import type { RulesConfig } from '../../core/config.js';
 import { pick, rollInt, type Draw, type RngState } from '../../core/rng.js';
 import {
   RuleError, type AvailableAction, type CampaignState, type CreateCampaignOptions,
-  type GameAction,
+  type Estate, type GameAction, type JobId, type RestId, type TutorId,
 } from '../../core/types.js';
 import { assertInvariants } from '../invariants.js';
 import type { Engine } from '../scenarios/harness.js';
@@ -38,23 +38,40 @@ export function selectAction(available: readonly AvailableAction[], random: RngS
   };
 }
 
-/** Legal-shaped actions that must be rejected in this phase; also probe departure parameter validation. */
-export function invalidActions(state: CampaignState, available: readonly AvailableAction[]): GameAction[] {
-  const candidates: GameAction[] = state.phase === 'home'
-    ? [
-      { type: 'CHOOSE_APPROACH', estate: 'bellatores' },
-      { type: 'USE_CONSUMABLE', itemId: 'metheglin' },
-      { type: 'CONTINUE_ENCOUNTER' }, { type: 'CONTINUE_SEGMENT' },
-      { type: 'RETREAT' }, { type: 'RETURN_HOME' }, { type: 'SKIP_ENCOUNTER' },
-    ]
-    : [
-      { type: 'TRAIN', tutor: 'hedge_knight' },
-      { type: 'WORK', job: 'stables' },
-      { type: 'REST', rest: 'rest_home' },
-      { type: 'BEGIN_PILGRIMAGE', carry: 0 },
-    ];
+const TUTORS = ['hedge_knight', 'hermit', 'smuggler'] as const satisfies readonly TutorId[];
+const JOBS = ['stables', 'alehouse', 'village_watch', 'scriptorium'] as const satisfies readonly JobId[];
+const RESTS = ['rest_home', 'bathhouse', 'shrine', 'banquet'] as const satisfies readonly RestId[];
+const ESTATES = ['bellatores', 'oratores', 'laboratores'] as const satisfies readonly Estate[];
+
+/** Every concrete non-departure action; `itemIds` adds one USE_CONSUMABLE per item. */
+export function concreteActions(itemIds: readonly string[]): GameAction[] {
+  return [
+    ...TUTORS.map((tutor) => ({ type: 'TRAIN', tutor }) as const),
+    ...JOBS.map((job) => ({ type: 'WORK', job }) as const),
+    ...RESTS.map((rest) => ({ type: 'REST', rest }) as const),
+    ...ESTATES.map((estate) => ({ type: 'CHOOSE_APPROACH', estate }) as const),
+    ...itemIds.map((itemId) => ({ type: 'USE_CONSUMABLE', itemId }) as const),
+    { type: 'SKIP_ENCOUNTER' }, { type: 'ACCEPT_RESULT' }, { type: 'CONTINUE_ENCOUNTER' },
+    { type: 'RETREAT' }, { type: 'RETURN_HOME' }, { type: 'CONTINUE_SEGMENT' },
+  ];
+}
+
+/**
+ * Actions that must be rejected in this exact state: every concrete action that
+ * `getAvailableActions` does not offer (wrong phase, wrong pilgrimage stage,
+ * unaffordable, item not carried, skip already used, …), plus departure
+ * parameter violations. This also holds `getAvailableActions` to completeness:
+ * an unlisted action that the engine accepts fails the probe.
+ */
+export function invalidActions(
+  state: CampaignState, available: readonly AvailableAction[], itemIds: readonly string[] = ['metheglin'],
+): GameAction[] {
+  const offered = new Set(available.map((action) => JSON.stringify(action)));
+  const candidates = concreteActions(itemIds).filter((action) => !offered.has(JSON.stringify(action)));
   const departure = available.find((action) => action.type === 'BEGIN_PILGRIMAGE');
-  if (departure) {
+  if (!departure) {
+    candidates.push({ type: 'BEGIN_PILGRIMAGE', carry: 0 });
+  } else {
     candidates.push(
       { type: 'BEGIN_PILGRIMAGE', carry: -1 },
       { type: 'BEGIN_PILGRIMAGE', carry: departure.maxCarry + 1 },
@@ -116,7 +133,7 @@ export function walkCampaign(
     assertInvariants(state, config);
     for (;;) {
       const available = availableActions(engine, state, config);
-      const invalid = pick(invalidRandom, invalidActions(state, available));
+      const invalid = pick(invalidRandom, invalidActions(state, available, Object.keys(config.items.catalog)));
       invalidRandom = invalid.state;
       try {
         assertRejectedAtomically(engine, state, invalid.value, config);
