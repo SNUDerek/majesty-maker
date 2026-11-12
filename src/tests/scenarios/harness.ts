@@ -298,7 +298,7 @@ export function coinDelta(
 export const ENGINE_SUITES = {
   pilgrimage: true, // C2
   items: false, // C3
-  final: false, // C4
+  final: true, // C4
 } as const;
 
 /** The presence of the public API enables C1, regardless of its behavior. */

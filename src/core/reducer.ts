@@ -191,7 +191,7 @@ export const getAvailableActions: GetAvailableActions<RulesConfig> = (state, con
     }
   }
 
-  // C2 owns the departure descriptor (items: C3, final gauntlet: C4).
+  // The pilgrimage module owns the departure descriptor (items: C3).
   const begin = beginPilgrimageDescriptor(state, config);
   if (begin !== null) actions.push(begin);
   return actions;
