@@ -24,6 +24,7 @@ npm install
 ## Layout
 
 - `src/core/`: pure rules engine. It must not import React, Zustand, Node built-ins, `fs` or `path`, or use `process` or ambient randomness/time (`Math.random`, `Date.now`, `new Date()`, `performance.now`, `crypto.*`). This is enforced by `src/tests/core-purity.test.ts`.
+  - `src/core/rng.ts`: pure seeded RNG (Mulberry32) with named substreams (`jobs`, `encounters`, `rewards`) derived from the master seed by splitmix32. Every draw takes a state and returns `{ value, state }`.
 - `src/simulation/`: headless batch simulation tooling.
 - `src/tests/`: Vitest tests. Import `describe`/`it`/`expect` from `vitest` explicitly.
 - `content/`: game data.
