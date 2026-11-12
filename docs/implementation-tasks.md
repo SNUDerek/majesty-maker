@@ -346,6 +346,12 @@ Everyone works on M0 together or in order (T0.1 → T0.2 + T0.4 → T0.3). T0.2 
 - **File:** `src/tests/invariants.ts`. It's test-side, but may be imported by the sim runner in `--strict` mode.
 - **Work:** `assertInvariants(state, config, prev?)` covers every core invariant in tech §13: integer types, ranges, non-negative Coin, treasury ≤ 9999, no persisting collapse in an interactable state, weeks monotonic and ≤ 96, checkpoint monotonic, and the pilgrimage object present iff phase is `pilgrimage`.
 - **Acceptance:** each invariant has a test that feeds a deliberately broken state.
+- **Contract notes for C1–C4** (enforced by the checker):
+  - `encounterIndex` counts resolved or skipped encounters in the current segment. While a segment is in progress, `furthestWaystation === segmentIndex`. Completing a regular segment raises the checkpoint to `segmentIndex + 1` and enters `waystation_decision` with `encounterIndex === encountersPerSegment`. The final gauntlet has `segmentIndex === regularSegments` and never reaches `waystation_decision`.
+  - `reroll_or_accept` is exactly the stage where `pendingFailure === true`; it requires a failed roll and an unused consumable with a reroll effect.
+  - A collapsed burden may persist in an interactable state only at home with `pendingConvalescence` set. That field is legal only in the home phase, and home phase is never at the deadline week.
+  - Inventory stores no zero counts. Entering a segment spends exactly one week, and play inside a segment spends none.
+  - Segment entry starts at encounter index zero. Within a segment, the entry week stays locked and the encounter index stays fixed or advances by one. One action unlocks at most one checkpoint. Deadline defeat requires the deadline week.
 
 ### D2 Deterministic scenario tests
 - **Depends on:** C1 for the home scenarios and C2–C4 for the rest. They can be written test-first as soon as T0.2 is frozen. **Parallel with:** C-series.
