@@ -114,41 +114,111 @@ export type GameAction =
   | { type: 'RETURN_HOME' }
   | { type: 'CONTINUE_SEGMENT' };
 
+/**
+ * What `getAvailableActions` returns. Identical to `GameAction` except that
+ * `BEGIN_PILGRIMAGE` is a descriptor: the caller picks `carry` within
+ * `[minCarry, maxCarry]` (and optional item ids) to build the concrete action.
+ */
+export type AvailableAction =
+  | Exclude<GameAction, { type: 'BEGIN_PILGRIMAGE' }>
+  | {
+      type: 'BEGIN_PILGRIMAGE';
+      minCarry: number;
+      maxCarry: number;
+      /** Departure fee that will be charged in addition to `carry`. */
+      fee: number;
+      isFinal: boolean;
+      equipmentIds: string[];
+      consumableIds: string[];
+    };
+
 interface EventBase {
   week: number;
 }
 
 export type CoinAccount = 'treasury' | 'carried';
 
+/** Why a week elapsed. */
+export type WeekReason =
+  | 'tutor'
+  | 'job'
+  | 'rest'
+  | 'segment_entry'
+  | 'convalescence';
+
+/** Attribution tag for every Coin movement (tech §12: earned/spent/lost by source). */
+export type CoinSource =
+  | 'job_payout'
+  | 'tutor_fee'
+  | 'rest_fee'
+  | 'departure_fee'
+  /** Treasury -> carried transfer at departure (paired treasury/carried events). */
+  | 'carry_out'
+  | 'encounter_reward'
+  | 'laboratores_penalty'
+  | 'skip_fee'
+  /** Carried -> treasury transfer when banking at home (retreat or waystation return). */
+  | 'bank_carried'
+  | 'retreat_loot_forfeit'
+  | 'retreat_toll'
+  | 'wipeout_retained'
+  | 'wipeout_lost'
+  | 'medical_fee';
+
+export type StatSource = 'tutor' | 'tutor_opposing' | 'zodiac' | 'item';
+
+export type BurdenSource =
+  | 'tutor'
+  | 'job'
+  | 'rest'
+  | 'convalescence'
+  | 'encounter_penalty'
+  | 'consumable'
+  | 'wipeout_reset';
+
+export type ItemSource =
+  | 'starting_inventory'
+  | 'reward'
+  | 'pilgrimage_slot_out'
+  | 'pilgrimage_slot_returned'
+  | 'consumed'
+  | 'wipeout_lost';
+
 export type GameEvent =
-  | (EventBase & { type: 'week_spent'; reason: string })
-  | (EventBase & { type: 'stat_changed'; estate: Estate; amount: number; source: string })
+  | (EventBase & { type: 'week_spent'; reason: WeekReason })
+  | (EventBase & { type: 'stat_changed'; estate: Estate; amount: number; source: StatSource })
   | (EventBase & {
       type: 'burden_changed';
       burden: 'fatigue' | 'melancholy';
       amount: number;
-      source: string;
+      source: BurdenSource;
     })
   | (EventBase & {
       type: 'coin_changed';
       account: CoinAccount;
       amount: number;
-      source: string;
+      source: CoinSource;
     })
+  | (EventBase & { type: 'item_changed'; itemId: string; amount: number; source: ItemSource })
   | (EventBase & {
       type: 'job_resolved';
       job: JobId;
       success: boolean;
       probability: number;
-      roll: number;
+      /** Absent when the job resolves without a draw (Stables is automatic). */
+      roll?: number;
+      automatic: boolean;
     })
-  | (EventBase & { type: 'collapse'; cause: 'fatigue' | 'melancholy' })
+  | (EventBase & { type: 'collapse'; cause: 'fatigue' | 'melancholy' | 'both' })
   | (EventBase & { type: 'convalescence'; cause: 'home_collapse' | 'wipeout' })
   | (EventBase & { type: 'pilgrimage_started'; segmentIndex: number; isFinal: boolean })
   | (EventBase & { type: 'encounter_drawn'; threat: Estate; encounterIndex: number })
-  | (EventBase & { type: 'encounter_skipped'; encounterIndex: number; source: string })
+  | (EventBase & { type: 'encounter_skipped'; encounterIndex: number; source: 'new_moon_bribe' })
   | (EventBase & {
       type: 'encounter_resolved';
+      segmentIndex: number;
+      isFinal: boolean;
+      encounterIndex: number;
       threat: Estate;
       approach: Estate;
       success: boolean;
@@ -161,7 +231,7 @@ export type GameEvent =
   | (EventBase & { type: 'retreat'; segmentIndex: number })
   | (EventBase & {
       type: 'wipeout';
-      cause: 'fatigue' | 'melancholy' | 'insufficient_carried_coin';
+      cause: 'fatigue' | 'melancholy' | 'coin';
     })
   | (EventBase & { type: 'victory' })
   | (EventBase & { type: 'deadline' });
@@ -252,30 +322,26 @@ export interface ActionResult {
   events: GameEvent[];
 }
 
-export type CreateCampaign = (
+/*
+ * Signatures are generic over the concrete config so implementations typed
+ * against `RulesConfig` (config.ts) are assignable, e.g.
+ * `export const applyAction: ApplyAction<RulesConfig> = ...`.
+ */
+export type CreateCampaign<C extends RulesConfigContract = RulesConfigContract> = (
   options: CreateCampaignOptions,
-  rulesConfig: RulesConfigContract,
+  rulesConfig: C,
 ) => CampaignState;
-export type GetAvailableActions = (
+export type GetAvailableActions<C extends RulesConfigContract = RulesConfigContract> = (
   state: CampaignState,
-  rulesConfig: RulesConfigContract,
-) => GameAction[];
-export type ApplyAction = (
+  rulesConfig: C,
+) => AvailableAction[];
+export type ApplyAction<C extends RulesConfigContract = RulesConfigContract> = (
   state: CampaignState,
   action: GameAction,
-  rulesConfig: RulesConfigContract,
+  rulesConfig: C,
 ) => ActionResult;
-export type GetDerivedStats = (
+export type GetDerivedStats<C extends RulesConfigContract = RulesConfigContract> = (
   state: CampaignState,
-  rulesConfig: RulesConfigContract,
+  rulesConfig: C,
 ) => DerivedStats;
 export type GetCalendar = (state: CampaignState) => CalendarInfo;
-
-/**
- * Multiply integer percentage modifiers and floor once at the end.
- * Callers should pass each applicable percentage separately.
- */
-export function applyIntegerPercent(base: number, ...percentages: number[]): number {
-  const numerator = percentages.reduce((value, percentage) => value * percentage, base);
-  return Math.floor(numerator / 100 ** percentages.length);
-}
