@@ -1,10 +1,5 @@
-import type { CalendarInfo, LunarPhase, CampaignState, ZodiacSign } from './types.js';
-
-const WEEKS_PER_MONTH = 4;
-const MONTHS_PER_YEAR = 12;
-const TOTAL_WEEKS = 96;
-const START_YEAR = 1450;
-const START_AGE = 14;
+import type { RulesConfig } from './config.js';
+import type { GetCalendar, ZodiacSign } from './types.js';
 
 /**
  * Western zodiac signs mapped to the month in which each sign begins.
@@ -26,32 +21,43 @@ export const signToBirthMonth: Readonly<Record<ZodiacSign, number>> = {
   pisces: 1,
 };
 
-const LUNAR_PHASES: readonly LunarPhase[] = ['new', 'waxing', 'full', 'waning'];
+/**
+ * Returns calendar and astrology coordinates for the state's elapsed week.
+ * Lengths, start year/age and lunar phases come from `config`, so calendar
+ * variants (e.g. a 48-week campaign) apply here too.
+ */
+export const getCalendar: GetCalendar<RulesConfig> = (state, config) => {
+  const { totalWeeks, weeksPerMonth, monthsPerYear, startYear, startAge, deadlineAge } = config.calendar;
+  const week = state.elapsedWeeks;
 
-/** Returns calendar and astrology coordinates for the state's elapsed week. */
-export function getCalendar(state: CampaignState): CalendarInfo {
-  if (!Number.isSafeInteger(state.elapsedWeeks) || state.elapsedWeeks < 0) {
-    throw new RangeError(
-      `getCalendar: elapsedWeeks must be a non-negative safe integer, got ${state.elapsedWeeks}`,
-    );
+  if (!Number.isSafeInteger(week) || week < 0 || week > totalWeeks) {
+    throw new RangeError(`getCalendar: elapsedWeeks must be an integer in [0, ${totalWeeks}], got ${week}`);
+  }
+  if (!Object.hasOwn(signToBirthMonth, state.birthSign)) {
+    throw new RangeError(`getCalendar: unknown birth sign ${JSON.stringify(state.birthSign)}`);
   }
 
-  const monthOffset = Math.floor(state.elapsedWeeks / WEEKS_PER_MONTH);
-  const weekOfMonth = state.elapsedWeeks % WEEKS_PER_MONTH;
-  const birthMonth = signToBirthMonth[state.birthSign];
-  const absoluteMonth = birthMonth + monthOffset;
+  const monthOffset = Math.floor(week / weeksPerMonth);
+  const weekOfMonth = week % weeksPerMonth;
+  const absoluteMonth = signToBirthMonth[state.birthSign] + monthOffset;
+  const lunarPhase = config.astrology.lunarPhaseByWeek[weekOfMonth];
+  if (lunarPhase === undefined) {
+    throw new RangeError(`getCalendar: no lunar phase configured for week ${weekOfMonth} of the month`);
+  }
+  const isDeadline = week >= totalWeeks;
 
   return {
     monthOffset,
     weekOfMonth,
-    currentMonth: absoluteMonth % MONTHS_PER_YEAR,
+    currentMonth: absoluteMonth % monthsPerYear,
     // The civil year rolls over at January, independently of the birthday.
-    displayYear: START_YEAR + Math.floor(absoluteMonth / MONTHS_PER_YEAR),
-    // Age changes only when a full twelve months have elapsed from the birth month.
-    age: START_AGE + Math.floor(monthOffset / MONTHS_PER_YEAR),
-    lunarPhase: LUNAR_PHASES[weekOfMonth] as LunarPhase,
-    solarDistance: monthOffset % MONTHS_PER_YEAR,
-    weeksRemaining: Math.max(0, TOTAL_WEEKS - state.elapsedWeeks),
-    isDeadline: state.elapsedWeeks >= TOTAL_WEEKS,
+    displayYear: startYear + Math.floor(absoluteMonth / monthsPerYear),
+    // Age changes only when a full year has elapsed from the birth month. The
+    // deadline is the deadline birthday, even in a shortened campaign variant.
+    age: isDeadline ? deadlineAge : startAge + Math.floor(monthOffset / monthsPerYear),
+    lunarPhase,
+    solarDistance: monthOffset % monthsPerYear,
+    weeksRemaining: totalWeeks - week,
+    isDeadline,
   };
-}
+};

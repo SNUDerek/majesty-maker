@@ -182,7 +182,7 @@ Everyone works on M0 together or in order (T0.1 → T0.2 + T0.4 → T0.3). T0.2 
 ### A1 Calendar
 - **Depends on:** T0.2. **Parallel with:** A2, T0.3, B3, D1, E2.
 - **File:** `src/core/calendar.ts`.
-- **Work:** `getCalendar(state)` returns `monthOffset`, `weekOfMonth` (0–3), `currentMonth` (0–11, birth month plus offset), `displayYear` (1450 + year rollover when the month wraps past December, not when the birthday comes round), `age` (14 or 15, 16 at the deadline), `lunarPhase` (new/waxing/full/waning), `solarDistance`, `weeksRemaining`, and `isDeadline`. Add a `signToBirthMonth` map; the plan is that Aries maps to its start month, documented in code.
+- **Work:** `getCalendar(state, config)` returns `monthOffset`, `weekOfMonth` (0–3), `currentMonth` (0–11, birth month plus offset), `displayYear` (1450 + year rollover when the month wraps past December, not when the birthday comes round), `age` (14 or 15, 16 at the deadline), `lunarPhase` (new/waxing/full/waning), `solarDistance`, `weeksRemaining`, and `isDeadline`. Add a `signToBirthMonth` map; the plan is that Aries maps to its start month, documented in code.
 - **Acceptance:** tests for week 0, week 3→4 month rollover, a birthday crossing the year boundary (Capricorn and Sagittarius signs), week 95, week 96 (`isDeadline`), and all 12 signs.
 
 ### A2 Conditions and derived stats
