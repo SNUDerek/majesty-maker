@@ -3,7 +3,7 @@
  * and road bonuses. Pure functions; every number comes from the rules config.
  */
 import type { RulesConfig } from './config.js';
-import { getItem, penaltyModifier, probabilityBonus } from './items.js';
+import { penaltyModifier, probabilityBonus } from './items.js';
 import { applyIntegerPercent } from './math.js';
 import { type Estate, type LunarPhase } from './types.js';
 
@@ -166,13 +166,12 @@ export function failurePenalty(input: FailurePenaltyInput, config: RulesConfig):
   const resource = PENALTY_RESOURCE[approach];
   const sources: string[] = [];
   const base = config.encounters.failurePenalty;
+  // B2 hook: neutral values (100%, 0) when no item applies to this approach.
   const modifier = penaltyModifier(input.equipmentId, approach, config);
-  const item = input.equipmentId === undefined ? undefined : getItem(input.equipmentId, config);
-  const itemApplies = item !== undefined && item.estate === approach;
 
   if (resource === 'coin') {
     const percents: number[] = [];
-    if (itemApplies && item.effect === 'coin_penalty_pct') {
+    if (modifier.coinPenaltyPct !== 100) {
       percents.push(modifier.coinPenaltyPct);
       sources.push(`item:${input.equipmentId}`);
     }
@@ -194,7 +193,7 @@ export function failurePenalty(input: FailurePenaltyInput, config: RulesConfig):
     amount = applyIntegerPercent(amount, config.astrology.fullMoon.pilgrimageBurdenPenaltyPct);
     sources.push('lunar:full');
   }
-  if (itemApplies && item.effect === 'reduce_failure_fatigue' && resource === 'fatigue') {
+  if (resource === 'fatigue' && modifier.fatigueReduction > 0) {
     amount = Math.max(0, amount - modifier.fatigueReduction);
     sources.push(`item:${input.equipmentId}`);
   }
