@@ -1,0 +1,44 @@
+{
+  "theriac": {
+    "name": "Theriac",
+    "kind": "consumable",
+    "effect": "reduce_fatigue",
+    "amount": 30,
+    "estate": null
+  },
+  "st_johns_wort": {
+    "name": "St. John's Wort",
+    "kind": "consumable",
+    "effect": "reduce_melancholy",
+    "amount": 30,
+    "estate": null
+  },
+  "metheglin": {
+    "name": "Metheglin",
+    "kind": "consumable",
+    "effect": "reroll_failed_check",
+    "amount": 0,
+    "estate": null
+  },
+  "gambeson": {
+    "name": "Gambeson",
+    "kind": "equipment",
+    "effect": "reduce_failure_fatigue",
+    "amount": 5,
+    "estate": "bellatores"
+  },
+  "saints_relic": {
+    "name": "Saint's Relic",
+    "kind": "equipment",
+    "effect": "success_bonus_vs_threat",
+    "amount": 10,
+    "estate": "oratores"
+  },
+  "weighted_coin": {
+    "name": "Weighted Coin",
+    "kind": "equipment",
+    "effect": "coin_penalty_pct",
+    "amount": 50,
+    "estate": "laboratores"
+  }
+}
