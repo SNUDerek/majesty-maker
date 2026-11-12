@@ -166,7 +166,7 @@ describe('Metheglin reroll', () => {
   it('a successful reroll pays the reward from rng.rewards and leaves the stake unchanged', () => {
     const first = failed([100, 1], {}, { carriedCoin: 4, departureCarriedCoin: 4 });
     const r = run(first.final, [{ type: 'USE_CONSUMABLE', itemId: 'metheglin' }]);
-    expect(r.events.map((e) => e.type)).toEqual(['item_changed', 'encounter_resolved', 'reroll_used', 'coin_changed']);
+    expect(r.events.map((e) => e.type)).toEqual(['item_changed', 'consumable_used', 'encounter_resolved', 'reroll_used', 'coin_changed']);
     expect(r.final.rng.encounters).not.toBe(first.final.rng.encounters);
     expect(r.final.rng.rewards).not.toBe(first.final.rng.rewards);
     expect(r.final.pilgrimage).toMatchObject({ encounterIndex: 1, lastRoll: 1 });
@@ -179,6 +179,20 @@ describe('Metheglin reroll', () => {
     expect(eventsOfType(r.events, 'wipeout')).toMatchObject([{ cause: 'fatigue' }]);
     expect(itemEvents(r.events, 'metheglin').map((e) => e.source)).toEqual(['consumed']);
     expect(r.final.inventory.metheglin ?? 0).toBe(0);
+  });
+
+  it.each([
+    { roll: 1, fatigue: 0 },
+    { roll: 100, fatigue: 0 },
+    { roll: 100, fatigue: 70 },
+  ])('records one consumption on reroll $roll with starting fatigue $fatigue', ({ roll, fatigue }) => {
+    const first = failed([100, roll], { fatigue });
+    expect(eventsOfType(first.events, 'consumable_used')).toEqual([]);
+    const r = run(first.final, [{ type: 'USE_CONSUMABLE', itemId: 'metheglin' }]);
+    expect(eventsOfType(r.events, 'consumable_used')).toEqual([
+      { type: 'consumable_used', week: first.final.elapsedWeeks, itemId: 'metheglin' },
+    ]);
+    expect(eventsOfType(r.events, 'reroll_used')).toMatchObject([{ itemId: 'metheglin', roll }]);
   });
 });
 

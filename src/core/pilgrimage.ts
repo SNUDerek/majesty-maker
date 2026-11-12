@@ -430,9 +430,9 @@ function useConsumable(input: CampaignState, action: Extract<GameAction, { type:
   road.consumableUsed = true;
   // The item left the inventory at departure; consuming it changes no count.
   t.events.push({ type: 'item_changed', week: t.week, itemId, amount: 0, source: 'consumed' });
+  t.events.push({ type: 'consumable_used', week: t.week, itemId });
 
   if (!effect.reroll) {
-    t.events.push({ type: 'consumable_used', week: t.week, itemId });
     for (const burden of ['fatigue', 'melancholy'] as const) {
       if (effect[burden] === 0) continue;
       state[burden] += effect[burden];
