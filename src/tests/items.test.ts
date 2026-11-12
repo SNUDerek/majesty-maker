@@ -137,10 +137,25 @@ describe('B2 experimental item rewards', () => {
   });
 
   it('rejects invalid reward tables at config loading', () => {
-    for (const table of [{ mystery: 1 }, { theriac: 0 }, { theriac: -1 }, { theriac: 1.5 }, { theriac: 0x1_0000_0000 }]) {
+    for (const table of [{ mystery: 1 }, { theriac: -1 }, { theriac: 1.5 }, { theriac: 0x1_0000_0000 }]) {
       expect(() => withOverrides(config, { items: { testRewardTable: table } })).toThrow(ConfigError);
     }
     const empty = { ...config, items: { ...config.items, acquisition: 'test_table' as const, testRewardTable: {} } };
     expect(() => withOverrides(empty, {})).toThrow(ConfigError);
+    const zeroed = Object.fromEntries(Object.keys(config.items.testRewardTable).map(id => [id, 0]));
+    expect(() => withOverrides(config, { items: { acquisition: 'test_table', testRewardTable: zeroed } }))
+      .toThrow(ConfigError);
+  });
+
+  it('lets a variant exclude items with weight 0 (maps deep-merge, so keys cannot be deleted)', () => {
+    const relicOnly = withOverrides(config, { items: { acquisition: 'test_table', testRewardTable: {
+      theriac: 0, st_johns_wort: 0, metheglin: 0, gambeson: 0, weighted_coin: 0,
+    } } });
+    let state = 7;
+    for (let i = 0; i < 50; i++) {
+      const result = drawItemReward(state, relicOnly);
+      expect(result.value).toBe('saints_relic');
+      state = result.state;
+    }
   });
 });
