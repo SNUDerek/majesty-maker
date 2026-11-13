@@ -5,9 +5,10 @@ import {
 } from '../core/index.js';
 import { encounterOdds } from '../core/encounter.js';
 import {
-  createPolicies, createPolicy, DEFAULT_POLICY_PARAMS, estimateSegmentSurvival, POLICY_IDS,
+  createPolicies, createPolicy, DEFAULT_POLICY_PARAMS, estimateSegmentSurvival, POLICIES, POLICY_IDS,
   type PolicyId, type PolicyParams,
 } from '../simulation/policies.js';
+import { runCli } from '../simulation/cli.js';
 import { deriveBatchSeed, runCampaign } from '../simulation/runner.js';
 import { loadContentConfig } from './support/config.js';
 
@@ -237,5 +238,27 @@ describe('E3 seeded campaign smoke tests', () => {
         carry: id === 'reckless' ? 0 : 60,
       });
     }
+  });
+});
+
+describe('CLI policy registry', () => {
+  it('registers every policy id with a factory bound to the loaded config', () => {
+    expect(Object.keys(POLICIES)).toEqual([...POLICY_IDS]);
+    const variant = withOverrides(config, { encounters: { failurePenalty: 20 } });
+    for (const id of POLICY_IDS) {
+      const policy = POLICIES[id]!(variant);
+      expect(policy.id).toBe(id);
+      expect(policy.params).toEqual(DEFAULT_POLICY_PARAMS);
+    }
+  });
+
+  it('runs the tech §14 trace command with the real registry', () => {
+    const out: string[] = [];
+    const err: string[] = [];
+    const code = runCli(['--policy', 'pragmatic', '--birth-sign', 'aries', '--seed', '123', '--trace'],
+      { stdout: (t) => out.push(t), stderr: (t) => err.push(t) });
+    expect(err).toEqual([]);
+    expect(code).toBe(0);
+    expect(out.join('\n')).toContain('policy=pragmatic sign=aries');
   });
 });

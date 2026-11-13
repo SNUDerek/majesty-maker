@@ -130,11 +130,9 @@ Implemented in `src/simulation/metrics.ts`, with synthetic event-stream and engi
 
 E3a and E3b are implemented in `src/simulation/policies.ts`: Stables-only, B/O/L specialists, Balanced, Reckless and Pragmatic. The factories expose validated params and stable policy IDs for E4. Tests in `src/tests/policies.test.ts` include 20 seeded campaigns per bot with strict invariants and decision-trace replay. See [archive/implementation-tasks-phase0-policies.md](archive/implementation-tasks-phase0-policies.md) for the completed specification and README for usage and heuristic assumptions.
 
-### E4 CLI
-- **Depends on:** E1. **Parallel with:** E3, E5.
-- **File:** `src/simulation/cli.ts`.
-- **Work:** use `node:util` `parseArgs`. Flags: `--policy`, `--all-policies`, `--birth-sign`, `--all-signs`, `--runs`, `--seed`, `--trace`, `--trace-seed`, `--config`, `--variant`, `--out`, `--strict`, `--weeks` (sensitivity only). `--trace` prints a readable week-by-week log: activity, probability, roll, deltas, and aspects.
-- **Acceptance:** the two commands in tech §14 work exactly as written.
+### E4 CLI — implementation reviewed
+
+Implemented in `src/simulation/cli.ts`, with regression coverage in `src/tests/cli.test.ts`. The task specification and review notes are archived in [archive/implementation-tasks-phase0-cli.md](archive/implementation-tasks-phase0-cli.md). E3 populates the policy registry, and the tech §14 commands run with the real policies. E5 adds the formal report formats.
 
 ### E5 Report exports
 - **Depends on:** E2, E4. **Parallel with:** E3b.

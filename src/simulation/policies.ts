@@ -222,3 +222,11 @@ export function createPolicy(id: PolicyId, config: RulesConfig,
 export function createPolicies(config: RulesConfig, params: Partial<PolicyParams> = {}): Policy[] {
   return POLICY_IDS.map((id) => createPolicy(id, config, params));
 }
+
+/** Builds a fresh policy for the loaded rules config; per-run state (if any) must live in the returned object. */
+export type PolicyFactory = (config: RulesConfig) => Policy;
+
+/** Registered policies, keyed by the id used with `--policy`. */
+export const POLICIES: Readonly<Record<string, PolicyFactory>> = Object.freeze(Object.fromEntries(
+  POLICY_IDS.map((id) => [id, (config: RulesConfig) => createPolicy(id, config)]),
+));
