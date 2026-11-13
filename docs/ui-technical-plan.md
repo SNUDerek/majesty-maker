@@ -47,15 +47,16 @@ Audio, animation beyond short CSS fades, Settings beyond a "reset save" button, 
 
 | Asset | Files | Use |
 |---|---|---|
-| Title | `misc/title_1920x1080.webp` | Title screen; reused as Final Gauntlet / victory / defeat backdrop. |
-| Backgrounds | `backgrounds/background_{home,school,job,pilgrimage}_1920x1080.webp` | Home + Rest (home, with a darker scrim for Rest); Tutoring (school); Work (job); Prep / Encounter / Waystation (pilgrimage). |
+| Title | `misc/title_1920x1080.webp` | Title screen; victory / defeat backdrop. |
+| Backgrounds | `backgrounds/background_{home,school,job,pilgrimage,waystation,capital}_1920x1080.webp` | Home + Rest (home, with a darker scrim for Rest); Tutoring (school); Work (job); Prep / Encounter (pilgrimage); Waystation (waystation); Final Gauntlet encounters (capital). `waystation` and `capital` are temporary copies of the pilgrimage and title images, to be overwritten. |
 | Parchment | `misc/parchment_1600x1080.webp` | Texture for large panels (side panel, preview, result) and the intro text box. |
 | Intro panels | `misc/intro_panels/intro_{01A,01B,02,03,04A,04B,04C,05,06,07,08}_1024x768.webp` | Intro sequence; 04B is skipped per the handoff text. |
 | Zodiac | `misc/zodiac_signs_905x720.webp` (4×3 grid) | Sign picker and Home date block, via CSS sprite (§3.3). |
-| Moon | `misc/moon_phases/*.png` (8 phases, 256²) | Engine has 4 phases; map `new→moon_new`, `waxing→moon_first_qaurter` (sic), `full→moon_full`, `waning→moon_third_quarter`. |
+| Moon | `misc/moon_phases/*.png` (8 phases, 256²) | Engine has 4 phases; map `new→moon_new`, `waxing→moon_first_quarter`, `full→moon_full`, `waning→moon_third_quarter`. |
 | Princess | `portraits/main_princess_360x720.webp` (transparent) | Home, full height on the left. Character setup. |
 | Tutors | `portraits/portrait_{hedge_knight,hermit,smuggler}_right_360x540.webp` | Tutor cards / preview panel. |
-| Other portraits | `portrait_{damsel,lady,queen,merchant_male,noble_male,student_male}_right_360x540.webp` | Damsel → princess headshot in the pilgrimage HUD (assumed, see §11). Merchant → Alehouse card, noble → Banquet, student → Scriptorium, queen → intro/credits only. |
+| Princess headshot | `portraits/portrait_princess_right_360x540.webp` (temporary copy of the damsel portrait) | Pilgrimage HUD, save slots. |
+| Other portraits | `portrait_{damsel,lady,queen,merchant_male,noble_male,student_male}_right_360x540.webp` | Merchant → Alehouse card, noble → Banquet, student → Scriptorium, queen → intro/credits only. |
 | Estate icons | `items/icon_{sword,book,hammer}.png` (32²) | Bellatores / Oratores / Laboratores everywhere. Render at 32 or 64 with `image-rendering: pixelated`. |
 | Items | `items/item_{theriac,st_johns_wort,metheglin,gambeson,saints_relic,weighted_coin}.png` | One per item id in `content/items.json`; filename = `item_<id>.png`. |
 | Coin | `items/gold/gold_pile*.png` | `gold_pile.png` as the Coin glyph; pick a larger pile for big amounts if cheap (optional). |
@@ -69,7 +70,7 @@ The pack is bright and cartoony; the art is watercolour/woodcut. To keep it from
 ### 3.3 Technical notes
 
 - **9-slice:** panels are 100×100 with ~8 px rounded borders. Use `border-image: url(panel_beigeLight.png) 12 fill / 12px stretch;` as a starting point and verify corners at 1× and 1.5× zoom. Buttons (`buttonLong_*`, 190×49) use `border-image-slice: 12 16` so they stretch horizontally.
-- **Bars:** three-part (`*_horizontalLeft` 9 px, `*_horizontalMid` 18 px, `*_horizontalRight` 9 px). Implement as a flex row: left cap, mid with `background-repeat: repeat-x` and `width: N%`, right cap. **`barBlue_horizontalBlue.png` is the blue mid piece** (misnamed in the pack).
+- **Bars:** three-part (`*_horizontalLeft` 9 px, `*_horizontalMid` 18 px, `*_horizontalRight` 9 px). Implement as a flex row: left cap, mid with `background-repeat: repeat-x` and `width: N%`, right cap. (The pack's misnamed `barBlue_horizontalBlue.png` has been renamed to `barBlue_horizontalMid.png`.)
 - **Zodiac sprite:** the grid isn't perfectly regular. Use `background-size: 400% 300%` and `background-position: calc(col * 33.333%) calc(row * 50%)` with a cell box of 226×240 and slight `object-fit`-style cropping; if a sign looks clipped, crop the sheet into 12 files instead (one-time, keep the original).
 - **Order on sheet:** row 0 aquarius, pisces, aries, taurus; row 1 gemini, cancer, leo, virgo; row 2 libra, scorpio, sagittarius, capricorn.
 - **Asset registry:** `src/ui/assets.ts` imports each used file explicitly (`import homeBg from '../../assets/backgrounds/…webp'`) and exports maps keyed by content id (`ESTATE_ICON[estate]`, `TUTOR_PORTRAIT[tutorId]`, `ITEM_ICON[itemId]`, `MOON[lunarPhase]`, `BACKGROUND[sceneId]`). Missing files fail the build; nothing in `src/core` knows about paths.
@@ -337,7 +338,7 @@ Background pilgrimage. Left: RouteStrip large, highlighting the next segment (`f
 
 ### 6.9 Waystation
 
-Same background with a warm scrim, centre panel: "Waystation N secured", route strip, carried Coin and earned loot this run, conditions. Buttons: *Continue to next waystation (1 week, no fee)* — hidden when no weeks remain, *Return home (bank X Coin)*, consumable if usable. After the last regular waystation, *Continue* is labelled "Begin the Final Gauntlet".
+Waystation background, centre panel: "Waystation N secured", route strip, carried Coin and earned loot this run, conditions. Buttons: *Continue to next waystation (1 week, no fee)* — hidden when no weeks remain, *Return home (bank X Coin)*, consumable if usable. After the last regular waystation, *Continue* is labelled "Begin the Final Gauntlet".
 
 ### 6.10 Outcome
 
@@ -435,14 +436,13 @@ Nothing blocks the playtest build; every gap below has a placeholder plan. Items
 |---|---|---|
 | **IM Fell DW Pica** font (named in `assets/info.md` and `fonts/info.txt`) is not in `assets/fonts/`; only IM Fell English is. | Use IM Fell English. | Add `IMFePIrm28P.woff2` (DW Pica roman) if you prefer it. |
 | Rest background | Home background + dark scrim. | Optional. |
-| **Waystation / abbey** background **(want)** | Pilgrimage background + warm scrim. | One 1920×1080 abbey/hospice image. |
-| **Capital / final gauntlet** background **(want)** | Title image. | One 1920×1080 castle/siege image; it's the climax. |
+| **Waystation / abbey** background **(want)** | `background_waystation` (copy of pilgrimage). | Overwrite with a 1920×1080 abbey/hospice image. |
+| **Capital / final gauntlet** background **(want)** | `background_capital` (copy of title). | Overwrite with a 1920×1080 castle/siege image. |
 | Encounter illustrations | Estate-coloured card with icon + flavour text. | Later; 3 (one per Estate) would already help. |
 | Job / rest card art | Icons and reused portraits (§3.1). | Optional. |
-| Princess **headshot** — `info.md` says one exists, but no file is named for her. | Assumed `portrait_damsel_right_360x540.webp`. | Confirm, or rename to `portrait_princess_right_360x540.webp`. |
+| Princess headshot | `portrait_princess_right` (copy of damsel). | Overwrite when ready. |
 | Estate icons are 32×32 pixel art; they'll look crude at 96 px on the threat card. | `image-rendering: pixelated`. | **(want)** larger or vector sword/book/hammer emblems (~128 px, transparent). |
 | Intro script lives only in an uncommitted edit of `docs/ui-handoff.md` on main. | Copied into `src/ui/text/intro.ts` during U7. | Commit that edit when convenient. |
-| Typos/misnames | Registry maps them explicitly. | Optional renames: `moon_first_qaurter.png` → `moon_first_quarter.png`; `ui/PNG/barBlue_horizontalBlue.png` → `barBlue_horizontalMid.png`. `info.md` says portraits are 260×540 — files are 360×540. |
 | Rights tracking | — | The handoff asks for per-image provenance; backgrounds, portraits, title and intro panels have no source notes yet. Not needed for playtesting; needed before any public pitch. |
 
 Rules-level questions surfaced while planning (not UI decisions; recorded for the rules owner):
