@@ -212,11 +212,29 @@ export function signed(n: number): string {
 // Pilgrimage
 // ---------------------------------------------------------------------------
 
-/** Three flavour lines per threat Estate, rotated by encounter index. */
+/**
+ * Three flavour lines per threat Estate, rotated by encounter index. A card's
+ * colour names who the adversary *is*, so the advantaged answer reads
+ * naturally (thematic doc): Bellatores beat Laboratores (force, noble
+ * stature), Laboratores beat Oratores (supplies, dirty tricks), Oratores beat
+ * Bellatores (the Church binds the nobility). No task-shaped lines.
+ */
 export const THREAT_FLAVOUR: Record<Estate, readonly string[]> = {
-  bellatores: ['Brigands block the road.', 'A robber knight demands a duel.', 'Deserters lie in ambush at the ford.'],
-  oratores: ['A suspicious friar bars the abbey gate.', 'A heresy-hunter questions every traveller.', 'Pilgrims whisper of a cursed shrine ahead.'],
-  laboratores: ['A toll-keeper wants more than his due.', 'A broken bridge needs mending.', 'A crafty pedlar offers a bargain too good to trust.'],
+  bellatores: [
+    'A robber knight bars the road, sword drawn.',
+    "Deserters from a lord's war lie in wait at the crossroads.",
+    "A baron's men-at-arms demand to know her business.",
+  ],
+  oratores: [
+    'A grasping pardoner will not let her pass without buying an indulgence.',
+    'A friar at the abbey gate demands letters of passage.',
+    'A tithe-collector claims the bridge toll for his abbot.',
+  ],
+  laboratores: [
+    "Poachers in the king's wood take her for a forester.",
+    'A mob of angry villeins blocks the lane.',
+    "A smugglers' gang holds the ford.",
+  ],
 };
 
 export const MATCHUP_LABEL: Record<'advantage' | 'neutral' | 'disadvantage', string> = {

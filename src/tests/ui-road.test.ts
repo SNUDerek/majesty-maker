@@ -10,7 +10,7 @@ import { activityOptions } from '../ui/engine/activities.js';
 import { deriveScreen } from '../ui/engine/screen.js';
 import { GameStore } from '../ui/engine/store.js';
 import { sourcesLine, summarize } from '../ui/engine/summarize.js';
-import { itemEffectLabel, penaltyLabel, roadMoonLabel } from '../ui/text/labels.js';
+import { THREAT_FLAVOUR, itemEffectLabel, penaltyLabel, roadMoonLabel } from '../ui/text/labels.js';
 import { loadShippedConfig } from './support/config.js';
 
 const config = loadShippedConfig();
@@ -73,6 +73,10 @@ describe('road helpers', () => {
     expect(roadMoonLabel('waning', config)).toBe('Waning Moon: no effect on the road');
     expect(penaltyLabel({ resource: 'fatigue', amount: 15 })).toBe('+15 Fatigue');
     expect(penaltyLabel({ resource: 'coin', amount: 7 })).toBe('−7 carried Coin');
+    for (const lines of Object.values(THREAT_FLAVOUR)) {
+      expect(lines).toHaveLength(3);
+      expect(new Set(lines).size).toBe(3);
+    }
     for (const item of Object.values(config.items.catalog)) {
       expect(itemEffectLabel(item)).not.toBe(item.effect);
     }
