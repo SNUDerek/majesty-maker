@@ -47,13 +47,33 @@ function isSaveFile(value: unknown): value is SaveFile {
     && typeof v.state === 'object' && v.state !== null && v.state.version === 1;
 }
 
+/** Engine query helpers are not validators: they do not read inventory or RNG, for example. */
+function hasPlayableState(state: CampaignState): boolean {
+  const record = (value: unknown): value is Record<string, unknown> =>
+    typeof value === 'object' && value !== null && !Array.isArray(value);
+  const natural = (value: unknown): boolean => Number.isSafeInteger(value) && (value as number) >= 0;
+  return ['home', 'pilgrimage', 'victory', 'defeat'].includes(state.phase)
+    && typeof state.scionName === 'string' && record(state.playerName)
+    && typeof state.playerName.first === 'string' && typeof state.playerName.last === 'string'
+    && Number.isSafeInteger(state.seed)
+    && [state.elapsedWeeks, state.fatigue, state.melancholy, state.treasury,
+      state.furthestWaystation, state.waxingStreak].every(natural)
+    && record(state.stats) && ['bellatores', 'oratores', 'laboratores'].every((key) => natural(state.stats[key as keyof typeof state.stats]))
+    && record(state.inventory) && Object.values(state.inventory).every(natural)
+    && record(state.rng) && ['jobs', 'encounters', 'rewards'].every((key) => {
+      const value = state.rng[key as keyof typeof state.rng];
+      return natural(value) && value <= 0xffff_ffff;
+    });
+}
+
 export function readSlot(storage: SaveStorage, slot: SlotId, config: RulesConfig): SlotInfo {
-  const raw = storage.getItem(slotKey(slot));
-  if (raw === null) return { slot, status: 'empty' };
   try {
+    const raw = storage.getItem(slotKey(slot));
+    if (raw === null) return { slot, status: 'empty' };
     const parsed: unknown = JSON.parse(raw);
     if (!isSaveFile(parsed)) return { slot, status: 'corrupt' };
     const { state } = parsed;
+    if (!hasPlayableState(state)) return { slot, status: 'corrupt' };
     if (state.phase === 'pilgrimage' && state.pilgrimage === undefined) return { slot, status: 'corrupt' };
     // Each throws on states the engine can't read (bad week, sign, phase).
     getCalendar(state, config);

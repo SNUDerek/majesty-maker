@@ -5,6 +5,7 @@
  */
 import {
   getAvailableActions,
+  getDerivedStats,
   previewHomeActivity,
   type ActivityOutcome,
   type AvailableAction,
@@ -60,4 +61,20 @@ export function outcomeLines(outcome: ActivityOutcome): string[] {
   const { min, max } = outcome.coin;
   if (min !== 0 || max !== 0) lines.push(`Coin ${min === max ? signed(min) : `${signed(min)} to ${signed(max)}`}`);
   return lines.length > 0 ? lines : ['No change'];
+}
+
+/** Project each branch against its own post-activity ceilings, then show the greater risk. */
+export function projectedConditions(state: CampaignState, preview: HomePreview, config: RulesConfig) {
+  const branches = [preview.success, ...(preview.failure === undefined ? [] : [preview.failure])].map((outcome) => {
+    const stats = { ...state.stats };
+    for (const estate of ESTATES) stats[estate] += outcome.stats[estate];
+    const derived = getDerivedStats({ ...state, stats }, config);
+    return {
+      fatigue: { value: state.fatigue + outcome.fatigue, ceiling: derived.fatigueCeiling },
+      melancholy: { value: state.melancholy + outcome.melancholy, ceiling: derived.melancholyCeiling },
+    };
+  });
+  const riskiest = (kind: 'fatigue' | 'melancholy') => branches.map((branch) => branch[kind])
+    .reduce((a, b) => b.value / b.ceiling > a.value / a.ceiling ? b : a);
+  return { fatigue: riskiest('fatigue'), melancholy: riskiest('melancholy') };
 }

@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { getDerivedStats, type CampaignState, type RulesConfig } from '../../core/index.js';
+import { type CampaignState, type RulesConfig } from '../../core/index.js';
 import { ACTIVITY_PORTRAIT, BACKGROUND } from '../assets.js';
 import { Button, CoinAmount, EstateIcon, Panel } from '../components/basic.js';
 import { TopBar } from '../components/chrome.js';
 import { ConditionGauge } from '../components/meters.js';
 import { Scene } from '../components/Stage.js';
-import { activityOptions, outcomeLines, type ActivityKind, type ActivityOption } from '../engine/activities.js';
+import { activityOptions, outcomeLines, projectedConditions, type ActivityKind, type ActivityOption } from '../engine/activities.js';
 import { ACTIVITY_BLURB, ACTIVITY_LABEL, modifierLabel } from '../text/labels.js';
 import { useGame } from '../useStore.js';
 
@@ -55,10 +55,7 @@ function PreviewPanel({ option, state, config, onCommit, onBack }: {
   option: ActivityOption; state: CampaignState; config: RulesConfig; onCommit: () => void; onBack: () => void;
 }) {
   const { preview } = option;
-  const derived = getDerivedStats(state, config);
-  const worst = preview.failure !== undefined
-    ? { fatigue: Math.max(preview.success.fatigue, preview.failure.fatigue), melancholy: Math.max(preview.success.melancholy, preview.failure.melancholy) }
-    : preview.success;
+  const projected = projectedConditions(state, preview, config);
   const collapse = preview.success.collapse ?? preview.failure?.collapse ?? null;
   return (
     <Panel variant="parchment" className="preview">
@@ -83,10 +80,10 @@ function PreviewPanel({ option, state, config, onCommit, onBack }: {
           </div>
         )}
       </div>
-      <ConditionGauge kind="fatigue" value={state.fatigue} ceiling={derived.fatigueCeiling}
-        projected={Math.max(0, state.fatigue + worst.fatigue)} />
-      <ConditionGauge kind="melancholy" value={state.melancholy} ceiling={derived.melancholyCeiling}
-        projected={Math.max(0, state.melancholy + worst.melancholy)} />
+      <ConditionGauge kind="fatigue" value={state.fatigue} ceiling={projected.fatigue.ceiling}
+        projected={projected.fatigue.value} />
+      <ConditionGauge kind="melancholy" value={state.melancholy} ceiling={projected.melancholy.ceiling}
+        projected={projected.melancholy.value} />
       {collapse !== null && (
         <p className="warn">
           {preview.success.collapse !== null ? 'This will make her collapse.' : 'If this fails, she will collapse.'}

@@ -3,7 +3,7 @@ import {
   applyAction, createCampaign, getAvailableActions, hashConfig,
   type CampaignState, type CreateCampaignOptions, type GameEvent,
 } from '../core/index.js';
-import { activityOptions, outcomeLines } from '../ui/engine/activities.js';
+import { activityOptions, outcomeLines, projectedConditions } from '../ui/engine/activities.js';
 import { readSlot, slotKey, writeSave, deleteSave, type SaveStorage } from '../ui/engine/persistence.js';
 import { deriveScreen, type UiState } from '../ui/engine/screen.js';
 import { GameStore } from '../ui/engine/store.js';
@@ -86,6 +86,26 @@ describe('summarize', () => {
 });
 
 describe('activityOptions', () => {
+  it('uses post-training ceilings rather than falsely warning of collapse', () => {
+    const state = { ...fresh(), elapsedWeeks: 1, fatigue: 71, stats: { ...fresh().stats, bellatores: 15 } };
+    const option = activityOptions(state, 'tutor', config)[0]!;
+    const projected = projectedConditions(state, option.preview, config);
+    expect(projected.fatigue.value).toBe(76);
+    expect(projected.fatigue.ceiling).toBeGreaterThan(projected.fatigue.value);
+    expect(option.preview.success.collapse).toBeNull();
+    const result = applyAction(state, option.action, config);
+    expect(result.state.fatigue).toBe(projected.fatigue.value);
+    expect(result.events.some((event) => event.type === 'collapse')).toBe(false);
+  });
+
+  it('keeps each job branch paired with its own ceiling when showing the greater risk', () => {
+    const state = { ...fresh(), elapsedWeeks: 1, fatigue: 70, stats: { ...fresh().stats, bellatores: 15 } };
+    const option = activityOptions(state, 'job', config).find((option) => option.preview.activityId === 'village_watch')!;
+    const projected = projectedConditions(state, option.preview, config);
+    expect(projected.fatigue).toEqual({ value: 80, ceiling: 75 }); // failure has no stat gain
+    expect(option.preview.failure!.collapse).toBe('fatigue');
+  });
+
   it('disables unaffordable activities with a reason instead of hiding them', () => {
     const poor = { ...fresh(), treasury: 10 };
     const tutors = activityOptions(poor, 'tutor', config);
@@ -113,6 +133,30 @@ describe('activityOptions', () => {
 });
 
 describe('persistence', () => {
+  it('accepts signed seeds supported by the engine', () => {
+    const storage = memoryStorage();
+    writeSave(storage, 'auto', createCampaign({ ...OPTIONS, seed: -123 }, config), config, new Date());
+    expect(readSlot(storage, 'auto', config).status).toBe('ok');
+  });
+
+  it.each([
+    { inventory: undefined }, { rng: undefined }, { rng: { jobs: 1, encounters: 2 } },
+    { phase: 'unknown' }, { fatigue: null }, { treasury: -1 }, { stats: { bellatores: 15, oratores: 15 } },
+  ])('rejects malformed state fields before loading: %j', (patch) => {
+    const storage = memoryStorage();
+    const save = writeSave(storage, 'auto', fresh(), config, new Date());
+    storage.setItem(slotKey('auto'), JSON.stringify({ ...save, state: { ...save.state, ...patch } }));
+    expect(readSlot(storage, 'auto', config).status).toBe('corrupt');
+    const store = new GameStore(config, storage);
+    expect(store.load('auto')).toBe(false);
+    expect(store.getSnapshot().state).toBeNull();
+  });
+
+  it('handles storage read errors without throwing', () => {
+    const storage = { ...memoryStorage(), getItem: () => { throw new Error('blocked'); } };
+    expect(readSlot(storage, 'auto', config).status).toBe('corrupt');
+  });
+
   it('round-trips a save and flags config mismatches and corrupt slots', () => {
     const storage = memoryStorage();
     const state = fresh();
