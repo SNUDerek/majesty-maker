@@ -1,6 +1,6 @@
 # Open questions: decisions (draft)
 
-**Status:** draft for sign-off. No config, code, or register entry has been changed yet.
+**Status: SUPERSEDED.** This draft is not the active decision record. The final decisions and implementation tasks are in [open-questions-tasks.md](../open-questions-tasks.md), which corrects this draft's Q13 fee/recovery timing and Q5 field naming.
 
 **Inputs:** [thematic design](thematic-design-doc.md), [suggestions A](open-questions-suggestions-a.md), [suggestions B](open-questions-suggestions-b.md), and the [owner's opinions](open-questions-opinions.md). Where they disagree, gameplay balance and ease of development decide, ahead of the owner's stated preference.
 

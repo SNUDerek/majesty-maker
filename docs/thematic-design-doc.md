@@ -71,7 +71,7 @@ Coin is capped at 9,999 and starts at 50.
 
 There are two conditions: Fatigue (physical tiredness) and Melancholy (boredom, depression).
 
-Fatigue and Melancholy start at zero and points are accrued by working or studying, and reduced by resting; when the bar is maxed out, the player collapses and must immediately rest to recover.
+Fatigue and Melancholy start at zero and points are accrued by working or studying, and reduced by resting; when the bar is maxed out, the player collapses and must immediately rest to recover. A collapse at home calls the physician: a fee of up to 20 Coin from the treasury (never into debt, charged once per collapse), then a forced week of convalescence that clears 15 Fatigue and 15 Melancholy. While a bar is still at its cap, further forced -15/-15 weeks follow without another fee. Recovery never extends the deadline: a collapse in the last week still pays the fee but gets no recovery week. (Rules settled in `docs/open-questions-tasks.md` Q13; the 20 Coin fee and the 15-point recovery are experimental numbers.)
 
 Fatigue and Melancholy are in 0-100 range but have a lower starting cap that raises with stat gain:
 
@@ -85,8 +85,12 @@ NOTE: visually, on the UI, show the full 100-level bar, and show the reduced cap
 The Laboratores stat does not affect Fatigue or Melancholy, instead it affects a "Purse Protection" stat that reduces money lost to failed Laboratores approaches and Pilgrimage wipeouts, calculated as:
 
 ```
-Purse Protection Rate = stat / 200  # half of stat value, as percent
+Purse Protection P = floor(Laboratores / 2)   # integer percent
+Failed Laboratores encounter cost = floor(15 × (1 − P/100) × item multiplier)   # floored once
+Wipeout retention = floor(pre-lethal carried Coin × P/100)
 ```
+
+At Laboratores 50 a failure costs 11 Coin (5 with the Weighted Coin). The Weighted Coin does not change wipeout retention. P is floored to a whole percent first, so at odd stats this is not quite the same as an unrounded `stat / 200` rate (Q2).
 
 math note: all values rounded down to nearest integer.
 
@@ -104,7 +108,7 @@ math note: all values rounded down to nearest integer.
 * **The Hermit (Oratores):** A secluded mystic teaching Latin, astrology, and ancient rites. Slightly lowers Bellatores.
 * **The Smuggler (Laboratores):** A pragmatic rogue teaching lockpicking, haggling, and stealth. Slightly lowers Oratores.
 
-All tutor sessions apply: −20 Coin, +5 stat, −1 to the opposing stat, +5 condition
+All tutor sessions apply: −20 Coin, +5 stat, −1 to the opposing stat, and a condition burden of five points: Hedge Knight +5 Fatigue, Hermit +5 Melancholy, Smuggler +3 Fatigue / +2 Melancholy (Q1; the magnitudes and the Smuggler split are experimental).
 
 ### Part-Time Jobs
 
@@ -157,7 +161,7 @@ There is a roll bonus applied when heading out from a Waystation: +40 on the fir
 
 1. **Draw:** An encounter card is drawn, visually telegraphed by a rubricated border (Red/Bellatores threat, Blue/Oratores threat, Green/Laboratores threat).
 2. **Approach:** The player chooses an Estate to respond with. This creates a Rock-Paper-Scissors advantage modifier (e.g., Bellatores brute-forces a Laboratores obstacle for a 1.5x stat multiplier). The approach also determines which bar absorbs a failure: A Bellatores approach accrues Fatigue, Oratores accrues Melancholy, and Laboratores costs Coin.
-3. **Roll:** A d100 is rolled under the modified stat. Success yields progress and minor loot; failure inflicts -15 to Fatigue, Melancholy, or Coin loss depending on the approach (doubled at Full Moon).
+3. **Roll:** A d100 is rolled under the modified stat. Success yields progress and minor loot; failure adds +15 Fatigue or +15 Melancholy, or costs 15 carried Coin (reduced by Purse Protection), depending on the approach. The Full Moon doubles only the Fatigue/Melancholy penalty, before the Gambeson's reduction (15 × 2 − 5 = 25); it never doubles the Coin loss. Exactly enough carried Coin to pay a failure is survivable.
 
 Roll calculation: stat × approach multiplier (advantage 1.5 / neutral 1.0 / disadvantage 0.75) + road bonus, clamped to 5–95%.
 
@@ -169,8 +173,8 @@ Failure does NOT halt or lose progress along the Pilgrimage path. In universe, y
 After every encounter, the player must decide to press on or retreat, managing their condition bars against the remaining distance to the next Waystation.
 
 * **Reach Waystation:** Survive all 5 encounters. The route is secured. The player keeps all loot, suffers no time penalty, and unlocks fast-travel safe passage back to the home estate (e.g. they safely travel back with a merchant caravan or get an escort). They can choose to continue on to the next waystation (which takes another week) or return home. Thematic Logic (The Abbey/Hospice): In the Middle Ages, long-distance travel relied on a network of fortified abbeys, monasteries, and chartered hospices specifically built to shelter pilgrims (such as the Knights Hospitaller). Once the character reaches one, they are under the protection of sacred hospitality. They can securely bank their findings, rest in safety, and join a heavily guarded merchant caravan or river barge heading back to their home estate for free.
-* **Make Camp (Retreat):** Turn back early. The player loses a portion of their run-specific loot and pays a Coin toll to safely return, but loses no calendar time (beyond the current week). The partial progress is lost. Thematic Logic (The Guide's Toll): The character is stranded in the untamed wilderness (the medieval woods were notoriously dangerous, full of outlaws and wolves). To get home safely without reaching the Abbey, they have to abandon their path and hire an unsavory local tracker, bribe a toll-bridge guard, or barter their newly acquired goods to a passing merchant for a ride back. It is a desperate, expensive scramble back to civilization.
-* **Wipeout:** Fatigue or Melancholy reaches max cap. or player cannot pay the required Coin (the previous encounter failure penalty would have reduced carried Coin past zero into negatives). The character collapses and is dragged home. The player loses all run loot and carried Coin (attenuated by the Purse Protection rate), pays heavy medical Coin penalties (-50 Coin from the total Coin, not carried Coin), and loses a full week of scheduling time to bed rest (if 50 Coin would put total Coin in the negative, set it to zero instead). Thematic Logic (The Convalescence): The character collapses on the road. They are either beaten and robbed by footpads, succumb to a sudden fever, or suffer a total nervous breakdown from terror. They are found unconscious by a passing cart and hauled back to the home estate. The currency loss pays the hefty surgeon or apothecary bills (leechcraft, poultices). The time loss represents mandatory bed rest, costing the player a valuable week of scheduling and stat-building.
+* **Make Camp (Retreat):** Turn back early. The player first forfeits half of the run loot still in the purse (rounded down in the player's favour: 3 earned Coin keeps 1), then pays a 10 Coin toll, from carried Coin first and then the treasury; Coin brought from home is never forfeited but can pay the toll. An unaffordable toll never blocks the retreat or creates debt. The rest is banked. Retreat loses no calendar time (beyond the current week); secured waystations are kept, but the partial progress is lost. (Q7/R3; the 50% and 10 Coin are experimental.) Thematic Logic (The Guide's Toll): The character is stranded in the untamed wilderness (the medieval woods were notoriously dangerous, full of outlaws and wolves). To get home safely without reaching the Abbey, they have to abandon their path and hire an unsavory local tracker, bribe a toll-bridge guard, or barter their newly acquired goods to a passing merchant for a ride back. It is a desperate, expensive scramble back to civilization.
+* **Wipeout:** Fatigue or Melancholy reaches max cap. or player cannot pay the required Coin (the previous encounter failure penalty would have reduced carried Coin past zero into negatives). The character collapses and is dragged home. The player loses all run loot and carried Coin (attenuated by the Purse Protection rate), pays heavy medical Coin penalties (-50 Coin from the total Coin, not carried Coin), and loses a full week of scheduling time to bed rest (if 50 Coin would put total Coin in the negative, set it to zero instead). That bed-rest week clears 35 Fatigue and 35 Melancholy (experimental), rather than resetting them; if a bar is still at its cap afterwards, further forced -15/-15 home weeks follow without a physician fee. With no week left, the losses are still settled but no recovery is granted. Equipment and secured waystations are kept (Q13). Thematic Logic (The Convalescence): The character collapses on the road. They are either beaten and robbed by footpads, succumb to a sudden fever, or suffer a total nervous breakdown from terror. They are found unconscious by a passing cart and hauled back to the home estate. The currency loss pays the hefty surgeon or apothecary bills (leechcraft, poultices). The time loss represents mandatory bed rest, costing the player a valuable week of scheduling and stat-building.
 
 note on continuing from a waystation: continuing from a waystation does not require another 10 Coin setup fee, that is paid only when setting out initially from home base. mechanically, there is a slight possibility for cheesing by 'returning' to restock consumables and set out again immediately, but the gold payment to set out on pilgrimage would need to be paid again.
 
@@ -187,16 +191,18 @@ The Solar Aspect system compares the current in-game month to the character's bi
 * **Solar Return (Birthday Month - 0 distance):** *Peak Vitality.* All Classes yield +20% stat gains. The Banquet rest action costs 50% less Coin (framed as birthday gifts/tributes).
 * **Opposition (6 Months from Birthday):** *Maximum Friction.* All Jobs generate 1.5x Fatigue and Melancholy. The player must rely heavily on Rest actions or banked Coin to survive this month without wiping out.
 * **Trine (4 or 8 Months - Elemental Harmony):** *Natural Flow.* Success rates on all d100 Job checks gain a flat +15% bonus.
-* **Square (3 or 9 Months - Forced Growth):** *Crucible.* Classes yield +30% stat gains, but also generate double the normal Melancholy, representing the immense pressure of rapid development.
+* **Square (3 or 9 Months - Forced Growth):** *Crucible.* Classes yield +30% stat gains, but also generate double their normal Fatigue and Melancholy (Knight 10/0, Hermit 0/10, Smuggler 6/4), representing the immense pressure of rapid development (Q5).
 
 ### System 2: The Lunar Phases (The Weekly Micro)
 
 While the Sun governs the month-long stat modifiers, the Moon governs the week-to-week tactical execution, heavily influencing **Rest Actions** and the **Pilgrimage**.
 
-* **Week 1: New Moon (Concealment):** *The Unseen.* Laboratores activities (The Smuggler, The Alehouse) gain a bonus. On the Pilgrimage, the player can pay a small Coin fee to "bribe/sneak" past one encounter card per route without rolling.
-* **Week 2: Waxing Moon (Momentum):** *Building Force.* Doing the exact same Job or Class as the previous week applies a compounding 1.1x multiplier to the payout/stat gain.
-* **Week 3: Full Moon (Culmination):** *Volatility.* Oratores and Bellatores activities surge. On the Pilgrimage, RPS Advantage multipliers are doubled (from 1.5x to 2.0x), but taking damage deals double Fatigue/Melancholy. It encourages high-risk, high-reward adventuring.
-* **Week 4: Waning Moon (Release):** *Recovery.* All Rest Actions (Bathhouse, Shrine, Banquet) clear 1.5x more Fatigue and Melancholy, encouraging the player to use Week 4 for recovery.
+* **Week 1: New Moon (Concealment):** *The Unseen.* Laboratores activities (The Smuggler, The Alehouse) gain +20% stat gains and payouts. On the Pilgrimage, in a segment entered during the New Moon (including the final gauntlet), the player can pay 10 carried Coin to "bribe/sneak" past one encounter card without rolling. The skipped card counts toward the segment's *N* encounters (so it can complete a segment or win the finale) but gives no loot. The moon is fixed when the segment is entered, and an unused skip does not carry over. An unaffordable skip is unavailable (Q3/Q9).
+* **Week 2: Waxing Moon (Momentum):** *Building Force.* Doing the exact same Job or Class as the previous week applies a single, non-compounding 1.2x multiplier to the payout/stat gain. Rest, travel, convalescence or a different activity breaks the chain (Q4).
+* **Week 3: Full Moon (Culmination):** *Volatility.* Oratores and Bellatores activities (Hedge Knight, Hermit, Village Watch, Scriptorium) gain +20% stat gains and payouts. On the Pilgrimage, RPS Advantage multipliers are doubled (from 1.5x to 2.0x), but failed Bellatores/Oratores approaches deal double Fatigue/Melancholy (Coin losses are not doubled). It encourages high-risk, high-reward adventuring.
+* **Week 4: Waning Moon (Release):** *Recovery.* The paid Rest Actions (Bathhouse, Shrine, Banquet) clear 1.5x more Fatigue and Melancholy, encouraging the player to use Week 4 for recovery. Rest at Home and forced convalescence are unaffected (R2).
+
+Lunar bonuses affect only positive stat gains and job payouts. They never change costs, opposing-stat losses, burdens or success chances. The percentages above are experimental magnitudes (Q4/Q12).
 
 ## 5. Items
 
@@ -212,14 +218,14 @@ consumables serve as "safety nets" while traveling and add complexity to the pus
 
 (the Metheglin is maybe a slight deviation from theme, but from wht I could find, there are not many consumable medieval good luck charms. It's a personal inclusion, since I like homebrewing mead, and also it's my nod to Kingdom Come Deliverance's Savior Schnapps, another alcohol with important gameplay effects.)
 
-Theriac and St. John's Wort can be used between encounters. Metheglin must be used immediately after a failed encounter roll.
+Theriac and St. John's Wort can be used between encounters and at a waystation decision, without spending time, but not while a failed roll awaits a reaction. Metheglin must be used immediately after a failed encounter roll (Q8).
 
 ### Equipment
 
 equipment provides passive buffs and effects on Pilgrimages when carried in the inventory (For now, there is no "paper doll" equipping; to gain an item's effects, it just needs to be in the pouch).
 
 * Gambeson : on a failed Bellatores approach, Fatigue penalty is reduced by 5.
-* Saint's Relic : when facing an Oratores-coded threat (blue encounter card), +10 to roll result.
+* Saint's Relic : when facing an Oratores-coded threat (blue encounter card), +10 percentage points of success chance, whatever the approach, applied before the 5–95% clamp (60% becomes 70%; 90% becomes 95%) (Q10).
 * Weighted Coin : on a failed Laboratores approach, lose half as much Coin
 
 ## 6. The Ending

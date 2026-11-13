@@ -28,7 +28,7 @@ export interface FailurePenaltyInput {
   /**
    * Current Purse Protection percent (`getDerivedStats().purseProtectionPct`).
    * Used only for Laboratores failures when `failure.purseProtection.appliesToLabFailures`
-   * is on (§9 Q2); ignored otherwise.
+   * is on (Q2, settled: on in the candidate); ignored otherwise.
    */
   purseProtectionPct?: number;
 }
@@ -127,7 +127,7 @@ export function roadBonusFor(segmentIndex: number, isFinal: boolean, config: Rul
 
 /**
  * Flat success-probability points from equipment against `threat` (Saint's Relic:
- * +10 versus an Oratores threat). Points add to probability, not to the die (§9 Q10).
+ * +10 versus an Oratores threat). Points add to probability, not to the die (Q10, settled).
  */
 export function equipmentProbabilityBonus(
   equipmentId: string | undefined,
@@ -156,7 +156,7 @@ export function encounterOdds(input: EncounterOddsInput, config: RulesConfig): E
  * Cost of a failed (non-wipeout) encounter.
  *
  * - Bellatores: Fatigue; Full Moon doubles it, **then** Gambeson subtracts its amount
- *   (15 x2 - 5 = 25; order is open, §9 Q6). Never below 0.
+ *   (15 x2 - 5 = 25; Q6, settled). Never below 0.
  * - Oratores: Melancholy; Full Moon doubles it.
  * - Laboratores: carried Coin; never affected by the moon. Weighted Coin (50%) and,
  *   when enabled, Purse Protection multiply together and are floored once (15 -> 7).
