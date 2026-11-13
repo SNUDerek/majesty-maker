@@ -19,9 +19,12 @@
   background-clip: padding-box;
   padding: 22px 26px 34px 34px;
 }
-.panel--parchment .panel__title { margin-left: 14px; }
+.panel--parchment .panel__title, .panel--parchment .modal__title > h2 { margin-left: 14px; }
 /* Tall fixed-height panels: the bottom torn edge is 5-7% of the height. */
 .panel--parchment.panel--tall { padding-bottom: 46px; }
+/* Wide panels (~800px): the torn edge and curl scale with the panel, so fixed insets fall short. */
+.panel--parchment.panel--wide { padding-left: 50px; }
+.panel--parchment.panel--wide .panel__title, .panel--parchment.panel--wide .modal__title > h2 { margin-left: 18px; }
 .panel--inset {
   border-image: url('../../../assets/ui/PNG/panelInset_beige.png') 12 fill / 12px stretch;
 }

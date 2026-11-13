@@ -26,7 +26,7 @@ export function ConditionGauge({
           {projected !== undefined && projected !== value ? `${value} → ${projected}` : value} / {ceiling}
         </span>
       </div>
-      <Bar value={Math.min(value, shown)} ghost={Math.max(value, shown)} cap={ceiling}
+      <Bar value={Math.min(value, shown)} ghost={Math.max(value, shown)} cap={ceiling} now={shown}
         colour={CONDITION_BAR[kind]} label={label} />
       {warning && <span className="gauge__warning">{shown >= ceiling ? 'Collapse!' : 'Near collapse'}</span>}
     </div>

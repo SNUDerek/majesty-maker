@@ -41,13 +41,15 @@ const pctOf = (n: number, max: number) => Math.max(0, Math.min(100, (n / max) * 
  * `cap` to `max` (a ceiling). Both overlays are approximate by design: the
  * numbers are always printed next to the bar.
  */
-export function Bar({ value, max = 100, colour, label, ghost, cap }: {
+export function Bar({ value, max = 100, colour, label, ghost, cap, now }: {
   value: number; max?: number; colour: BarColour; label: string; ghost?: number; cap?: number;
+  /** Value announced to assistive tech; defaults to the ghost (projection) or the value. */
+  now?: number;
 }) {
   const pct = pctOf(value, max);
   const ghostPct = ghost === undefined ? 0 : pctOf(ghost, max);
   return (
-    <div className="bar" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={cap ?? max} aria-valuenow={ghost ?? value}>
+    <div className="bar" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={cap ?? max} aria-valuenow={now ?? ghost ?? value}>
       <div className="bar__track"><Strip colour="back" /></div>
       {ghostPct > pct && (
         <div className="bar__fill bar__fill--ghost" style={{ width: `max(${ghostPct}%, 18px)` }}><Strip colour={colour} /></div>

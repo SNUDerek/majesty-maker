@@ -44,7 +44,7 @@ export function Modal({
     <div ref={ref} className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <div>
         <Panel variant="parchment" className={`modal ${className}`}>
-          <div id={titleId}>{typeof title === 'string' ? <h2>{title}</h2> : title}</div>
+          <div id={titleId} className="modal__title">{typeof title === 'string' ? <h2>{title}</h2> : title}</div>
           {children}
           <div className="modal__actions">{actions}</div>
         </Panel>

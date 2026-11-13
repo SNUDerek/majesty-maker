@@ -70,7 +70,7 @@ export function SaveLoadOverlay() {
     );
   }
   return (
-    <Modal key="slots" className="saveload" title={inGame ? 'Save / Load' : 'Load'} actions={<>
+    <Modal key="slots" className="saveload panel--wide" title={inGame ? 'Save / Load' : 'Load'} actions={<>
       {inGame && <Button onClick={() => store.quitToTitle()}>Quit to title</Button>}
       <Button primary onClick={() => store.closeOverlay()}>Close</Button>
     </>}>

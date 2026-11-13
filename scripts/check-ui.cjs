@@ -9,6 +9,8 @@ const { chromium } = require('playwright');
  * Every visible text leaf, button, bar, image or input inside a parchment panel stays inside the
  * paper's drawn edge. The texture is stretched over the padding box, and its torn edge sits about
  * 4% in from the left, 2.5% right, 3% top and 5% bottom (measured on parchment_1600x1080.webp).
+ * Left keeps 1% clearance past the edge, and nothing may start under the top-left curl
+ * (about 8% of the width by 10% of the height), which scales with the panel.
  */
 async function assertInsideParchment(page, where) {
   const problems = await page.evaluate(() => {
@@ -26,15 +28,17 @@ async function assertInsideParchment(page, where) {
       const w = pad.right - pad.left;
       const h = pad.bottom - pad.top;
       const box = {
-        left: pad.left + 0.04 * w, right: pad.right - 0.025 * w,
+        left: pad.left + 0.05 * w, right: pad.right - 0.025 * w,
         top: pad.top + 0.03 * h, bottom: pad.bottom - 0.05 * h,
       };
+      const curl = { right: pad.left + 0.08 * w, bottom: pad.top + 0.1 * h };
       for (const el of panel.querySelectorAll('*')) {
         const leaf = (el.children.length === 0 && el.textContent.trim() !== '') || el.matches('button, .bar, img, input, select');
         if (!leaf || el.closest('.bar') !== null && !el.matches('.bar')) continue;
         const e = el.getBoundingClientRect();
         if (e.width === 0 || e.height === 0) continue;
-        if (e.left < box.left || e.right > box.right || e.top < box.top || e.bottom > box.bottom) {
+        const underCurl = e.left < curl.right && e.top < curl.bottom;
+        if (underCurl || e.left < box.left || e.right > box.right || e.top < box.top || e.bottom > box.bottom) {
           out.push(`${panel.className.split(' ').slice(1).join('.')} > ${el.tagName.toLowerCase()} "${el.textContent.trim().slice(0, 30)}"`);
         }
       }
@@ -66,6 +70,9 @@ async function assertInsideParchment(page, where) {
       await page.getByRole('button', { name: 'Continue', exact: true }).click();
       await page.getByRole('button', { name: 'Tutoring', exact: true }).waitFor();
       await assertInsideParchment(page, 'home');
+      await page.getByRole('button', { name: 'Menu', exact: true }).click();
+      await assertInsideParchment(page, 'save/load');
+      await page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).click();
       // Kenney gauge fill follows the value (0–100 scale).
       const fill = await page.locator('.home-side .gauge--fatigue .bar__fill:not(.bar__fill--ghost)').getAttribute('style');
       assert.match(fill, /71%/);
@@ -91,6 +98,13 @@ async function assertInsideParchment(page, where) {
       assert.equal(await page.evaluate(() => document.activeElement.textContent), 'Tutoring');
       for (const kind of ['Work', 'Rest']) {
         await page.getByRole('button', { name: kind, exact: true }).click();
+        if (kind === 'Rest') {
+          // A falling projection announces the projected value, not the faded old one.
+          const restGauge = page.locator('.preview .gauge--fatigue');
+          const [, from, to] = (await restGauge.innerText()).match(/(\d+) → (\d+)/);
+          assert.ok(Number(to) < Number(from));
+          assert.equal(await restGauge.locator('[role="meter"]').getAttribute('aria-valuenow'), to);
+        }
         await page.getByRole('button', { name: 'Commit week' }).click();
         await page.getByRole('dialog').getByRole('button', { name: 'Continue' }).click();
       }

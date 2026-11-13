@@ -114,7 +114,7 @@ export function PrepScreen() {
     <Scene image={BACKGROUND.pilgrimage}>
       <TopBar state={state} config={config} onMenu={() => store.setUi({ overlay: 'saveload' })} />
       <div className="prep">
-        <Panel variant="parchment" title="The pilgrimage">
+        <Panel variant="parchment" className="panel--wide" title="The pilgrimage">
           <RouteStrip furthest={state.furthestWaystation} total={config.route.regularSegments} />
           <h2 style={{ marginTop: 16 }}>{info.name}</h2>
           <p>{info.length} encounters · road bonus {signed(info.roadBonus)}%</p>

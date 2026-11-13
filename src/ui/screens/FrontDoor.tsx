@@ -88,7 +88,7 @@ export function SetupScreen() {
   return (
     <Scene image={BACKGROUND.home}>
       <img className="home-princess" src={IMAGES.princessFull} alt="" />
-      <Panel variant="parchment" className="setup panel--tall" title="Before the tale begins">
+      <Panel variant="parchment" className="setup panel--tall panel--wide" title="Before the tale begins">
         <div className="setup__names">
           <label className="field"><span>Her name</span>
             <input value={scionName} maxLength={24} onChange={(e) => setScion(e.target.value)} autoFocus /></label>
