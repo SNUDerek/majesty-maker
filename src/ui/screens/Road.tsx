@@ -11,12 +11,12 @@ import { BACKGROUND, ITEM_ICON } from '../assets.js';
 import { Button, CoinAmount, EstateIcon, Panel } from '../components/basic.js';
 import { RouteStrip, TopBar } from '../components/chrome.js';
 import { ConditionGauge } from '../components/meters.js';
-import { Modal } from '../components/overlays.js';
+import { Modal, ResultRows } from '../components/overlays.js';
+import { EstateName } from '../components/stats.js';
 import { Scene } from '../components/Stage.js';
 import {
   carryPresets, departureAction, departureOption, previewLeave, segmentInfo, segmentMoon,
 } from '../engine/road.js';
-import { sourcesLine } from '../engine/summarize.js';
 import {
   signed, ESTATES, ESTATE_LABEL, LUNAR_LABEL, MATCHUP_LABEL, THREAT_FLAVOUR, itemEffectLabel, penaltyLabel, roadMoonLabel,
 } from '../text/labels.js';
@@ -114,7 +114,7 @@ export function PrepScreen() {
     <Scene image={BACKGROUND.pilgrimage}>
       <TopBar state={state} config={config} onMenu={() => store.setUi({ overlay: 'saveload' })} />
       <div className="prep">
-        <Panel variant="parchment" title="The pilgrimage">
+        <Panel variant="parchment" className="panel--wide" title="The pilgrimage">
           <RouteStrip furthest={state.furthestWaystation} total={config.route.regularSegments} />
           <h2 style={{ marginTop: 16 }}>{info.name}</h2>
           <p>{info.length} encounters · road bonus {signed(info.roadBonus)}%</p>
@@ -228,10 +228,11 @@ function ChooseApproach({ state, config, onAct }: { state: CampaignState; config
         {approaches.map((a, i) => (
           <button key={a.estate} type="button" className="approach" onClick={() => onAct({ type: 'CHOOSE_APPROACH', estate: a.estate })}>
             <span className="approach__icon"><EstateIcon estate={a.estate} /></span>
-            <span className="approach__name"><span className="key">{i + 1}</span>{ESTATE_LABEL[a.estate]}</span>
+            <span className="approach__name"><span className="key">{i + 1}</span><EstateName estate={a.estate} /></span>
             <span className="approach__odds num">{a.odds.probability}%</span>
             <span className="approach__meta">
-              {MATCHUP_LABEL[a.odds.matchup]} · win: +{a.reward.min}–{a.reward.max} Coin · fail: {penaltyLabel(a.failure)}
+              {MATCHUP_LABEL[a.odds.matchup]} · win: +{a.reward.min}–{a.reward.max} Coin · fail:{' '}
+              <span className={a.failure.resource === 'coin' ? '' : 'st st--cost'}>{penaltyLabel(a.failure)}</span>
               {a.failureWipesOut && <span className="warn"> · failure means wipeout</span>}
             </span>
           </button>
@@ -299,11 +300,7 @@ function RetreatConfirm({ state, config, onCancel, onConfirm }: {
       <Button onClick={onCancel}>Stay</Button>
       <Button primary onClick={onConfirm}>Retreat</Button>
     </>}>
-      <table className="result__rows"><tbody>
-        {retreat.rows.map((r) => (
-          <tr key={r.quantity}><td>{r.label}</td><td className={`num ${r.tone}`}>{signed(r.amount)}</td><td>{sourcesLine(r)}</td></tr>
-        ))}
-      </tbody></table>
+      <ResultRows rows={retreat.rows} />
       {retreat.notes.map((n) => <p key={n} className="warn">{n}</p>)}
       <p className="muted" style={{ marginTop: 8 }}>No time passes. Waystations already secured are kept.</p>
     </Modal>

@@ -6,7 +6,7 @@ import { ConditionGauge, StatBlock } from '../components/meters.js';
 import { Scene } from '../components/Stage.js';
 import { activityOptions } from '../engine/activities.js';
 import { departureBlocker } from '../engine/road.js';
-import { ESTATES, SIGN_LABEL, criticalPeriodLabel } from '../text/labels.js';
+import { ESTATES, SIGN_LABEL, criticalPeriodLabel, fullName } from '../text/labels.js';
 import { useGame } from '../useStore.js';
 
 export function SidePanel() {
@@ -15,19 +15,19 @@ export function SidePanel() {
   const derived = getDerivedStats(state, store.config);
   const items = Object.entries(state.inventory).filter(([, n]) => n > 0);
   return (
-    <Panel variant="parchment" className="home-side">
-      <h2>{state.scionName}</h2>
+    <Panel variant="parchment" className="home-side panel--tall">
+      <h2>{fullName(state)}</h2>
       <span className="muted">Born under {SIGN_LABEL[state.birthSign]}</span>
-      <h3>Estates</h3>
+      <h3 className="side-heading">Estates</h3>
       {ESTATES.map((e) => <StatBlock key={e} estate={e} value={state.stats[e]} />)}
-      <h3>Condition</h3>
+      <h3 className="side-heading">Condition</h3>
       <ConditionGauge kind="fatigue" value={state.fatigue} ceiling={derived.fatigueCeiling} />
       <ConditionGauge kind="melancholy" value={state.melancholy} ceiling={derived.melancholyCeiling} />
       <span className="forecast">Purse Protection: <span className="num">{derived.purseProtectionPct}%</span></span>
       <span className="forecast">Treasury: <CoinAmount amount={state.treasury} /></span>
       {items.length > 0 && (
         <>
-          <h3>Inventory</h3>
+          <h3 className="side-heading">Inventory</h3>
           <div className="chips">
             {items.map(([id, n]) => (
               <span key={id} className="coin">
@@ -74,10 +74,10 @@ export function HomeHub({ convalescence }: { convalescence: boolean }) {
               <Button disabled={blocker !== null} title={blocker ?? undefined} onClick={() => store.setUi({ homeView: 'prep' })}>
                 Pilgrimage
               </Button>
+              <Button disabled title="Social visits come later">Social (later)</Button>
             </div>
           )}
           {!convalescence && blocker !== null && <p className="home-note" style={{ marginTop: 8 }}>Pilgrimage: {blocker}.</p>}
-          <p className="home-note" style={{ marginTop: 8 }}>Social visits come later.</p>
         </Panel>
         <Panel title="The road to the capital">
           <RouteStrip furthest={state.furthestWaystation} total={store.config.route.regularSegments} />

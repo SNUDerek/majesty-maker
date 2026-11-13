@@ -6,12 +6,25 @@
   padding: var(--space-3) var(--space-4);
   color: var(--ink);
 }
+/*
+ * Parchment on a Kenney brown board. The texture is stretched to the panel (not cropped), so its
+ * torn edge always sits at the same fraction of the panel: ~4% in from the left, ~2.5% right,
+ * ~3% top (curl at top-left) and 5-7% bottom. Content padding keeps text inside that edge.
+ */
 .panel--parchment {
   border-image: url('../../../assets/ui/PNG/panel_brown.png') 12 / 12px stretch;
-  background-color: var(--parchment);
-  background-size: cover;
+  background-color: var(--board);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
   background-clip: padding-box;
+  padding: 22px 26px 34px 34px;
 }
+.panel--parchment .panel__title, .panel--parchment .modal__title > h2 { margin-left: 14px; }
+/* Tall fixed-height panels: the bottom torn edge is 5-7% of the height. */
+.panel--parchment.panel--tall { padding-bottom: 46px; }
+/* Wide panels (~800px): the torn edge and curl scale with the panel, so fixed insets fall short. */
+.panel--parchment.panel--wide { padding-left: 50px; }
+.panel--parchment.panel--wide .panel__title, .panel--parchment.panel--wide .modal__title > h2 { margin-left: 18px; }
 .panel--inset {
   border-image: url('../../../assets/ui/PNG/panelInset_beige.png') 12 fill / 12px stretch;
 }
@@ -69,31 +82,18 @@
 .bar__fill { overflow: hidden; }
 .bar__fill-inner { display: flex; width: 100%; min-width: 18px; }
 
-/* ---------- Condition gauge (plain CSS) ---------- */
+/* ---------- Condition gauge (Kenney bar + overlays) ---------- */
 .gauge { display: grid; gap: 2px; }
 .gauge__head { display: flex; justify-content: space-between; font-size: var(--text-sm); }
-.gauge__track {
-  position: relative;
-  height: 14px;
-  border: 1px solid var(--ink-muted);
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.35);
-  overflow: hidden;
+.bar__fill--ghost { opacity: 0.4; }
+/* Hatched region above the ceiling; inset to roughly match the bar's transparent margin. */
+.bar__cap-zone {
+  position: absolute; top: 2px; bottom: 2px; right: 2px;
+  border-radius: 0 6px 6px 0;
+  background: repeating-linear-gradient(135deg, rgba(60, 50, 40, 0.55) 0 3px, rgba(200, 190, 170, 0.55) 3px 6px);
 }
-.gauge__fill, .gauge__ghost, .gauge__locked { position: absolute; top: 0; bottom: 0; }
-.gauge__fill { left: 0; }
-.gauge__ghost { opacity: 0.45; }
-.gauge__locked {
-  right: 0;
-  background: repeating-linear-gradient(135deg, #8d877c 0 4px, #b5afa3 4px 8px);
-}
-.gauge__tick {
-  position: absolute; top: -2px; bottom: -2px; width: 2px;
-  background: var(--ink);
-}
-.gauge--fatigue .gauge__fill, .gauge--fatigue .gauge__ghost { background: var(--fatigue); }
-.gauge--melancholy .gauge__fill, .gauge--melancholy .gauge__ghost { background: var(--melancholy); }
-.gauge--warning .gauge__track { animation: pulse 1.2s ease-in-out infinite alternate; }
+.bar__cap-tick { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--ink); }
+.gauge--warning .bar { animation: pulse 1.2s ease-in-out infinite alternate; border-radius: 9px; }
 .gauge__warning { font-size: var(--text-sm); color: var(--bad); font-style: italic; }
 @keyframes pulse { from { box-shadow: 0 0 0 0 rgba(163, 39, 31, 0); } to { box-shadow: 0 0 0 3px rgba(163, 39, 31, 0.55); } }
 
@@ -206,13 +206,14 @@
   overflow: hidden;
 }
 .home-side h3 { margin-top: var(--space-2); }
+.side-heading { font-family: var(--font-head); font-style: normal; font-size: var(--text-lg); }
 .home-side .stat { margin-bottom: 6px; }
 .home-centre {
   position: absolute; top: 68px; left: 360px; right: 364px; bottom: 12px;
   display: flex; flex-direction: column; justify-content: flex-end; gap: var(--space-3);
 }
-.home-menu { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
-.home-menu .btn { width: 100%; min-height: 56px; font-size: var(--text-lg); }
+.home-menu { display: grid; grid-template-columns: 1fr; gap: var(--space-2); max-width: 360px; margin: 0 auto; }
+.home-menu .btn { width: 100%; min-height: 50px; font-size: var(--text-lg); }
 .home-note { font-size: var(--text-sm); color: var(--ink-muted); font-style: italic; }
 .banner {
   padding: var(--space-2) var(--space-3);
@@ -227,8 +228,7 @@
 }
 .activity__cards { display: grid; gap: var(--space-3); align-content: start; }
 .activity__cards--tutor { grid-template-columns: repeat(3, 1fr); }
-.activity__cards--job { grid-template-columns: repeat(2, 1fr); }
-.activity__cards--rest { grid-template-columns: repeat(2, 1fr); }
+.activity__cards--job, .activity__cards--rest { grid-template-columns: 1fr; max-width: 620px; gap: var(--space-2); }
 .activity__header { grid-column: 1 / -1; color: #f6e7c1; text-shadow: 0 2px 4px #000; }
 
 .card {
@@ -282,7 +282,6 @@
 .hud__stats .dim { opacity: 0.6; }
 .hud__gauges { width: 240px; display: grid; gap: 2px; }
 .hud__gauges .gauge__head { font-size: 13px; }
-.hud__gauges .gauge__track { height: 10px; background: rgba(255, 255, 255, 0.6); }
 .hud__gauges .gauge__warning { display: none; }
 
 .road {
@@ -386,3 +385,10 @@
 .field select { width: 100%; }
 .prep-gauges { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-top: var(--space-2); }
 .prep > .panel { max-height: 100%; overflow: auto; }
+
+/* ---------- Colour-coded stat text ---------- */
+.st--bellatores { color: var(--bellatores); }
+.st--oratores { color: var(--oratores); }
+.st--laboratores { color: var(--laboratores); }
+.st--cost { color: var(--muted-cost); }
+.stat-line { display: block; }

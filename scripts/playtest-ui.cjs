@@ -51,7 +51,7 @@ const homeOnly = args.includes('--home-only');
       await page.locator('.approach').nth(best).click(); continue;
     }
     if (await page.locator('text=A failed roll').count()) { await page.click('button:has-text("Accept failure")'); continue; }
-    const warn = await page.locator('.hud .gauge__track').evaluateAll((els) => els.some((e) => e.closest('.gauge--warning')));
+    const warn = await page.locator('.hud .gauge--warning').count().then((n) => n > 0);
     if (await page.locator('text=Press on, or turn back').count()) {
       if (warn) { await page.click('button:has-text("Retreat home")'); await shot('retreat'); await page.click('.modal-backdrop button:has-text("Retreat")'); }
       else await page.click('button:has-text("Press on")');

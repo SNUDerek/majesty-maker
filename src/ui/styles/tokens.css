@@ -4,8 +4,10 @@
   --surround: #15110c;
   --bellatores: #a3271f;    --oratores: #24508f;    --laboratores: #2f6b2c;
   --fatigue: #c99a1a;       --melancholy: #6b4a8c;
+  --muted-cost: #5f574d;    /* condition (Fatigue/Melancholy) changes in text */
   --good: #2f6b2c;          --bad: #a3271f;
   --focus: #f2c14e;
+  --board: #97714a;         /* Kenney panel_brown interior, under the parchment's torn edge */
   --scrim: rgba(18, 12, 6, 0.72);
   --font-body: 'IM Fell English', Georgia, serif;
   --font-head: 'Canterbury', 'IM Fell English', serif;

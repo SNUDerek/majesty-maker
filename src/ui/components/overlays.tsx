@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { sourcesLine, weeksLine, type ResultSummary } from '../engine/summarize.js';
 import { signed } from '../text/labels.js';
 import { Button, Panel } from './basic.js';
+import { quantityClass } from './stats.js';
 
 export function Modal({
   title, children, actions, className = '',
@@ -43,12 +44,29 @@ export function Modal({
     <div ref={ref} className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <div>
         <Panel variant="parchment" className={`modal ${className}`}>
-          <div id={titleId}>{typeof title === 'string' ? <h2>{title}</h2> : title}</div>
+          <div id={titleId} className="modal__title">{typeof title === 'string' ? <h2>{title}</h2> : title}</div>
           {children}
           <div className="modal__actions">{actions}</div>
         </Panel>
       </div>
     </div>
+  );
+}
+
+/** Net changes, coloured by quantity (Estate colour, grey conditions, ink Coin), with sources. */
+export function ResultRows({ rows }: { rows: ResultSummary['rows'] }) {
+  return (
+    <table className="result__rows">
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.quantity}>
+            <td className={quantityClass(row.quantity)}>{row.label}</td>
+            <td className={`num ${quantityClass(row.quantity)}`}>{signed(row.amount)}</td>
+            <td>{sourcesLine(row)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
@@ -65,17 +83,7 @@ export function ResultPanel({ summary, onDismiss }: { summary: ResultSummary; on
       actions={<Button primary onClick={onDismiss}>Continue</Button>}
     >
       {summary.rows.length > 0 && (
-        <table className="result__rows">
-          <tbody>
-            {summary.rows.map((row) => (
-              <tr key={row.quantity}>
-                <td>{row.label}</td>
-                <td className={`num ${row.tone}`}>{signed(row.amount)}</td>
-                <td>{sourcesLine(row)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <ResultRows rows={summary.rows} />
       )}
       <p className="muted" style={{ marginTop: 8 }}>{weeksLine(summary.weeks)}</p>
       {summary.notes.length > 0 && <ul className="result__notes">{summary.notes.map((n) => <li key={n}>{n}</li>)}</ul>}

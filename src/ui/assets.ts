@@ -119,6 +119,12 @@ export const BAR: Record<BarColour, readonly [string, string, string]> = {
   yellow: [barYellowL, barYellowM, barYellowR],
 };
 
+/** Condition bars share the Estate colours for now; swap in re-hued bar art here. */
+export const CONDITION_BAR: Record<'fatigue' | 'melancholy', BarColour> = {
+  fatigue: 'red',
+  melancholy: 'blue',
+};
+
 export const ESTATE_BAR: Record<Estate, BarColour> = {
   bellatores: 'red',
   oratores: 'blue',
