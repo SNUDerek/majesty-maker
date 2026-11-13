@@ -49,7 +49,8 @@ function rowTone(quantity: Quantity, amount: number): Tone {
   return (amount > 0) === risingIsGood ? 'good' : 'bad';
 }
 
-function collectRows(events: readonly GameEvent[]): ResultRow[] {
+/** Net change per quantity across the events, with sources (also used by the Chronicle). */
+export function collectRows(events: readonly GameEvent[]): ResultRow[] {
   const rows = new Map<Quantity, { amount: number; parts: Map<string, number> }>();
   const add = (quantity: Quantity, amount: number, source: string): void => {
     const row = rows.get(quantity) ?? { amount: 0, parts: new Map<string, number>() };

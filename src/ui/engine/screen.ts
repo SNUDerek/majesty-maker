@@ -7,7 +7,7 @@ import type { ResultSummary } from './summarize.js';
 
 export type HomeView = 'hub' | 'tutor' | 'job' | 'rest' | 'prep';
 export type Menu = 'title' | 'intro' | 'setup' | 'game';
-export type Overlay = 'saveload' | 'credits';
+export type Overlay = 'saveload' | 'credits' | 'chronicle';
 
 export interface UiState {
   menu: Menu;

@@ -4,6 +4,8 @@
  */
 import { getAvailableActions, getCalendar, getDerivedStats, hashConfig, previewApproaches, type CampaignState, type RulesConfig } from '../../core/index.js';
 
+import type { ChronicleEntry } from './chronicle.js';
+
 export type SlotId = 'auto' | 'slot1' | 'slot2' | 'slot3';
 export const SLOTS: readonly SlotId[] = ['auto', 'slot1', 'slot2', 'slot3'];
 
@@ -14,6 +16,8 @@ export interface SaveFile {
   configId: string;
   configHash: string;
   state: CampaignState;
+  /** The Chronicle (absent in older saves, which then load with an empty log). */
+  log?: ChronicleEntry[];
 }
 
 export type SlotInfo =
@@ -28,16 +32,28 @@ export function slotKey(slot: SlotId): string {
   return `hidden-scion:${slot}`;
 }
 
-export function writeSave(storage: SaveStorage, slot: SlotId, state: CampaignState, config: RulesConfig, now: Date): SaveFile {
+export function writeSave(
+  storage: SaveStorage, slot: SlotId, state: CampaignState, config: RulesConfig, now: Date,
+  log: readonly ChronicleEntry[] = [],
+): SaveFile {
   const save: SaveFile = {
     format: 1,
     savedAt: now.toISOString(),
     configId: config.id,
     configHash: hashConfig(config),
     state,
+    log: [...log],
   };
   storage.setItem(slotKey(slot), JSON.stringify(save));
   return save;
+}
+
+/** The saved Chronicle, keeping only well-formed entries; anything else reads as an empty log. */
+function readLog(value: unknown): ChronicleEntry[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((e): e is ChronicleEntry => typeof e === 'object' && e !== null
+    && Number.isSafeInteger((e as ChronicleEntry).week) && typeof (e as ChronicleEntry).title === 'string'
+    && Array.isArray((e as ChronicleEntry).rows) && Array.isArray((e as ChronicleEntry).notes));
 }
 
 function isSaveFile(value: unknown): value is SaveFile {
@@ -89,7 +105,7 @@ export function readSlot(storage: SaveStorage, slot: SlotId, config: RulesConfig
     getCalendar(state, config);
     getDerivedStats(state, config);
     getAvailableActions(state, config);
-    return { slot, status: 'ok', save: parsed, compatible: parsed.configHash === hashConfig(config) };
+    return { slot, status: 'ok', save: { ...parsed, log: readLog(parsed.log) }, compatible: parsed.configHash === hashConfig(config) };
   } catch {
     return { slot, status: 'corrupt' };
   }
