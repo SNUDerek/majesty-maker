@@ -79,31 +79,18 @@
 .bar__fill { overflow: hidden; }
 .bar__fill-inner { display: flex; width: 100%; min-width: 18px; }
 
-/* ---------- Condition gauge (plain CSS) ---------- */
+/* ---------- Condition gauge (Kenney bar + overlays) ---------- */
 .gauge { display: grid; gap: 2px; }
 .gauge__head { display: flex; justify-content: space-between; font-size: var(--text-sm); }
-.gauge__track {
-  position: relative;
-  height: 14px;
-  border: 1px solid var(--ink-muted);
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.35);
-  overflow: hidden;
+.bar__fill--ghost { opacity: 0.4; }
+/* Hatched region above the ceiling; inset to roughly match the bar's transparent margin. */
+.bar__cap-zone {
+  position: absolute; top: 2px; bottom: 2px; right: 2px;
+  border-radius: 0 6px 6px 0;
+  background: repeating-linear-gradient(135deg, rgba(60, 50, 40, 0.55) 0 3px, rgba(200, 190, 170, 0.55) 3px 6px);
 }
-.gauge__fill, .gauge__ghost, .gauge__locked { position: absolute; top: 0; bottom: 0; }
-.gauge__fill { left: 0; }
-.gauge__ghost { opacity: 0.45; }
-.gauge__locked {
-  right: 0;
-  background: repeating-linear-gradient(135deg, #8d877c 0 4px, #b5afa3 4px 8px);
-}
-.gauge__tick {
-  position: absolute; top: -2px; bottom: -2px; width: 2px;
-  background: var(--ink);
-}
-.gauge--fatigue .gauge__fill, .gauge--fatigue .gauge__ghost { background: var(--fatigue); }
-.gauge--melancholy .gauge__fill, .gauge--melancholy .gauge__ghost { background: var(--melancholy); }
-.gauge--warning .gauge__track { animation: pulse 1.2s ease-in-out infinite alternate; }
+.bar__cap-tick { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--ink); }
+.gauge--warning .bar { animation: pulse 1.2s ease-in-out infinite alternate; border-radius: 9px; }
 .gauge__warning { font-size: var(--text-sm); color: var(--bad); font-style: italic; }
 @keyframes pulse { from { box-shadow: 0 0 0 0 rgba(163, 39, 31, 0); } to { box-shadow: 0 0 0 3px rgba(163, 39, 31, 0.55); } }
 
@@ -292,7 +279,6 @@
 .hud__stats .dim { opacity: 0.6; }
 .hud__gauges { width: 240px; display: grid; gap: 2px; }
 .hud__gauges .gauge__head { font-size: 13px; }
-.hud__gauges .gauge__track { height: 10px; background: rgba(255, 255, 255, 0.6); }
 .hud__gauges .gauge__warning { display: none; }
 
 .road {

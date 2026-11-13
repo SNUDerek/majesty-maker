@@ -1,5 +1,5 @@
 import type { Estate } from '../../core/index.js';
-import { ESTATE_BAR } from '../assets.js';
+import { CONDITION_BAR, ESTATE_BAR } from '../assets.js';
 import { ESTATE_LABEL, signed } from '../text/labels.js';
 import { Bar, EstateIcon } from './basic.js';
 
@@ -7,8 +7,10 @@ import { Bar, EstateIcon } from './basic.js';
 export const WARNING_RATIO = 0.8;
 
 /**
- * 0–100 track: fill = current, ghost = projected, hatched above the ceiling.
- * Colour is never the only cue: the label and numbers are always shown.
+ * Fatigue / Melancholy on the Kenney bar: fill = current, faded fill = the
+ * projection when it rises, hatched from the ceiling to 100. Falling
+ * projections (rests) show the new value as the fill and the old as the
+ * faded part, so the drop is visible. Label and numbers are always shown.
  */
 export function ConditionGauge({
   kind, value, ceiling, projected,
@@ -16,9 +18,6 @@ export function ConditionGauge({
   const label = kind === 'fatigue' ? 'Fatigue' : 'Melancholy';
   const shown = projected ?? value;
   const warning = shown >= ceiling * WARNING_RATIO;
-  const clamp = (n: number) => Math.max(0, Math.min(100, n));
-  const low = Math.min(value, shown);
-  const high = Math.max(value, shown);
   return (
     <div className={`gauge gauge--${kind} ${warning ? 'gauge--warning' : ''}`}>
       <div className="gauge__head">
@@ -27,12 +26,8 @@ export function ConditionGauge({
           {projected !== undefined && projected !== value ? `${value} → ${projected}` : value} / {ceiling}
         </span>
       </div>
-      <div className="gauge__track" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={ceiling} aria-valuenow={shown}>
-        <div className="gauge__fill" style={{ width: `${clamp(low)}%` }} />
-        {high > low && <div className="gauge__ghost" style={{ left: `${clamp(low)}%`, width: `${clamp(high) - clamp(low)}%` }} />}
-        <div className="gauge__locked" style={{ width: `${100 - clamp(ceiling)}%` }} />
-        <div className="gauge__tick" style={{ left: `calc(${clamp(ceiling)}% - 1px)` }} />
-      </div>
+      <Bar value={Math.min(value, shown)} ghost={Math.max(value, shown)} cap={ceiling}
+        colour={CONDITION_BAR[kind]} label={label} />
       {warning && <span className="gauge__warning">{shown >= ceiling ? 'Collapse!' : 'Near collapse'}</span>}
     </div>
   );

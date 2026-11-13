@@ -21,24 +21,45 @@ export function Button({
   return <button type="button" className={`btn ${primary ? 'btn--primary' : ''} ${className}`} {...rest} />;
 }
 
-/** Kenney three-part bar; `value` of `max`. */
-export function Bar({ value, max = 100, colour, label }: { value: number; max?: number; colour: BarColour; label: string }) {
-  const pct = Math.max(0, Math.min(100, (value / max) * 100));
-  const [bl, bm, br] = BAR.back;
+/** One three-part Kenney strip (caps + repeating middle) filling its box. */
+function Strip({ colour }: { colour: BarColour }) {
   const [l, m, r] = BAR[colour];
   return (
-    <div className="bar" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={max} aria-valuenow={value}>
-      <div className="bar__track">
-        <span className="bar__cap" style={{ backgroundImage: `url(${bl})` }} />
-        <span className="bar__mid" style={{ backgroundImage: `url(${bm})` }} />
-        <span className="bar__cap" style={{ backgroundImage: `url(${br})` }} />
-      </div>
+    <>
+      <span className="bar__cap" style={{ backgroundImage: `url(${l})` }} />
+      <span className="bar__mid" style={{ backgroundImage: `url(${m})` }} />
+      <span className="bar__cap" style={{ backgroundImage: `url(${r})` }} />
+    </>
+  );
+}
+
+const pctOf = (n: number, max: number) => Math.max(0, Math.min(100, (n / max) * 100));
+
+/**
+ * Kenney three-part bar; `value` of `max`. Optional `ghost` draws a faded
+ * fill up to that value (a projection), and `cap` hatches the region from
+ * `cap` to `max` (a ceiling). Both overlays are approximate by design: the
+ * numbers are always printed next to the bar.
+ */
+export function Bar({ value, max = 100, colour, label, ghost, cap }: {
+  value: number; max?: number; colour: BarColour; label: string; ghost?: number; cap?: number;
+}) {
+  const pct = pctOf(value, max);
+  const ghostPct = ghost === undefined ? 0 : pctOf(ghost, max);
+  return (
+    <div className="bar" role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={cap ?? max} aria-valuenow={ghost ?? value}>
+      <div className="bar__track"><Strip colour="back" /></div>
+      {ghostPct > pct && (
+        <div className="bar__fill bar__fill--ghost" style={{ width: `max(${ghostPct}%, 18px)` }}><Strip colour={colour} /></div>
+      )}
       {pct > 0 && (
-        <div className="bar__fill" style={{ width: `max(${pct}%, 18px)` }}>
-          <span className="bar__cap" style={{ backgroundImage: `url(${l})` }} />
-          <span className="bar__mid" style={{ backgroundImage: `url(${m})` }} />
-          <span className="bar__cap" style={{ backgroundImage: `url(${r})` }} />
-        </div>
+        <div className="bar__fill" style={{ width: `max(${pct}%, 18px)` }}><Strip colour={colour} /></div>
+      )}
+      {cap !== undefined && cap < max && (
+        <>
+          <div className="bar__cap-zone" style={{ left: `${pctOf(cap, max)}%` }} />
+          <div className="bar__cap-tick" style={{ left: `calc(${pctOf(cap, max)}% - 1px)` }} />
+        </>
       )}
     </div>
   );
