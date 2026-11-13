@@ -1,5 +1,6 @@
 /** Browser regression checks. Requires Playwright + Chromium and a running dev server.
  * Run: node scripts/check-ui.cjs [URL]. NODE_PATH may point to an existing Playwright installation.
+ * Covers New Game → intro → setup → home activities, modal focus and stage scaling.
  */
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
@@ -13,6 +14,9 @@ const { chromium } = require('playwright');
       page.on('pageerror', (error) => errors.push(error.message));
       await page.goto(process.argv[2] ?? 'http://127.0.0.1:5173');
       await page.getByRole('button', { name: 'New Game', exact: true }).click();
+      await page.getByRole('button', { name: 'Skip', exact: true }).click();
+      await page.getByRole('button', { name: 'Begin', exact: true }).click();
+      await page.getByRole('button', { name: 'Tutoring', exact: true }).waitFor();
       await page.evaluate(() => {
         const save = JSON.parse(localStorage.getItem('hidden-scion:auto'));
         Object.assign(save.state, { birthSign: 'aries', elapsedWeeks: 1, fatigue: 71 });
@@ -37,6 +41,8 @@ const { chromium } = require('playwright');
       await page.keyboard.press('Enter');
       await dialog.waitFor({ state: 'detached' });
       assert.equal(await page.locator('.scene').evaluate((scene) => scene.inert), false);
+      // Focus returns to the new screen's main action, not <body>.
+      assert.equal(await page.evaluate(() => document.activeElement.textContent), 'Tutoring');
       for (const kind of ['Work', 'Rest']) {
         await page.getByRole('button', { name: kind, exact: true }).click();
         await page.getByRole('button', { name: 'Commit week' }).click();

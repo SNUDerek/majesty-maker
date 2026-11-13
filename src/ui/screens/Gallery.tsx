@@ -14,9 +14,9 @@ const SAMPLE_RESULT: ResultSummary = {
   detail: 'Rolled 72 against 50%.',
   tone: 'bad',
   rows: [
-    { quantity: 'fatigue', label: 'Fatigue', amount: 5, sources: ['work'], tone: 'bad' },
-    { quantity: 'melancholy', label: 'Melancholy', amount: 5, sources: ['work'], tone: 'bad' },
-    { quantity: 'treasury', label: 'Treasury', amount: -20, sources: ['physician fee'], tone: 'bad' },
+    { quantity: 'fatigue', label: 'Fatigue', amount: 5, sources: ['work'], parts: [{ source: 'work', amount: 5 }], tone: 'bad' },
+    { quantity: 'melancholy', label: 'Melancholy', amount: 5, sources: ['work'], parts: [{ source: 'work', amount: 5 }], tone: 'bad' },
+    { quantity: 'treasury', label: 'Treasury', amount: -20, sources: ['physician fee'], parts: [{ source: 'physician fee', amount: -20 }], tone: 'bad' },
   ],
   weeks: { count: 1, reasons: ['job'] },
   notes: ['She collapsed from Fatigue. Next week is spent recovering.'],

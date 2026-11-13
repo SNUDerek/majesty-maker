@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
-import { weeksLine, type ResultSummary } from '../engine/summarize.js';
+import { sourcesLine, weeksLine, type ResultSummary } from '../engine/summarize.js';
 import { signed } from '../text/labels.js';
 import { Button, Panel } from './basic.js';
 
@@ -35,6 +35,8 @@ export function Modal({
       modal.removeEventListener('keydown', trapTab);
       siblings.forEach((element, index) => { element.inert = inertBefore[index]!; });
       if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
+      // The opener is gone (e.g. the screen changed under a result): focus the new screen's main action.
+      else document.querySelector<HTMLElement>('[data-autofocus]:not(:disabled), .scene .btn--primary:not(:disabled)')?.focus();
     };
   }, []);
   return (
@@ -69,7 +71,7 @@ export function ResultPanel({ summary, onDismiss }: { summary: ResultSummary; on
               <tr key={row.quantity}>
                 <td>{row.label}</td>
                 <td className={`num ${row.tone}`}>{signed(row.amount)}</td>
-                <td>{row.sources.join(', ')}</td>
+                <td>{sourcesLine(row)}</td>
               </tr>
             ))}
           </tbody>

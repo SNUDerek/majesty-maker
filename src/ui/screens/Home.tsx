@@ -5,6 +5,7 @@ import { RouteStrip, TopBar } from '../components/chrome.js';
 import { ConditionGauge, StatBlock } from '../components/meters.js';
 import { Scene } from '../components/Stage.js';
 import { activityOptions } from '../engine/activities.js';
+import { departureBlocker } from '../engine/road.js';
 import { ESTATES, SIGN_LABEL, criticalPeriodLabel } from '../text/labels.js';
 import { useGame } from '../useStore.js';
 
@@ -45,10 +46,11 @@ export function HomeHub({ convalescence }: { convalescence: boolean }) {
   const { store, snap } = useGame();
   const state = snap.state!;
   const derived = getDerivedStats(state, store.config);
+  const blocker = departureBlocker(state, store.config);
   const restHome = activityOptions(state, 'rest', store.config).find((o) => o.preview.activityId === 'rest_home')!;
   return (
     <Scene image={BACKGROUND.home}>
-      <TopBar state={state} config={store.config} onMenu={() => store.quitToTitle()} />
+      <TopBar state={state} config={store.config} onMenu={() => store.setUi({ overlay: 'saveload' })} />
       <img className="home-princess" src={IMAGES.princessFull} alt={state.scionName} />
       <div className="home-centre">
         <Panel variant="parchment" title="How shall she spend this week?">
@@ -61,18 +63,21 @@ export function HomeHub({ convalescence }: { convalescence: boolean }) {
             <>
               <p className="banner">She collapsed and must spend this week resting at home.</p>
               <div className="home-menu" style={{ marginTop: 12 }}>
-                <Button primary autoFocus onClick={() => store.dispatch(restHome.action)}>Rest at home</Button>
+                <Button primary autoFocus data-autofocus onClick={() => store.dispatch(restHome.action)}>Rest at home</Button>
               </div>
             </>
           ) : (
             <div className="home-menu">
-              <Button onClick={() => store.setUi({ homeView: 'tutor' })}>Tutoring</Button>
+              <Button data-autofocus onClick={() => store.setUi({ homeView: 'tutor' })}>Tutoring</Button>
               <Button onClick={() => store.setUi({ homeView: 'job' })}>Work</Button>
               <Button onClick={() => store.setUi({ homeView: 'rest' })}>Rest</Button>
-              <Button disabled title="Arrives in the next build">Pilgrimage</Button>
+              <Button disabled={blocker !== null} title={blocker ?? undefined} onClick={() => store.setUi({ homeView: 'prep' })}>
+                Pilgrimage
+              </Button>
             </div>
           )}
-          <p className="home-note" style={{ marginTop: 8 }}>Social visits come later. Pilgrimage arrives in the next build.</p>
+          {!convalescence && blocker !== null && <p className="home-note" style={{ marginTop: 8 }}>Pilgrimage: {blocker}.</p>}
+          <p className="home-note" style={{ marginTop: 8 }}>Social visits come later.</p>
         </Panel>
         <Panel title="The road to the capital">
           <RouteStrip furthest={state.furthestWaystation} total={store.config.route.regularSegments} />

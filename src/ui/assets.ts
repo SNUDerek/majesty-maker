@@ -1,8 +1,9 @@
 /**
- * Asset registry (docs/ui-technical-plan.md §3.3). Every file the UI uses is
+ * Asset registry (docs/archive/ui-technical-plan.md §3.3). Every file the UI uses is
  * imported here so a missing file fails the build. Keyed by content id.
  */
 import type { ActivityId, Estate, LunarPhase } from '../core/index.js';
+import type { IntroPanelId } from './text/intro.js';
 
 import bgCapital from '../../assets/backgrounds/background_capital_1920x1080.webp';
 import bgHome from '../../assets/backgrounds/background_home_1920x1080.webp';
@@ -35,6 +36,16 @@ import itemGambeson from '../../assets/items/item_gambeson.png';
 import itemRelic from '../../assets/items/item_saints_relic.png';
 import itemWeightedCoin from '../../assets/items/item_weighted_coin.png';
 import coin from '../../assets/items/gold/gold_pile.png';
+import intro01A from '../../assets/misc/intro_panels/intro_01A_1024x768.webp';
+import intro01B from '../../assets/misc/intro_panels/intro_01B_1024x768.webp';
+import intro02 from '../../assets/misc/intro_panels/intro_02_1024x768.webp';
+import intro03 from '../../assets/misc/intro_panels/intro_03_1024x768.webp';
+import intro04A from '../../assets/misc/intro_panels/intro_04A_1024x768.webp';
+import intro04C from '../../assets/misc/intro_panels/intro_04C_1024x768.webp';
+import intro05 from '../../assets/misc/intro_panels/intro_05_1024x768.webp';
+import intro06 from '../../assets/misc/intro_panels/intro_06_1024x768.webp';
+import intro07 from '../../assets/misc/intro_panels/intro_07_1024x768.webp';
+import intro08 from '../../assets/misc/intro_panels/intro_08_1024x768.webp';
 import barBackL from '../../assets/ui/PNG/barBack_horizontalLeft.png';
 import barBackM from '../../assets/ui/PNG/barBack_horizontalMid.png';
 import barBackR from '../../assets/ui/PNG/barBack_horizontalRight.png';
@@ -112,4 +123,17 @@ export const ESTATE_BAR: Record<Estate, BarColour> = {
   bellatores: 'red',
   oratores: 'blue',
   laboratores: 'green',
+};
+
+export const INTRO_PANEL: Record<IntroPanelId, string> = {
+  '01A': intro01A,
+  '01B': intro01B,
+  '02': intro02,
+  '03': intro03,
+  '04A': intro04A,
+  '04C': intro04C,
+  '05': intro05,
+  '06': intro06,
+  '07': intro07,
+  '08': intro08,
 };

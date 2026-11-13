@@ -24,16 +24,3 @@ export function OutcomeScreen({ outcome }: { outcome: 'victory' | 'deadline' }) 
     </Scene>
   );
 }
-
-/** Stands in for the pilgrimage screens until U6 (reachable only by loading such a save). */
-export function PilgrimagePlaceholder() {
-  const { store } = useGame();
-  return (
-    <Scene image={BACKGROUND.pilgrimage}>
-      <Panel variant="parchment" className="centre-panel" title="On the road">
-        <p>Pilgrimage screens arrive in the next build.</p>
-        <div className="modal__actions"><Button onClick={() => store.quitToTitle()}>Return to title</Button></div>
-      </Panel>
-    </Scene>
-  );
-}

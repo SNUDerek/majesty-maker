@@ -1,5 +1,5 @@
 /**
- * Pure, draw-free previews for the UI (docs/ui-technical-plan.md §4.2).
+ * Pure, draw-free previews for the UI (docs/archive/ui-technical-plan.md §4.2).
  *
  * Previews never consume RNG and never reveal a roll: they report the
  * guaranteed outcome of tutors and rests, both branches of a job, and the

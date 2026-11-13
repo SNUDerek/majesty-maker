@@ -46,7 +46,7 @@ export function TopBar({ state, config, onMenu }: { state: CampaignState; config
       {derived.solarAspect !== 'none' && <span className="badge">{SOLAR_LABEL[derived.solarAspect]}</span>}
       <span className="topbar__spacer" />
       <span title="Treasury"><CoinAmount amount={state.treasury} /></span>
-      <Button onClick={onMenu}>Title</Button>
+      <Button onClick={onMenu}>Menu</Button>
     </header>
   );
 }

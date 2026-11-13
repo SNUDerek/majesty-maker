@@ -1,5 +1,5 @@
 /**
- * GameStore (docs/ui-technical-plan.md §5.3): the single owner of the
+ * GameStore (docs/archive/ui-technical-plan.md §5.3): the single owner of the
  * campaign state, consumed by React through `useSyncExternalStore`.
  * Plain TS so it can be driven in Node tests.
  */
@@ -15,7 +15,7 @@ import {
   type RulesConfig,
 } from '../../core/index.js';
 import { sameAction } from './activities.js';
-import { readSlot, writeSave, type SaveStorage, type SlotId } from './persistence.js';
+import { SLOTS, deleteSave, readSlot, writeSave, type SaveStorage, type SlotId, type SlotInfo } from './persistence.js';
 import type { UiState } from './screen.js';
 import { summarize } from './summarize.js';
 
@@ -83,7 +83,8 @@ export class GameStore {
 
   newGame(options: CreateCampaignOptions): void {
     const state = createCampaign(options, this.config);
-    this.set({ state, ui: { menu: 'game', homeView: 'hub' }, lastEvents: [], error: null });
+    const { devSeed } = this.snapshot.ui;
+    this.set({ state, ui: { menu: 'game', homeView: 'hub', ...(devSeed === undefined ? {} : { devSeed }) }, lastEvents: [], error: null });
     this.autosave(state);
   }
 
@@ -102,14 +103,47 @@ export class GameStore {
   save(slot: SlotId): void {
     const { state } = this.snapshot;
     if (state === null || this.storage === null) return;
-    writeSave(this.storage, slot, state, this.config, this.now());
+    try {
+      writeSave(this.storage, slot, state, this.config, this.now());
+      this.set({}); // slot listings changed
+    } catch {
+      this.set({ error: 'Saving failed (storage full or blocked).' });
+    }
+  }
+
+  /** Every slot's status, autosave first. Empty when storage is unavailable. */
+  slots(): SlotInfo[] {
+    const storage = this.storage;
+    if (storage === null) return [];
+    return SLOTS.map((slot) => readSlot(storage, slot, this.config));
+  }
+
+  deleteSlot(slot: SlotId): void {
+    if (this.storage === null) return;
+    try {
+      deleteSave(this.storage, slot);
+      this.set({});
+    } catch {
+      this.set({ error: 'Deleting failed (storage blocked).' });
+    }
+  }
+
+  closeOverlay(): void {
+    const { overlay: _closed, ...ui } = this.snapshot.ui;
+    this.set({ ui });
+  }
+
+  /** Dev panel only: replaces the state without going through the engine. Clearly not a game action. */
+  devReplaceState(state: CampaignState): void {
+    this.set({ state, lastEvents: [] });
+    this.autosave(state);
   }
 
   /** Validates against `getAvailableActions`, applies, shows the result and autosaves. */
   dispatch(action: GameAction): void {
     const { state, ui } = this.snapshot;
     if (state === null) return;
-    if (ui.pendingResult !== undefined) return; // the player hasn't seen the last result yet
+    if (ui.pendingResult !== undefined || ui.overlay !== undefined) return; // the player hasn't seen the last result yet
     if (!isAvailable(state, action, this.config)) {
       this.set({ error: 'That action is not available now.' });
       return;
@@ -124,8 +158,9 @@ export class GameStore {
       }
       throw error;
     }
-    const summary = summarize(action, result.events);
-    const isHomeActivity = action.type === 'TRAIN' || action.type === 'WORK' || action.type === 'REST';
+    const summary = summarize(action, result.events, result.state);
+    const isHomeActivity = action.type === 'TRAIN' || action.type === 'WORK' || action.type === 'REST'
+      || action.type === 'BEGIN_PILGRIMAGE';
     const nextUi: UiState = { ...ui, ...(isHomeActivity ? { homeView: 'hub' as const } : {}) };
     delete nextUi.pendingResult;
     if (summary !== null) nextUi.pendingResult = summary;
