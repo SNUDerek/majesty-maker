@@ -20,6 +20,9 @@ npm install
 | `npm run test:watch` | Run Vitest in watch mode |
 | `npm run typecheck` | Type-check with `tsc --noEmit` |
 | `npm run sim` | Run the simulation CLI (`src/simulation/cli.ts`) |
+| `npm run dev` | Run the browser UI with Vite (add `?gallery` to the URL for the component gallery) |
+| `npm run build` | Type-check the UI and build it into `dist/` |
+| `npm run typecheck:ui` | Type-check `src/ui` with `tsconfig.ui.json` |
 
 ## Simulation CLI
 
@@ -75,6 +78,9 @@ The S3/S4 overlays are in `content/experiments/balance/`.
   - `src/core/rng.ts`: pure seeded RNG (Mulberry32) with named substreams (`jobs`, `encounters`, `rewards`) derived from the master seed by splitmix32. Every draw takes a state and returns `{ value, state }`.
   - `src/core/config.ts`: typed `RulesConfig`. `loadConfig({ rules, items, variants })` merges and validates parsed JSON, `hashConfig` gives a stable config id, and `getUnresolved` lists every non-confirmed parameter (see [docs/unresolved-parameters.md](docs/unresolved-parameters.md)).
   - `src/core/encounter.ts`: encounter matchups, probability breakdowns, roll-under checks, road bonuses, and failure penalties. Functions take config last and use the shared equipment hooks in `src/core/items.ts`. Regular segments use indices `0..regularSegments-1`; the final gauntlet uses index `regularSegments`.
+- `src/ui/`: React + Vite playtest UI (docs/ui-technical-plan.md). It imports only `src/core/index.ts` and the `content/` JSON; every number on screen comes from the engine. Type-checked by `tsconfig.ui.json` (the root `tsconfig.json` excludes it).
+  - `src/ui/engine/`: plain-TS logic tested under `src/tests/ui-*.test.ts`: `GameStore` (wraps `applyAction`, validates against `getAvailableActions`, autosaves), `deriveScreen` (screen from engine state), `summarize` (events → result panel), `persistence` (versioned localStorage saves with `configHash`) and `activities` (activity previews and disabled reasons).
+  - `src/ui/components/`, `src/ui/screens/`: Kenney-framed components on a fixed 1280×720 stage scaled with CSS `zoom`. Current build: home hub, Tutor/Work/Rest, results, forced convalescence and the deadline outcome; pilgrimage, intro/setup and save slots follow.
 - `src/simulation/`: headless batch simulation tooling.
   - `src/simulation/runner.ts`: `runCampaign({ seed, sign, policy, config, trace?, strict?, maxSteps? })` drives one campaign to victory or deadline, asking a `Policy` (`decide(state, available, derived, calendar)`) for each action. It returns `{ finalState, events, decisions }`, where each decision records its week, the pre-roll probability of any check it resolved, and its event range; `trace` adds before/after snapshots and `strict` runs the D1 invariant checker on every transition. `deriveBatchSeed(baseSeed, sign, runIndex)` gives policy-independent paired seeds.
   - `src/simulation/policies.ts`: `createPolicy(id, config, params?)` and `createPolicies(config, params?)` provide seven bots for E3: `stables-only`, `specialist-b`, `specialist-o`, `specialist-l`, `balanced`, `reckless`, and `pragmatic`. Pass a policy directly to `runCampaign`, or select it by ID in the CLI through the `POLICIES` registry (each factory receives the CLI's loaded config and uses default params). Policies use visible stats, burdens, carried Coin, threats, inventory and calendar, without reading the seed or RNG streams. Ties follow Estate/action order for deterministic replay.

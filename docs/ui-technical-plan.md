@@ -1,6 +1,6 @@
 # The Hidden Scion — UI Technical Plan (Playtest PoC)
 
-**Status:** U1 implemented; U2–U8 remain.
+**Status:** U1–U5 implemented (home loop playable; an interim title screen stands in for U7); U6–U8 remain.
 **Derived from:** [ui-handoff.md](ui-handoff.md) (design intent), the rules engine in `src/core/` (authoritative), and an audit of `assets/`.
 **Goal:** the smallest browser UI that lets a person play a full 96-week campaign to test gameplay, and doesn't look horrendous. Polish, audio, transitions and pitch-quality composition come later.
 
