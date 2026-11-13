@@ -31,9 +31,9 @@ function itemName(id: string, config: RulesConfig): string {
 function ItemLabel({ id, config }: { id: string; config: RulesConfig }) {
   const item = config.items.catalog[id];
   return (
-    <span className="coin">
+    <span className="item-line">
       {ITEM_ICON[id] !== undefined && <img src={ITEM_ICON[id]} width={24} height={24} alt="" />}
-      {itemName(id, config)}{item !== undefined && <span className="muted"> — {itemEffectLabel(item)}</span>}
+      <span>{itemName(id, config)}{item !== undefined && <span className="muted"> — {itemEffectLabel(item)}</span>}</span>
     </span>
   );
 }
@@ -56,7 +56,7 @@ function ConsumableButton({ action, config, onUse }: { action: UseConsumable; co
 // HUD
 // ---------------------------------------------------------------------------
 
-export function PilgrimageHud({ state, config }: { state: CampaignState; config: RulesConfig }) {
+export function PilgrimageHud({ state, config, onMenu }: { state: CampaignState; config: RulesConfig; onMenu: () => void }) {
   const road = state.pilgrimage!;
   const info = segmentInfo(road.segmentIndex, config);
   const derived = getDerivedStats(state, config);
@@ -83,6 +83,7 @@ export function PilgrimageHud({ state, config }: { state: CampaignState; config:
         <ConditionGauge kind="fatigue" value={state.fatigue} ceiling={derived.fatigueCeiling} />
         <ConditionGauge kind="melancholy" value={state.melancholy} ceiling={derived.melancholyCeiling} />
       </div>
+      <Button onClick={onMenu}>Menu</Button>
     </header>
   );
 }
@@ -111,7 +112,7 @@ export function PrepScreen() {
     : departureAction(option, carry, equipmentId || undefined, consumableId || undefined);
   return (
     <Scene image={BACKGROUND.pilgrimage}>
-      <TopBar state={state} config={config} onMenu={() => store.quitToTitle()} />
+      <TopBar state={state} config={config} onMenu={() => store.setUi({ overlay: 'saveload' })} />
       <div className="prep">
         <Panel variant="parchment" title="The pilgrimage">
           <RouteStrip furthest={state.furthestWaystation} total={config.route.regularSegments} />
@@ -159,9 +160,11 @@ export function PrepScreen() {
                   {consumableId !== '' && <ItemLabel id={consumableId} config={config} />}
                 </label>
               )}
-              <div style={{ marginTop: 10 }}>
+              <div className="prep-gauges">
                 <ConditionGauge kind="fatigue" value={state.fatigue} ceiling={derived.fatigueCeiling} />
                 <ConditionGauge kind="melancholy" value={state.melancholy} ceiling={derived.melancholyCeiling} />
+              </div>
+              <div>
                 <p className="forecast">Purse Protection: {derived.purseProtectionPct}% of carried Coin survives a wipeout</p>
               </div>
               <p className="summary-line">
@@ -314,7 +317,7 @@ export function EncounterScreen() {
   const [confirming, setConfirming] = useState(false);
   return (
     <Scene image={road.isFinal ? BACKGROUND.capital : BACKGROUND.pilgrimage}>
-      <PilgrimageHud state={state} config={store.config} />
+      <PilgrimageHud state={state} config={store.config} onMenu={() => store.setUi({ overlay: 'saveload' })} />
       <div className="road">
         <ThreatCard state={state} />
         {!blocked && road.stage === 'choose_approach' && <ChooseApproach state={state} config={store.config} onAct={act} />}
@@ -347,7 +350,7 @@ export function WaystationScreen() {
   const derived = getDerivedStats(state, config);
   return (
     <Scene image={BACKGROUND.waystation}>
-      <PilgrimageHud state={state} config={config} />
+      <PilgrimageHud state={state} config={config} onMenu={() => store.setUi({ overlay: 'saveload' })} />
       <Panel variant="parchment" className="centre-panel" title={`Waystation ${road.segmentIndex + 1} secured`}>
         <RouteStrip furthest={state.furthestWaystation} total={config.route.regularSegments} />
         <p style={{ marginTop: 10 }}>Carried <CoinAmount amount={road.carriedCoin} /> · earned this run <CoinAmount amount={road.earnedCoin} /></p>

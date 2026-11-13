@@ -115,7 +115,7 @@ export function ActivityScreen({ kind }: { kind: ActivityKind }) {
   const { title, scene, scrim } = KIND[kind];
   return (
     <Scene image={BACKGROUND[scene]} scrim={scrim}>
-      <TopBar state={state} config={store.config} onMenu={() => store.quitToTitle()} />
+      <TopBar state={state} config={store.config} onMenu={() => store.setUi({ overlay: 'saveload' })} />
       <div className="activity">
         <div className={`activity__cards activity__cards--${kind}`}>
           <h1 className="activity__header">{title}</h1>

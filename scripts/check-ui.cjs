@@ -13,6 +13,9 @@ const { chromium } = require('playwright');
       page.on('pageerror', (error) => errors.push(error.message));
       await page.goto(process.argv[2] ?? 'http://127.0.0.1:5173');
       await page.getByRole('button', { name: 'New Game', exact: true }).click();
+      await page.getByRole('button', { name: 'Skip', exact: true }).click();
+      await page.getByRole('button', { name: 'Begin', exact: true }).click();
+      await page.getByRole('button', { name: 'Tutoring', exact: true }).waitFor();
       await page.evaluate(() => {
         const save = JSON.parse(localStorage.getItem('hidden-scion:auto'));
         Object.assign(save.state, { birthSign: 'aries', elapsedWeeks: 1, fatigue: 71 });

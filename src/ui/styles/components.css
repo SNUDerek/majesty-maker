@@ -265,7 +265,7 @@
 /* ---------- Pilgrimage ---------- */
 .hud {
   position: absolute; top: 0; left: 0; right: 0; height: 88px;
-  display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: var(--space-5);
+  display: grid; grid-template-columns: auto 1fr auto auto auto; align-items: center; gap: var(--space-4);
   padding: 0 var(--space-4);
   background: linear-gradient(rgba(30, 20, 10, 0.94), rgba(30, 20, 10, 0.82));
   color: var(--parchment);
@@ -336,3 +336,53 @@
 .field { display: grid; gap: 4px; margin-top: var(--space-2); }
 .field select { padding: 3px 6px; border: 1px solid var(--ink-muted); background: #fffaf0; }
 .summary-line { font-size: var(--text-sm); font-style: italic; margin-top: var(--space-2); }
+
+.hud .btn { min-height: 38px; min-width: 80px; font-size: var(--text-sm); }
+
+/* ---------- Front door ---------- */
+.intro {
+  position: absolute; inset: 24px;
+  display: grid; grid-template-columns: 720px 1fr; gap: var(--space-5); align-items: center;
+}
+.intro__panel { padding: 0; border: 6px solid #2b1d0e; background: #000; cursor: pointer; box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6); }
+.intro__panel img { display: block; width: 708px; height: 531px; object-fit: cover; }
+.intro__text p { font-size: var(--text-lg); line-height: 1.4; min-height: 140px; }
+.intro__actions { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-3); margin-top: var(--space-3); }
+.intro__actions .muted { margin-right: auto; }
+
+.setup { position: absolute; top: 24px; right: 24px; bottom: 24px; width: 820px; display: flex; flex-direction: column; gap: var(--space-2); }
+.setup__names { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-3); }
+.setup input { padding: 4px 8px; border: 1px solid var(--ink-muted); background: #fffaf0; }
+.signs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; border: none; padding: 0; margin: var(--space-2) 0 0; }
+.signs legend { padding: 0; margin-bottom: 6px; font-style: italic; }
+.sign { display: grid; justify-items: center; gap: 2px; padding: 4px; border: 2px solid transparent; border-radius: 6px; cursor: pointer; font-size: var(--text-sm); }
+.sign:hover { background: rgba(255, 255, 255, 0.4); }
+.sign--on { border-color: var(--ink); background: rgba(255, 255, 255, 0.55); }
+.sign:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
+.setup__preview { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); margin-top: var(--space-2); }
+.setup .preview__actions { margin-top: auto; }
+
+.modal.saveload { width: 820px; }
+.slots { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.slot { display: grid; grid-template-columns: 90px 1fr auto; align-items: center; gap: var(--space-3); padding: 6px 0; border-bottom: 1px dotted var(--parchment-dark); }
+.slot__name { font-family: var(--font-head); font-size: var(--text-lg); }
+.slot__desc { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); }
+.slot__actions { display: flex; gap: 6px; }
+.slot__actions .btn { min-width: 76px; min-height: 36px; font-size: var(--text-sm); padding: 0 8px; }
+.credits { padding-left: 20px; }
+
+.dev-toggle { position: absolute; left: 4px; bottom: 4px; z-index: 30; font: 12px monospace; opacity: 0.5; }
+.dev {
+  position: absolute; left: 8px; bottom: 8px; width: 380px; max-height: 600px; overflow: auto; z-index: 30;
+  padding: 8px; background: rgba(10, 10, 10, 0.92); color: #e6e6e6; font: 13px/1.4 monospace; border: 1px solid #555;
+}
+.dev button, .dev input, .dev select { font: 12px monospace; color: #111; }
+.dev__row { display: flex; gap: 6px; align-items: center; justify-content: space-between; margin-bottom: 6px; flex-wrap: wrap; }
+.dev__note { color: #aaa; margin: 0 0 6px; }
+.dev__dump { width: 100%; height: 260px; font: 11px monospace; }
+
+.item-line { display: flex; align-items: center; gap: 6px; font-size: var(--text-sm); }
+.item-line img { image-rendering: pixelated; flex: none; }
+.field select { width: 100%; }
+.prep-gauges { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-top: var(--space-2); }
+.prep > .panel { max-height: 100%; overflow: auto; }
