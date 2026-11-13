@@ -7,7 +7,8 @@ import { GameStore } from './engine/store.js';
 import { ActivityScreen } from './screens/Activity.js';
 import { Gallery } from './screens/Gallery.js';
 import { HomeHub } from './screens/Home.js';
-import { OutcomeScreen, PilgrimagePlaceholder } from './screens/Outcome.js';
+import { OutcomeScreen } from './screens/Outcome.js';
+import { EncounterScreen, PrepScreen, WaystationScreen } from './screens/Road.js';
 import { TitleScreen } from './screens/Title.js';
 import { browserStorage } from './storage.js';
 import { StoreContext, useGame } from './useStore.js';
@@ -22,12 +23,12 @@ function Game() {
   switch (screen.kind) {
     case 'title': scene = <TitleScreen />; break;
     case 'outcome': scene = <OutcomeScreen outcome={screen.outcome} />; break;
-    case 'encounter':
-    case 'waystation': scene = <PilgrimagePlaceholder />; break;
+    case 'encounter': scene = <EncounterScreen />; break;
+    case 'waystation': scene = <WaystationScreen />; break;
     case 'home':
       scene = screen.view === 'tutor' || screen.view === 'job' || screen.view === 'rest'
         ? <ActivityScreen key={screen.view} kind={screen.view} />
-        : <HomeHub convalescence={screen.convalescence} />;
+        : screen.view === 'prep' ? <PrepScreen /> : <HomeHub convalescence={screen.convalescence} />;
       break;
   }
   return (

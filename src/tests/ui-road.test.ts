@@ -9,7 +9,7 @@ import {
 import { activityOptions } from '../ui/engine/activities.js';
 import { deriveScreen } from '../ui/engine/screen.js';
 import { GameStore } from '../ui/engine/store.js';
-import { summarize } from '../ui/engine/summarize.js';
+import { sourcesLine, summarize } from '../ui/engine/summarize.js';
 import { itemEffectLabel, penaltyLabel, roadMoonLabel } from '../ui/text/labels.js';
 import { loadShippedConfig } from './support/config.js';
 
@@ -61,6 +61,9 @@ describe('road helpers', () => {
     const actual = summarize({ type: 'RETREAT' }, applyAction(state, { type: 'RETREAT' }, config).events);
     expect(preview).toEqual(actual);
     expect(preview.title).toBe('Retreat');
+    const carried = preview.rows.find((r) => r.quantity === 'carried')!;
+    expect(carried.parts.reduce((n, p) => n + p.amount, 0)).toBe(carried.amount);
+    expect(sourcesLine(carried)).toMatch(/banked −\d+/);
     expect(() => previewLeave(state, { type: 'CONTINUE_ENCOUNTER' } as never, config)).toThrow(/only RETREAT/);
   });
 
@@ -95,7 +98,9 @@ describe('summarize (road)', () => {
       { week: w, type: 'waystation_reached', waystation: 2 }])!;
     expect(win.title).toBe('Encounter won — Waystation 2 reached');
     expect(win.detail).toBe('Rolled 42 against 73%.');
-    expect(win.rows).toEqual([{ quantity: 'carried', label: 'Carried Coin', amount: 3, sources: ['reward'], tone: 'good' }]);
+    expect(win.rows).toEqual([{ quantity: 'carried', label: 'Carried Coin', amount: 3, sources: ['reward'],
+      parts: [{ source: 'reward', amount: 3 }], tone: 'good' }]);
+    expect(sourcesLine(win.rows[0]!)).toBe('reward');
     expect(win.notes[0]).toMatch(/Waystation 2 is secured/);
 
     const pending = summarize({ type: 'CHOOSE_APPROACH', estate: 'bellatores' }, [resolved(false)])!;

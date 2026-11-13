@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
-import { weeksLine, type ResultSummary } from '../engine/summarize.js';
+import { sourcesLine, weeksLine, type ResultSummary } from '../engine/summarize.js';
 import { signed } from '../text/labels.js';
 import { Button, Panel } from './basic.js';
 
@@ -69,7 +69,7 @@ export function ResultPanel({ summary, onDismiss }: { summary: ResultSummary; on
               <tr key={row.quantity}>
                 <td>{row.label}</td>
                 <td className={`num ${row.tone}`}>{signed(row.amount)}</td>
-                <td>{row.sources.join(', ')}</td>
+                <td>{sourcesLine(row)}</td>
               </tr>
             ))}
           </tbody>

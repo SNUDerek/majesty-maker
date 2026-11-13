@@ -4,7 +4,7 @@
  */
 import type { Estate, GameAction, GameEvent, WeekReason } from '../../core/index.js';
 import {
-  ACTIVITY_LABEL, BURDEN_SOURCE_LABEL, COIN_SOURCE_LABEL, ESTATE_LABEL, STAT_SOURCE_LABEL, WEEK_REASON_LABEL,
+  ACTIVITY_LABEL, signed, BURDEN_SOURCE_LABEL, COIN_SOURCE_LABEL, ESTATE_LABEL, STAT_SOURCE_LABEL, WEEK_REASON_LABEL,
 } from '../text/labels.js';
 
 export type Quantity = Estate | 'fatigue' | 'melancholy' | 'treasury' | 'carried';
@@ -17,6 +17,8 @@ export interface ResultRow {
   amount: number;
   /** Display sources in first-seen order, e.g. ['lesson', 'neglect']. */
   sources: string[];
+  /** Net amount per source, in the same order (useful when a row mixes sources). */
+  parts: { source: string; amount: number }[];
   /** For Fatigue/Melancholy/Coin, whether a rise is good. */
   tone: Tone;
 }
@@ -48,11 +50,11 @@ function rowTone(quantity: Quantity, amount: number): Tone {
 }
 
 function collectRows(events: readonly GameEvent[]): ResultRow[] {
-  const rows = new Map<Quantity, { amount: number; sources: string[] }>();
+  const rows = new Map<Quantity, { amount: number; parts: Map<string, number> }>();
   const add = (quantity: Quantity, amount: number, source: string): void => {
-    const row = rows.get(quantity) ?? { amount: 0, sources: [] };
+    const row = rows.get(quantity) ?? { amount: 0, parts: new Map<string, number>() };
     row.amount += amount;
-    if (!row.sources.includes(source)) row.sources.push(source);
+    row.parts.set(source, (row.parts.get(source) ?? 0) + amount);
     rows.set(quantity, row);
   };
   for (const event of events) {
@@ -63,8 +65,9 @@ function collectRows(events: readonly GameEvent[]): ResultRow[] {
   return ROW_ORDER.flatMap((quantity) => {
     const row = rows.get(quantity);
     if (row === undefined) return [];
-    return [{ quantity, label: QUANTITY_LABEL[quantity], amount: row.amount, sources: row.sources,
-      tone: rowTone(quantity, row.amount) }];
+    const parts = [...row.parts].map(([source, amount]) => ({ source, amount }));
+    return [{ quantity, label: QUANTITY_LABEL[quantity], amount: row.amount, sources: parts.map((p) => p.source),
+      parts, tone: rowTone(quantity, row.amount) }];
   });
 }
 
@@ -196,6 +199,12 @@ export function summarize(action: GameAction, events: readonly GameEvent[]): Res
     weeks: { count: reasons.length, reasons },
     notes,
   };
+}
+
+/** "lesson" for one source; "loot forfeited −1 · retreat toll −10" for several. */
+export function sourcesLine(row: ResultRow): string {
+  if (row.parts.length <= 1) return row.sources.join(', ');
+  return row.parts.map((p) => `${p.source} ${signed(p.amount)}`).join(' · ');
 }
 
 /** "2 weeks passed: work, convalescence". */
