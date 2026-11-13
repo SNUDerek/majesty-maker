@@ -1,5 +1,6 @@
 /** Browser regression checks. Requires Playwright + Chromium and a running dev server.
  * Run: node scripts/check-ui.cjs [URL]. NODE_PATH may point to an existing Playwright installation.
+ * Covers New Game → intro → setup → home activities, modal focus and stage scaling.
  */
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
@@ -40,6 +41,8 @@ const { chromium } = require('playwright');
       await page.keyboard.press('Enter');
       await dialog.waitFor({ state: 'detached' });
       assert.equal(await page.locator('.scene').evaluate((scene) => scene.inert), false);
+      // Focus returns to the new screen's main action, not <body>.
+      assert.equal(await page.evaluate(() => document.activeElement.textContent), 'Tutoring');
       for (const kind of ['Work', 'Rest']) {
         await page.getByRole('button', { name: kind, exact: true }).click();
         await page.getByRole('button', { name: 'Commit week' }).click();

@@ -63,12 +63,12 @@ export function HomeHub({ convalescence }: { convalescence: boolean }) {
             <>
               <p className="banner">She collapsed and must spend this week resting at home.</p>
               <div className="home-menu" style={{ marginTop: 12 }}>
-                <Button primary autoFocus onClick={() => store.dispatch(restHome.action)}>Rest at home</Button>
+                <Button primary autoFocus data-autofocus onClick={() => store.dispatch(restHome.action)}>Rest at home</Button>
               </div>
             </>
           ) : (
             <div className="home-menu">
-              <Button onClick={() => store.setUi({ homeView: 'tutor' })}>Tutoring</Button>
+              <Button data-autofocus onClick={() => store.setUi({ homeView: 'tutor' })}>Tutoring</Button>
               <Button onClick={() => store.setUi({ homeView: 'job' })}>Work</Button>
               <Button onClick={() => store.setUi({ homeView: 'rest' })}>Rest</Button>
               <Button disabled={blocker !== null} title={blocker ?? undefined} onClick={() => store.setUi({ homeView: 'prep' })}>

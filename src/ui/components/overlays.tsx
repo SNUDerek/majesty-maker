@@ -35,6 +35,8 @@ export function Modal({
       modal.removeEventListener('keydown', trapTab);
       siblings.forEach((element, index) => { element.inert = inertBefore[index]!; });
       if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
+      // The opener is gone (e.g. the screen changed under a result): focus the new screen's main action.
+      else document.querySelector<HTMLElement>('[data-autofocus]:not(:disabled), .scene .btn--primary:not(:disabled)')?.focus();
     };
   }, []);
   return (

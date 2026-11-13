@@ -281,7 +281,7 @@ function ContinueOrRetreat({ state, config, onAct, onRetreat }: {
       <div className="road-actions">
         {consumable !== undefined && <ConsumableButton action={consumable} config={config} onUse={() => onAct(consumable)} />}
         <Button onClick={onRetreat}>Retreat home</Button>
-        <Button primary autoFocus onClick={() => onAct({ type: 'CONTINUE_ENCOUNTER' })}>Press on</Button>
+        <Button primary autoFocus data-autofocus onClick={() => onAct({ type: 'CONTINUE_ENCOUNTER' })}>Press on</Button>
       </div>
     </Panel>
   );
@@ -313,7 +313,8 @@ export function EncounterScreen() {
   const state = snap.state!;
   const road = state.pilgrimage!;
   const act = (a: GameAction) => store.dispatch(a);
-  const blocked = snap.ui.pendingResult !== undefined;
+  // Hide stage actions (and their 1/2/3 keys) while a result or menu overlay is up.
+  const blocked = snap.ui.pendingResult !== undefined || snap.ui.overlay !== undefined;
   const [confirming, setConfirming] = useState(false);
   return (
     <Scene image={road.isFinal ? BACKGROUND.capital : BACKGROUND.pilgrimage}>
@@ -358,12 +359,12 @@ export function WaystationScreen() {
           The moon will be fixed at {LUNAR_LABEL[derived.lunarPhase]} if she sets out now: {roadMoonLabel(derived.lunarPhase, config)}.</p>
         <ConditionGauge kind="fatigue" value={state.fatigue} ceiling={derived.fatigueCeiling} />
         <ConditionGauge kind="melancholy" value={state.melancholy} ceiling={derived.melancholyCeiling} />
-        {snap.ui.pendingResult === undefined && (
+        {snap.ui.pendingResult === undefined && snap.ui.overlay === undefined && (
           <div className="road-actions">
             {consumable !== undefined && <ConsumableButton action={consumable} config={config} onUse={() => store.dispatch(consumable)} />}
             <Button onClick={() => store.dispatch({ type: 'RETURN_HOME' })}>Return home (bank {road.carriedCoin} Coin)</Button>
             {canContinue && (
-              <Button primary autoFocus onClick={() => store.dispatch({ type: 'CONTINUE_SEGMENT' })}>
+              <Button primary autoFocus data-autofocus onClick={() => store.dispatch({ type: 'CONTINUE_SEGMENT' })}>
                 {next.isFinal ? 'Begin the Final Gauntlet (1 week)' : `Continue to Waystation ${road.segmentIndex + 2} (1 week, no fee)`}
               </Button>
             )}
