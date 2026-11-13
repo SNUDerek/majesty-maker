@@ -37,6 +37,7 @@ if (values.task) {
 } else {
   const tasks = stagePlan(stage);
   const jobs = Number(values.jobs ?? Math.max(1, availableParallelism() - 1));
+  if (!Number.isSafeInteger(jobs) || jobs < 1) throw new Error('--jobs must be a positive integer');
   mkdirSync(out, { recursive: true });
   let git: string | null = null;
   let dirty: boolean | null = null;
@@ -44,10 +45,13 @@ if (values.task) {
     git = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
     dirty = execFileSync('git', ['status', '--porcelain', '--', 'src', 'scripts', 'content'], { encoding: 'utf8' }).trim() !== '';
   } catch { /* not a checkout */ }
-  writeFileSync(join(out, 'manifest.json'), JSON.stringify({
+  const manifest = {
     stage, runs, seed, strict, git, dirty, configIds: configIds(stage), startedAt: new Date().toISOString(),
     tasks: tasks.map((t) => ({ config: t.config.name, overlays: t.config.overlays, policy: t.policy })),
-  }, null, 2) + '\n');
+  };
+  const writeManifest = (status: 'running' | 'complete' | 'failed') =>
+    writeFileSync(join(out, 'manifest.json'), JSON.stringify({ ...manifest, status }, null, 2) + '\n');
+  writeManifest('running');
   const script = fileURLToPath(import.meta.url);
   let next = 0, done = 0, failed = 0;
   const started = Date.now();
@@ -73,6 +77,7 @@ if (values.task) {
     };
     for (let i = 0; i < Math.min(jobs, tasks.length); i++) launch();
   });
+  writeManifest(failed ? 'failed' : 'complete');
   if (failed) {
     console.error(`${failed} task(s) failed`);
     process.exitCode = 1;

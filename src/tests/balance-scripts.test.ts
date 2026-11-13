@@ -14,6 +14,13 @@ const dir = mkdtempSync(join(tmpdir(), 'balance-'));
 afterAll(() => rmSync(dir, { recursive: true, force: true }));
 
 describe('B3 stage scripts', () => {
+  it('rejects invalid worker counts instead of leaving the stage pending', () => {
+    for (const jobs of ['0', '-1', '1.5', 'NaN']) {
+      expect(() => execFileSync(process.execPath, ['--import', 'tsx', 'scripts/balance-testing/run.ts',
+        '--stage', '0', '--out', join(dir, 'invalid'), `--jobs=${jobs}`], { stdio: 'pipe' }))
+        .toThrow(/--jobs must be a positive integer/);
+    }
+  });
   it('plans stage 0 on the baseline and the stage 1 S3 × S4 grid', () => {
     expect(hashConfig(loadStageConfig(BASELINE))).toBe(hashConfig(loadContentConfig('rules.experimental.json')));
     expect(STAGE1_CONFIGS.map((c) => c.name)).toEqual(['baseline', 'opp1-dis60', 'opp1-dis50', 'opp0-dis75', 'opp0-dis60',
@@ -44,8 +51,9 @@ describe('B3 stage scripts', () => {
     // A full stage 0 at 2 runs × 1 sign; pairs need n ≥ 2.
     const out = join(dir, 'stage0');
     mkdirSync(join(out, 'baseline'), { recursive: true });
-    writeFileSync(join(out, 'manifest.json'), JSON.stringify({ stage: 0, runs: 2, seed: 1, strict: false, git: null,
-      configIds: configIds(0) }));
+    const manifest = { stage: 0, runs: 2, seed: 1, signs: ['aries'], strict: false, git: null,
+      configIds: configIds(0), tasks: stagePlan(0).map((t) => ({ config: t.config.name, policy: t.policy })) };
+    writeFileSync(join(out, 'manifest.json'), JSON.stringify(manifest));
     const config = loadStageConfig(BASELINE);
     for (const task of stagePlan(0)) {
       const rs = runTask(task, { runs: 2, seed: 1, strict: false, signs: ['aries'] }, config);
@@ -56,5 +64,17 @@ describe('B3 stage scripts', () => {
     for (const heading of ['## Stage 0: shapes on the baseline', '### Deliberate price', '## Stage 0: budget-matched builds',
       '## Stage 0: Coin loophole', '## Success criteria scorecard']) expect(md).toContain(heading);
     expect(md).toMatch(/^\| hybrid-b@?/m);
+    const analyze = () => execFileSync(process.execPath,
+      ['--import', 'tsx', 'scripts/balance-testing/analyze.ts', '--stage0', out], { stdio: 'pipe' });
+    writeFileSync(join(out, 'manifest.json'), JSON.stringify({ ...manifest, status: 'failed' }));
+    expect(analyze).toThrow(/incomplete stage/);
+    writeFileSync(join(out, 'manifest.json'), JSON.stringify(manifest));
+    const task = stagePlan(0)[0]!;
+    const file = join(out, task.config.name, `${task.policy.name}.ndjson`);
+    const one = runTask(task, { runs: 1, seed: 1, strict: false, signs: ['aries'] }, config)[0]!;
+    writeFileSync(file, `${JSON.stringify(one)}\n${JSON.stringify(one)}\n`);
+    expect(analyze).toThrow(/invalid run coverage/);
+    rmSync(file);
+    expect(analyze).toThrow(/missing task/);
   }, 60_000);
 });

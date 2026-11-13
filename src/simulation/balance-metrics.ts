@@ -279,7 +279,9 @@ export function pairedDifference(a: readonly BalanceRecord[], b: readonly Balanc
   value: (r: BalanceRecord) => number, z = 1.959963984540054): PairedDifference {
   const key = (r: BalanceRecord) => `${r.birthSign}:${r.seed}`;
   const byKey = new Map(a.map((r) => [key(r), r]));
-  if (byKey.size !== a.length || a.length !== b.length) throw new Error('paired groups must have the same unique seeds');
+  if (byKey.size !== a.length || new Set(b.map(key)).size !== b.length || a.length !== b.length) {
+    throw new Error('paired groups must have the same unique seeds');
+  }
   const diffs = b.map((r) => {
     const other = byKey.get(key(r));
     if (!other) throw new Error(`no pair for ${key(r)}`);

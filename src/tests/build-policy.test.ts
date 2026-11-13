@@ -64,6 +64,8 @@ describe('B1 build policy decisions', () => {
     expect(decide('spec-b', state, { survivalThreshold: 0, endingFloor: 30 })).toEqual({ type: 'TRAIN', tutor: 'smuggler' });
     expect(decide('spec-b', { ...state, stats: stats(100, 30, 30) }, { survivalThreshold: 0, endingFloor: 30 }).type)
       .toBe('BEGIN_PILGRIMAGE');
+    expect(decide('spec-b', state, { survivalThreshold: 0, endingFloor: 30, tutorBudget: 0 }).type)
+      .not.toBe('BEGIN_PILGRIMAGE');
   });
 
   it('keeps training past met targets lead-first, skipping target-0 stats, and departs when nothing is trainable', () => {
@@ -139,6 +141,8 @@ describe('B1 build policy decisions', () => {
     }, furthestWaystation: FINAL });
     expect(decide('spec-b', state, { survivalThreshold: 0 }).type).toBe('CONTINUE_SEGMENT');
     expect(decide('hybrid-b', state, { survivalThreshold: 0 }).type).toBe('RETURN_HOME');
+    expect(decide('spec-b', state, { survivalThreshold: 0, endingFloor: 30, tutorBudget: 0 }).type)
+      .toBe('RETURN_HOME');
   });
 
   it('every preset finishes strict campaigns, and every victory meets its targets and floor', () => {

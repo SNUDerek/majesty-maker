@@ -138,6 +138,7 @@ The evidence points this way:
 ## Limits
 
 - Bot quality bounds every conclusion. The build presets are slower than the published specialists, and the spec preset's fixed lead target of 100 decides when she enters the finale. The stage 5 grid over targets and `carryFailures` is the check.
+- Budget probes use equal spending caps, not equal realized tutor spend. Shape targets become allocation objectives after the cap cannot fund another lesson; ending floors remain mandatory. These results do not establish the plan's equal realized-spend comparison.
 - Budget shapes set targets as 15 + 5 × lessons, ignoring the sign bonus, opposing loss and job gains. Achieved profiles are reported beside each one.
 - Medians are winner-only. They are always read beside the paired victory week, which counts a loss as week 97.
 - Items are off; there is no UI; the finale is the current eight-card gauntlet.

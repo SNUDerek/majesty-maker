@@ -138,6 +138,7 @@ describe('B2 summaries and paired differences', () => {
     const won = a.map((r) => ({ ...r, victoryWeek: 1, outcome: 'victory' as const }));
     expect(pairedDifference(lost, won, wonBy())).toMatchObject({ mean: 1, low: 1, high: 1, significant: true });
     expect(() => pairedDifference(a, b.slice(1), wonBy())).toThrow();
+    expect(() => pairedDifference(a, [b[0]!, b[0]!, b[2]!, b[3]!], wonBy())).toThrow(/unique seeds/);
     expect(() => pairedDifference(a, [...b.slice(1), rec(9, 1)], wonBy())).toThrow(/no pair/);
   });
 });

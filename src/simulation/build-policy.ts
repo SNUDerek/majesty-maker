@@ -116,6 +116,10 @@ export function createBuildPolicy(id: string, config: RulesConfig, overrides: Pa
   let tutorSpent = 0;
 
   const targetsMet = (state: CampaignState) => ESTATES.every((e) => state.stats[e] >= targets[e]);
+  // Budget probes use targets to allocate a capped investment. They may stop
+  // below that shape, but the deliberate ending objective is always mandatory.
+  const finaleReady = (state: CampaignState) => ESTATES.every((e) => state.stats[e] >= params.endingFloor)
+    && (targetsMet(state) || (params.tutorBudget !== null && !canStillTrain(state)));
 
   /** Lowest current/target ratio among unmet targets; when all are met, lead → secondary → third past them. */
   const trainingChoice = (state: CampaignState, derived: DerivedStats, actions: readonly Concrete[]):
@@ -206,7 +210,7 @@ export function createBuildPolicy(id: string, config: RulesConfig, overrides: Pa
             isFinal: road.segmentIndex + 1 === config.route.regularSegments, segmentEntryWeek: state.elapsedWeeks,
           } : road;
           const finaleBlocked = continuation.type === 'CONTINUE_SEGMENT' && nextRoad.isFinal
-            && !targetsMet(state) && canStillTrain(state);
+            && !finaleReady(state);
           if (!finaleBlocked && survival(state, derived, nextRoad) >= params.survivalThreshold) return continuation;
         }
         const exit = actions.find((a) => a.type === 'RETURN_HOME' || a.type === 'RETREAT');
@@ -226,8 +230,9 @@ export function createBuildPolicy(id: string, config: RulesConfig, overrides: Pa
       // Stat readiness assumes a rested scion with the full wanted purse, so neither burdens nor
       // lack of Coin read as lack of skill (otherwise she buys lessons while tired, adding burden).
       const restedState = { ...state, fatigue: 0, melancholy: 0 };
-      const statReady = (survival(restedState, derived, departureRoad(state, isFinal, want)) >= params.survivalThreshold
-        && (!isFinal || targetsMet(state))) || !canStillTrain(state);
+      const statReady = (!isFinal || finaleReady(state))
+        && (survival(restedState, derived, departureRoad(state, isFinal, want)) >= params.survivalThreshold
+          || !canStillTrain(state));
       const rested = Math.max(state.fatigue, state.melancholy) <= params.departureBurden;
       const fee = config.route.departureFee;
 

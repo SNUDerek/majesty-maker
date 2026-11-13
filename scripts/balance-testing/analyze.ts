@@ -8,11 +8,12 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parseArgs } from 'node:util';
-import type { Estate } from '../../src/core/types.js';
+import type { Estate, ZodiacSign } from '../../src/core/types.js';
 import {
   pairedDifference, summarizeBalance, WIN_BY_WEEKS, wonBy, type BalanceRecord, type BalanceSummary, type Spread,
 } from '../../src/simulation/balance-metrics.js';
-import { BUDGETS, BUDGET_SHAPES, ENDING_FLOORS, STAGE1_CONFIGS } from './stages.js';
+import { BUDGETS, BUDGET_SHAPES, ENDING_FLOORS, SIGNS, STAGE1_CONFIGS } from './stages.js';
+import { deriveBatchSeed } from '../../src/simulation/runner.js';
 
 const { values } = parseArgs({ options: { stage0: { type: 'string' }, stage1: { type: 'string' } } });
 if (!values.stage0) throw new Error('--stage0 is required');
@@ -23,13 +24,29 @@ const data = new Map<string, Map<string, Group>>(); // config -> policy -> group
 const manifests: Record<string, unknown>[] = [];
 
 function load(dir: string): void {
-  manifests.push(JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf8')));
+  const manifest = JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf8'));
+  if (manifest.status !== undefined && manifest.status !== 'complete') throw new Error(`incomplete stage: ${dir}`);
+  manifests.push(manifest);
+  for (const task of manifest.tasks ?? []) {
+    if (!existsSync(join(dir, task.config, `${task.policy.name}.ndjson`))) {
+      throw new Error(`missing task ${task.config}/${task.policy.name}`);
+    }
+  }
+  const signs: readonly ZodiacSign[] = manifest.signs ?? SIGNS;
+  const seeds = new Set(signs.flatMap((sign) => Array.from({ length: manifest.runs }, (_, i) =>
+    `${sign}:${deriveBatchSeed(manifest.seed, sign, i)}`)));
   for (const config of readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name)) {
     const byPolicy = data.get(config) ?? new Map<string, Group>();
     data.set(config, byPolicy);
     for (const file of readdirSync(join(dir, config)).filter((f) => f.endsWith('.ndjson'))) {
       const records = readFileSync(join(dir, config, file), 'utf8').trim().split('\n')
         .map((line) => JSON.parse(line) as BalanceRecord);
+      const policy = file.replace(/\.ndjson$/, '');
+      const keys = new Set(records.map((r) => `${r.birthSign}:${r.seed}`));
+      if (records.length !== seeds.size || keys.size !== records.length
+        || records.some((r) => !seeds.has(`${r.birthSign}:${r.seed}`) || r.config !== config || r.policy !== policy)) {
+        throw new Error(`invalid run coverage or metadata: ${config}/${policy}`);
+      }
       byPolicy.set(file.replace(/\.ndjson$/, ''), {
         summary: summarizeBalance(records),
         slim: records.map((r): Slim => ({ birthSign: r.birthSign, seed: r.seed, victoryWeek: r.victoryWeek,
@@ -39,7 +56,7 @@ function load(dir: string): void {
   }
 }
 load(values.stage0);
-if (values.stage1 && existsSync(values.stage1)) load(values.stage1);
+if (values.stage1) load(values.stage1);
 
 const get = (config: string, policy: string): Group | undefined => data.get(config)?.get(policy);
 const must = (config: string, policy: string): Group => {
