@@ -3,11 +3,10 @@ import {
   createCampaign, getAvailableActions, getCalendar, getDerivedStats, withOverrides,
   type CampaignState, type RulesConfig,
 } from '../core/index.js';
-import { jobSuccessChance } from '../core/economy.js';
 import {
   BUILD_POLICIES, BUILD_PRESET_IDS, buildOrder, buildTargets, createBuildPolicy, type BuildParams,
 } from '../simulation/build-policy.js';
-import { modifiers, POLICY_IDS, createPolicy } from '../simulation/policies.js';
+import { POLICY_IDS, createPolicy } from '../simulation/policies.js';
 import { deriveBatchSeed, runCampaign } from '../simulation/runner.js';
 import { runCli } from '../simulation/cli.js';
 import { loadContentConfig } from './support/config.js';
@@ -99,19 +98,24 @@ describe('B1 build policy decisions', () => {
     expect(decide('spec-l', { ...state, treasury: 25 }, params, rules).type).toBe('WORK');
   });
 
-  it('chooses jobs by expected Coin, not success chance', () => {
-    const state = home({ treasury: 0, stats: stats(60, 15, 15) });
-    const derived = getDerivedStats(state, config);
-    const value = (job: 'stables' | 'alehouse' | 'village_watch' | 'scriptorium') => {
-      const def = config.jobs.definitions[job];
-      const mod = modifiers(state, derived, job, 'job', config);
-      const die = def.success.coinDie ? (def.success.coinDie + 1) / 2 : 0;
-      return (jobSuccessChance(state, job, mod, config) ?? 100) * (def.success.coin + die) * mod.payoutPct;
-    };
-    const best = (['stables', 'alehouse', 'village_watch', 'scriptorium'] as const)
-      .reduce((a, b) => (value(b) > value(a) ? b : a));
-    expect(best).not.toBe('stables');
-    expect(decide('spec-o', state)).toEqual({ type: 'WORK', job: best });
+  it('chooses jobs by expected Coin plus wanted stat gains priced at the lesson rate, not success chance', () => {
+    // A plain week: no Solar aspect, Waning moon (affects paid rest only).
+    const week = Array.from({ length: 48 }, (_, w) => w).find((w) => {
+      const d = getDerivedStats(home({ elapsedWeeks: w }), config);
+      return d.solarAspect === 'none' && d.lunarPhase === 'waning';
+    })!;
+    const state = home({ elapsedWeeks: week, treasury: 0, stats: stats(30, 40, 40) });
+    // Odds: watch 65%, alehouse/scriptorium 75%. Coin: watch 9.75, alehouse 11.6, scriptorium 11.25.
+    // A wanted +2 is worth 8 Coin: scriptorium 17.25 for spec-o, watch 14.95 for spec-b, alehouse 17.6 for spec-l.
+    expect(decide('spec-o', state)).toEqual({ type: 'WORK', job: 'scriptorium' });
+    expect(decide('spec-b', state)).toEqual({ type: 'WORK', job: 'village_watch' });
+    expect(decide('spec-l', state)).toEqual({ type: 'WORK', job: 'alehouse' });
+    // Lead at the cap: only Coin counts. Watch 65% x 15 = 9.75 < Alehouse 11.6 < Scriptorium 95% x 15 = 14.25.
+    expect(decide('spec-o', { ...state, stats: stats(30, 100, 40) })).toEqual({ type: 'WORK', job: 'scriptorium' });
+    expect(decide('spec-b', { ...state, stats: stats(100, 15, 40) })).toEqual({ type: 'WORK', job: 'village_watch' });
+    // Success chance alone would pick Stables (100%).
+    expect(decide('spec-o', { ...state, stats: stats(0, 0, 0) }).type).toBe('WORK');
+    expect(decide('spec-o', { ...state, stats: stats(0, 0, 0) })).not.toEqual({ type: 'WORK', job: 'stables' });
   });
 
   it('picks the best approach per card, and uses the New Moon skip below the threshold', () => {
@@ -172,5 +176,15 @@ describe('published policies are unchanged', () => {
         s.treasury, r.decisions.length].join(',');
     })));
     await expect(rows.join('\n') + '\n').toMatchFileSnapshot('./fixtures/published-policies.csv');
+  });
+});
+
+describe('B1 readiness ignores burdens', () => {
+  it('rests instead of buying lessons when only her burdens keep her from the finale', () => {
+    // spec-b floor 20 met; heavy Fatigue would sink the survival estimate on its own.
+    const state = home({ furthestWaystation: FINAL, treasury: 300, stats: stats(100, 23, 23), fatigue: 80 });
+    const fresh = decide('spec-b', { ...state, fatigue: 0 }, { endingFloor: 20 });
+    expect(fresh.type).toBe('BEGIN_PILGRIMAGE');
+    expect(decide('spec-b', state, { endingFloor: 20, restMargin: 0 }).type).toBe('REST');
   });
 });

@@ -8,6 +8,9 @@
  *  2. Departure readiness: the survival estimate, burdens and Coin.
  *  3. Coin budget: carry enough Laboratores failures, plus the New Moon skip fee.
  *
+ * Jobs are chosen by expected value: Coin, plus any stat gain the build wants,
+ * priced at what a lesson charges per point.
+ *
  * The seven published policies in policies.ts are unchanged; these presets
  * sit beside them so old reports stay reproducible.
  */
@@ -171,7 +174,12 @@ export function createBuildPolicy(id: string, config: RulesConfig, overrides: Pa
     const mod = modifiers(state, derived, job.job, 'job', config);
     const chance = jobSuccessChance(state, job.job, mod, config) ?? 100;
     const avgDie = def.success.coinDie > 0 ? (def.success.coinDie + 1) / 2 : 0;
-    return chance / 100 * (def.success.coin + avgDie) * mod.payoutPct / 100;
+    // A wanted stat point is worth what a lesson charges per point (20 Coin / 5 by default).
+    const gained = def.success.gainStat;
+    const tutor = Object.values(config.classes.tutors).find((t) => t.target === gained)!;
+    const wanted = targets[gained] > 0 && state.stats[gained] < config.startingState.statMax;
+    const statValue = wanted ? def.success.gain * mod.statGainPct / 100 * tutor.cost / tutor.gain : 0;
+    return chance / 100 * ((def.success.coin + avgDie) * mod.payoutPct / 100 + statValue);
   };
 
   const policy: Policy = {
@@ -215,8 +223,10 @@ export function createBuildPolicy(id: string, config: RulesConfig, overrides: Pa
       const isFinal = departure?.isFinal
         ?? state.furthestWaystation === config.route.regularSegments;
       const want = wantedCarry(derived);
-      // Stat readiness assumes the full wanted purse, so lack of Coin never reads as lack of skill.
-      const statReady = (survival(state, derived, departureRoad(state, isFinal, want)) >= params.survivalThreshold
+      // Stat readiness assumes a rested scion with the full wanted purse, so neither burdens nor
+      // lack of Coin read as lack of skill (otherwise she buys lessons while tired, adding burden).
+      const restedState = { ...state, fatigue: 0, melancholy: 0 };
+      const statReady = (survival(restedState, derived, departureRoad(state, isFinal, want)) >= params.survivalThreshold
         && (!isFinal || targetsMet(state))) || !canStillTrain(state);
       const rested = Math.max(state.fatigue, state.melancholy) <= params.departureBurden;
       const fee = config.route.departureFee;

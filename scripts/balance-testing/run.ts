@@ -39,9 +39,13 @@ if (values.task) {
   const jobs = Number(values.jobs ?? Math.max(1, availableParallelism() - 1));
   mkdirSync(out, { recursive: true });
   let git: string | null = null;
-  try { git = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim(); } catch { /* not a checkout */ }
+  let dirty: boolean | null = null;
+  try {
+    git = execFileSync('git', ['rev-parse', 'HEAD'], { encoding: 'utf8' }).trim();
+    dirty = execFileSync('git', ['status', '--porcelain', '--', 'src', 'scripts', 'content'], { encoding: 'utf8' }).trim() !== '';
+  } catch { /* not a checkout */ }
   writeFileSync(join(out, 'manifest.json'), JSON.stringify({
-    stage, runs, seed, strict, git, configIds: configIds(stage), startedAt: new Date().toISOString(),
+    stage, runs, seed, strict, git, dirty, configIds: configIds(stage), startedAt: new Date().toISOString(),
     tasks: tasks.map((t) => ({ config: t.config.name, overlays: t.config.overlays, policy: t.policy })),
   }, null, 2) + '\n');
   const script = fileURLToPath(import.meta.url);

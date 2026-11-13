@@ -61,6 +61,12 @@ const diff = (a: Group, b: Group, week = Infinity) => {
   const d = pairedDifference(a.slim, b.slim, wonBy(week));
   return `${d.mean >= 0 ? '+' : ''}${(100 * d.mean).toFixed(1)} [${(100 * d.low).toFixed(1)}, ${(100 * d.high).toFixed(1)}]${d.significant ? ' **' : ''}`;
 };
+/** Paired speed: victory week, with a loss counted as week 97 (later = worse). */
+const weekOrLoss = (r: BalanceRecord) => r.victoryWeek ?? 97;
+const weekDiff = (a: Group, b: Group) => {
+  const d = pairedDifference(a.slim, b.slim, weekOrLoss);
+  return `${d.mean >= 0 ? '+' : ''}${d.mean.toFixed(1)} [${d.low.toFixed(1)}, ${d.high.toFixed(1)}]${d.significant ? ' **' : ''}`;
+};
 const medianGap = (a: Group, b: Group) => {
   const x = a.summary.winWeekMedian, y = b.summary.winWeekMedian;
   return x === null || y === null ? '–' : `${y - x >= 0 ? '+' : ''}${(y - x).toFixed(1)}`;
@@ -146,13 +152,13 @@ function shapeComparisons(config: string): string[][] {
     for (const [x, y] of [['spec', 'hybrid'], ['spec', 'duo'], ['duo', 'hybrid']] as const) {
       const a = get(config, `${x}-${k}`), b = get(config, `${y}-${k}`);
       if (!a || !b) continue;
-      rows.push([`${y}-${k} − ${x}-${k}`, diff(a, b), diff(a, b, 70), diff(a, b, 80), medianGap(a, b)]);
+      rows.push([`${y}-${k} − ${x}-${k}`, diff(a, b), diff(a, b, 70), diff(a, b, 80), medianGap(a, b), weekDiff(a, b)]);
     }
   }
   return rows;
 }
 say('## Stage 0: shape comparisons (paired, same seeds)',
-  table(['comparison', 'Δ win', 'Δ won by 70', 'Δ won by 80', 'Δ median wk'], shapeComparisons(B)));
+  table(['comparison', 'Δ win', 'Δ won by 70', 'Δ won by 80', 'Δ median wk', 'Δ week (loss = 97)'], shapeComparisons(B)));
 
 function budgetRows(config: string): string[][] {
   const rows: string[][] = [];
@@ -164,7 +170,8 @@ function budgetRows(config: string): string[][] {
       const s = g.summary;
       rows.push([`${k} ${budget}`, shape, BUDGET_SHAPES[shape]![budget].join('/'), p1(s.victoryRate.estimate),
         p1(s.winByWeek[80]), n1(s.winWeekMedian), profile(s.profileAtVictory), n0(s.tutorSpendPerRun),
-        shape === 'pure' ? '' : diff(pure, g), shape === 'pure' ? '' : diff(pure, g, 80), shape === 'pure' ? '' : medianGap(pure, g)]);
+        shape === 'pure' ? '' : diff(pure, g), shape === 'pure' ? '' : diff(pure, g, 80), shape === 'pure' ? '' : medianGap(pure, g),
+        shape === 'pure' ? '' : weekDiff(pure, g)]);
     }
   }
   return rows;
@@ -172,7 +179,7 @@ function budgetRows(config: string): string[][] {
 say('## Stage 0: budget-matched builds',
   'Same tutor Coin cap; lessons main/secondary/third. Δ is split − pure, paired.',
   table(['lead, budget', 'shape', 'lessons', 'win %', 'won by 80', 'median wk', 'profile at victory', 'tutor Coin',
-    'Δ win', 'Δ won by 80', 'Δ median'], budgetRows(B)));
+    'Δ win', 'Δ won by 80', 'Δ median', 'Δ week (loss = 97)'], budgetRows(B)));
 
 // ---------------------------------------------------------------------------
 const stage1 = STAGE1_CONFIGS.map((c) => c.name).filter((c) => data.has(c));
@@ -195,9 +202,9 @@ if (stage1.length > 1) {
       return a && b ? diff(a, b, 70) : '–';
     })])));
   for (const c of stage1.slice(1)) {
-    say(`### Shape comparisons: ${c}`, table(['comparison', 'Δ win', 'Δ won by 70', 'Δ won by 80', 'Δ median wk'], shapeComparisons(c)));
+    say(`### Shape comparisons: ${c}`, table(['comparison', 'Δ win', 'Δ won by 70', 'Δ won by 80', 'Δ median wk', 'Δ week (loss = 97)'], shapeComparisons(c)));
     say(`### Budget-matched: ${c}`, table(['lead, budget', 'shape', 'lessons', 'win %', 'won by 80', 'median wk',
-      'profile at victory', 'tutor Coin', 'Δ win', 'Δ won by 80', 'Δ median'], budgetRows(c)));
+      'profile at victory', 'tutor Coin', 'Δ win', 'Δ won by 80', 'Δ median', 'Δ week (loss = 97)'], budgetRows(c)));
   }
 }
 
@@ -207,7 +214,7 @@ function scorecard(config: string): string[] {
   const s = (p: string) => get(config, p)?.summary;
   const hybrids = LEADS.map((k) => s(`hybrid-${k}`)).filter((x): x is BalanceSummary => !!x);
   const specs = LEADS.map((k) => s(`spec-${k}`)).filter((x): x is BalanceSummary => !!x);
-  if (hybrids.length < 3 || specs.length < 3) return [config, '–', '–', '–', '–', '–', '–'];
+  if (hybrids.length < 3 || specs.length < 3) return [config, '–', '–', '–', '–', '–', '–', '–'];
   const minHybrid = Math.min(...hybrids.map((h) => h.victoryRate.estimate));
   // Best = earliest median among builds within 1 point of the highest win rate.
   const best = (xs: BalanceSummary[]) => {
@@ -227,6 +234,12 @@ function scorecard(config: string): string[] {
       return d.high >= 0;
     });
   }));
+  const budgetSpeedOk = LEADS.every((k) => BUDGETS.every((budget) => {
+    const pure = get(config, `budget-${k}-${budget}-pure`);
+    if (!pure) return false;
+    return ['split', 'tri'].some((shape) =>
+      pairedDifference(pure.slim, must(config, `budget-${k}-${budget}-${shape}`).slim, weekOrLoss).low <= 0);
+  }));
   const leadSpread = ['spec', 'duo', 'hybrid'].map((shape) => {
     const xs = LEADS.map((k) => s(`${shape}-${k}`)!);
     const rates = xs.map((x) => 100 * x.victoryRate.estimate), weeks = xs.map((x) => x.winWeekMedian ?? 99);
@@ -244,13 +257,15 @@ function scorecard(config: string): string[] {
     `${mark(minHybrid >= 0.95)} (min ${p1(minHybrid)})`,
     `${mark(competitive)} (${bh.policy} ${n1(bh.winWeekMedian)} vs ${bs.policy} ${n1(bs.winWeekMedian)}; Δwin ${(100 * reliability.mean).toFixed(1)})`,
     mark(budgetOk),
+    mark(budgetSpeedOk),
     `${mark(leadsOk)} (${leadSpread.join('; ')})`,
     `${mark((bestOverall.winWeekMedian ?? 99) < 80)} (${bestOverall.policy} ${n1(bestOverall.winWeekMedian)})`];
 }
 say('## Success criteria scorecard (§6 requirements)',
   '"Best" is the earliest median win week among builds within 1 point of the highest win rate.',
-  'Budget: for every lead and budget, some split shape is not significantly worse than pure on win rate.',
-  table(['config', 'hybrids ≥ 95%', 'best hybrid competitive', 'budget split ≥ pure', 'leads within 10 pts / 5 wk',
+  'Budget (win): for every lead and budget, some split shape is not significantly worse than pure on win rate. '
+  + 'Budget (speed): the same on paired victory week, a loss counting as week 97.',
+  table(['config', 'hybrids ≥ 95%', 'best hybrid competitive', 'budget split ≥ pure (win)', 'budget split ≥ pure (speed)', 'leads within 10 pts / 5 wk',
     'best median < 80'], [B, ...stage1.slice(1)].filter((c) => data.has(c)).map(scorecard)));
 
 process.stdout.write(out.join('\n'));
