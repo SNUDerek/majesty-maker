@@ -45,3 +45,9 @@ and make progress towards overcoming the final encounter.
 
 This is a POC meant to implement this basic game loop, including a simplified adventuring mechanic. 
 it is meant to be more closely medieval-themed than the Princess Maker games
+
+### Documentation
+
+* `./docs/thematic-design-doc.md` describes the concept and thematic elements, with some high level gameplay descriptions.
+* `./docs/technical-planning-doc.md` contains technical details for the game logic and the initial backend plan.
+* `./docs/implementation-tasks.md` describes current tasks.
