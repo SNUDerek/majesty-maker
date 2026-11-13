@@ -1,6 +1,6 @@
 # Parameter Register
 
-This register lists every rules value whose **number** is not yet canon, along with the decision that settled the rule behind it. All thirteen open questions (Q1–Q13) and R1–R5 are resolved in [open-questions-tasks.md](open-questions-tasks.md). What remains open is numeric tuning, not rule semantics.
+This register lists every rules value whose **number** is not yet canon, along with the decision that settled the rule behind it. All thirteen open questions (Q1–Q13) and R1–R5 are resolved in [the decision record](archive/open-questions-tasks.md). What remains open is numeric tuning, not rule semantics.
 
 Each value has an explicit default in `content/rules.default.json` and a matching `provenance` entry. At runtime, `getUnresolved(config)` in `src/core/config.ts` lists the non-confirmed parameters with their current values, so reports can record them. `src/tests/config.test.ts` fails if this file is missing any path that the default config flags.
 
@@ -39,7 +39,7 @@ Statuses:
 
 ## Rules owned by modules
 
-Some decisions are about rule logic, not a single config value. Being absent from the table above does **not** mean a question was settled implicitly; each was settled explicitly in [open-questions-tasks.md](open-questions-tasks.md) and is covered by `src/tests/open-questions.test.ts`:
+Some decisions are about rule logic, not a single config value. Being absent from the table above does **not** mean a question was settled implicitly; each was settled explicitly in [the decision record](archive/open-questions-tasks.md) and is covered by `src/tests/open-questions.test.ts`:
 
 - Q6: Full Moon doubles the base Fatigue/Melancholy penalty before the Gambeson's −5 (`src/core/encounter.ts`).
 - Q8: Theriac/Wort between encounters and at waystation decisions; Metheglin only during a pending failed roll (`src/core/items.ts`).

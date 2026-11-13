@@ -589,8 +589,18 @@ export function loadConfig({ rules, items, variants = [] }: ConfigSources): Rule
   for (const [label, part] of [['rules', rules], ['items', items], ...variants.map((v, i) => [`variants[${i}]`, v])] as const) {
     if (!isPlainObject(part)) throw new ConfigError([`${label}: expected a JSON object`]);
   }
+  // Historical snapshots omit these additive fields. Explicit values (including
+  // invalid ones) still override the defaults and go through normal validation.
   let merged = mergeOverlay(rules, { items: { catalog: items } });
   for (const variant of variants) merged = mergeOverlay(merged, variant);
+  const solar = valueAt(merged, 'astrology.solar').value;
+  if (isPlainObject(solar) && !Object.hasOwn(solar, 'squareTutorFatiguePct')) {
+    merged = mergeOverlay(merged, { astrology: { solar: { squareTutorFatiguePct: 100 } } });
+  }
+  const homeCollapse = valueAt(merged, 'failure.homeCollapse').value;
+  if (isPlainObject(homeCollapse) && !Object.hasOwn(homeCollapse, 'fee')) {
+    merged = mergeOverlay(merged, { failure: { homeCollapse: { fee: 0 } } });
+  }
 
   const errors = validateConfig(merged);
   if (errors.length > 0) throw new ConfigError(errors);

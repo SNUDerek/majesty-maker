@@ -33,7 +33,7 @@ Policy IDs are the seven E3 bots (see [Policy bots](#policy-bots-e3)). Use `--co
 
 ### Open-question decisions candidate
 
-The rules settled in [docs/open-questions-tasks.md](docs/open-questions-tasks.md) are implemented in the engine. The shipped defaults keep the **legacy control** values, so rule changes can be compared on the same executable. The selected values are in the `open-questions-decisions` variant: tutor burdens 5/0, 0/5, 3/2; Square doubling both tutor burdens; Purse Protection on failed Laboratores encounters; Waxing ×1.20; New/Full Moon home bonuses +20%; 10-Coin New Moon skip; retreat toll 10; wipeout recovery −35/−35; and a 20-Coin home-collapse physician fee.
+The rules settled in [the archived decision record](docs/archive/open-questions-tasks.md) are implemented in the engine. The shipped defaults keep the **legacy control** values, so rule changes can be compared on the same executable. The selected values are in the `open-questions-decisions` variant: tutor burdens 5/0, 0/5, 3/2; Square doubling both tutor burdens; Purse Protection on failed Laboratores encounters; Waxing ×1.20; New/Full Moon home bonuses +20%; 10-Coin New Moon skip; retreat toll 10; wipeout recovery −35/−35; and a 20-Coin home-collapse physician fee.
 
 ```sh
 # Candidate and legacy control on the same paired seeds
@@ -120,3 +120,5 @@ npm run sim -- --policy pragmatic --birth-sign aries --trace-seed 123 --out repo
 ```
 
 Reuse the original config/variant/week arguments and policy params. To restore the exact rules, save the `config` property of `summary.json` as a separate JSON file and pass it with `--config <snapshot.json>`; keep the recorded code revision and policy params as well. E5 tests inject deterministic policies, so report goldens do not change when bot heuristics are tuned.
+
+The [active follow-up tasks](docs/open-questions-tasks.md) retain T8 and the remaining balance validation. Portable matrix, paired-analysis, and threshold-sensitivity scripts are in `scripts/open-questions`; see the [reproduction commands](docs/balance-report-baseline.md#baseline-promoted-t7). Historical config snapshots receive legacy defaults for the new Square Fatigue factor (100%) and home physician fee (0 Coin).

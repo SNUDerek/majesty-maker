@@ -1,6 +1,6 @@
 # Balance report: open-question decisions baseline (T6/T7)
 
-**Status:** first controlled comparison of the rules settled in [open-questions-tasks.md](open-questions-tasks.md). The comparison is reproducible, but **it does not show the game is balanced**. The current policy bots are coarse heuristics, and several new rules are never exercised by them (see [Limits](#limits-what-this-batch-cannot-show)).
+**Status:** first controlled comparison of the rules settled in [decision record](archive/open-questions-tasks.md). The initial comparison is reproducible (scripts below); close-comparison escalation and unexercised mechanics remain [follow-up work](open-questions-tasks.md). It **does not show the game is balanced**. The current policy bots are coarse heuristics, and several new rules are never exercised by them (see [Limits](#limits-what-this-batch-cannot-show)).
 
 **Scope:** item-free (`items.acquisition: disabled`, R4), 96 weeks, five regular segments of five encounters, and an eight-encounter finale (R1). This covers rules only; UI and natural item acquisition (T8) are out of scope.
 
@@ -74,7 +74,7 @@ Median specialist win week, control → candidate: specialist-b 49 → 48, speci
 
 ## Trace review: the Waxing collapse is a bot artifact
 
-The −52.7 pp for pragmatic under Waxing ×1.20 (and so under the candidate) is **not** a rule effect. Every affected run ends with identical totals: 0 segment entries, Bel 50 / Ora 52 / Lab 82. A replay shows the cause:
+The −52.7 pp for pragmatic under Waxing ×1.20 (and so under the candidate) is a rule-triggered policy failure, rather than evidence that the rules make victory impossible. Every affected run ends with identical totals: 0 segment entries, Bel 50 / Ora 52 / Lab 82. A replay shows the cause:
 
 ```sh
 npm run sim -- --policy pragmatic --birth-sign aries --trace-seed 4275821509 \
@@ -102,7 +102,7 @@ With a coherent threshold, Waxing and the home bonuses help, as intended, and th
 1. **Specialist dominance is unchanged.** All three specialists win at least 99.9% of runs in every config, including both harder finales, usually by week 41–50 of 96. None of the settled rules changes that, and the decision doc did not expect them to. This remains the main open balance problem.
 2. **Laboratores is favoured, as Q1/Q5 warned.** Under the candidate the Laboratores specialist gains five weeks (46 → 41); the others gain one or two. That comes from Purse Protection on encounter failures and the 3/2 Smuggler split. Q2 alone is worth +4.4 pp to pragmatic and the lowest wipeout count.
 3. **Generalists gain the most from the candidate**, once bot thresholds are coherent: +14.9 pp pragmatic and +5.6 pp balanced, finishing 10–13 weeks earlier.
-4. **Retreat toll 10 is a small, measurable cost** (−0.7 pp pragmatic, fewer retreats). No change is proposed.
+4. **Retreat toll 10 shows a small provisional cost** (−0.7 pp pragmatic, fewer retreats). No change is proposed.
 5. **Q5 (Square on both burdens) and Q1 alone are neutral** for these bots: they add rest weeks but change no outcome.
 
 ## Limits: what this batch cannot show
@@ -121,4 +121,22 @@ With a coherent threshold, Waxing and the home bonuses help, as intended, and th
   2. An anti-specialist lever beyond finale length, such as a nonuniform encounter distribution or a stat-requirement mix.
   3. Watch the Laboratores advantage. Do not switch the Smuggler split automatically (per Q1); revisit only with evidence from a skip-capable policy.
 
-Raw reports are not checked in, because they are large; the commands above regenerate them byte-for-byte.
+Raw reports are not checked in because they are large. From the repository root:
+
+```sh
+bash scripts/open-questions/run.sh reports/open-questions 1000
+python3 -I scripts/open-questions/analyze.py reports/open-questions > reports/open-questions/tables.md
+node --import tsx scripts/open-questions/thresholds.ts 1000 > reports/open-questions/thresholds.md
+```
+
+The first command runs all 19 configurations sequentially with strict invariants.
+The threshold script fixes `trainingReserve: 60`, base seed 20261113, all twelve
+signs, and both generalist policies, and prints paired normal-approximation 95%
+intervals using the sample variance of per-seed victory differences. The analysis
+script uses the same method for the main matrix. Use 5000 instead of 1000 for
+close-comparison escalation, which remains pending; small effects are provisional.
+
+Replaying at the recorded source revision reproduces campaign data. At later
+revisions, Git/argv metadata differs even when campaign outcomes match; exports
+are not expected to be byte-identical across revisions. The portable scripts
+were added during review after the recorded batch revision.

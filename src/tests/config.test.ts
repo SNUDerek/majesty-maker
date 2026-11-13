@@ -58,6 +58,28 @@ describe('default config', () => {
     expect(Object.keys(config.items.catalog)).toHaveLength(6);
   });
 
+  it('loads pre-Q13 snapshots with legacy defaults without mutating the source', () => {
+    const rules = defaultRules();
+    delete rules.astrology.solar.squareTutorFatiguePct;
+    delete rules.failure.homeCollapse.fee;
+    const before = structuredClone(rules);
+    const loaded = loadConfig({ rules, items: readContentJson('items.json') });
+    expect(loaded.astrology.solar.squareTutorFatiguePct).toBe(100);
+    expect(loaded.failure.homeCollapse.fee).toBe(0);
+    expect(rules).toEqual(before);
+    const candidate = loadConfig({ rules, items: readContentJson('items.json'),
+      variants: [readContentJson('variants/open-questions-decisions.json')] });
+    expect(candidate.astrology.solar.squareTutorFatiguePct).toBe(200);
+    expect(candidate.failure.homeCollapse.fee).toBe(20);
+  });
+
+  it.each(['squareTutorFatiguePct', 'fee'])('rejects an explicit null %s instead of defaulting it', (field) => {
+    expectConfigError(() => loadWith((rules) => {
+      if (field === 'fee') rules.failure.homeCollapse.fee = null;
+      else rules.astrology.solar.squareTutorFatiguePct = null;
+    }), field);
+  });
+
   it('carries the confirmed values from the tech doc', () => {
     expect(config.calendar).toMatchObject({ totalWeeks: 96, weeksPerMonth: 4, startYear: 1450, startAge: 14 });
     expect(config.startingState).toMatchObject({ baseStat: 15, zodiacBonus: 5, treasury: 50, treasuryMax: 9999 });

@@ -165,7 +165,7 @@ Status: the first pass of F1–F3 is done for the open-question decisions (tasks
 
 ## 5. Open questions found while planning
 
-All thirteen questions are now **resolved**. See [open-questions-tasks.md](open-questions-tasks.md) for the decision record. The settled rules are implemented in the engine. Shipped defaults (`content/rules.default.json`) remain the legacy controls. The selected values live in the `open-questions-decisions` variant, and their numbers stay experimental until F1–F3.
+All thirteen questions are now **resolved**. See [the archived decision record](archive/open-questions-tasks.md) and [remaining follow-up work](open-questions-tasks.md). The settled rules are implemented in the engine. Shipped defaults (`content/rules.default.json`) remain the legacy controls. The selected values live in the `open-questions-decisions` variant, and their numbers stay experimental until F1–F3.
 
 | # | Question | Resolution | Default (legacy control) | Candidate (`open-questions-decisions`) |
 |---|---|---|---|---|

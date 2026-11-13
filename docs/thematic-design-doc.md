@@ -71,7 +71,7 @@ Coin is capped at 9,999 and starts at 50.
 
 There are two conditions: Fatigue (physical tiredness) and Melancholy (boredom, depression).
 
-Fatigue and Melancholy start at zero and points are accrued by working or studying, and reduced by resting; when the bar is maxed out, the player collapses and must immediately rest to recover. A collapse at home calls the physician: a fee of up to 20 Coin from the treasury (never into debt, charged once per collapse), then a forced week of convalescence that clears 15 Fatigue and 15 Melancholy. While a bar is still at its cap, further forced -15/-15 weeks follow without another fee. Recovery never extends the deadline: a collapse in the last week still pays the fee but gets no recovery week. (Rules settled in `docs/open-questions-tasks.md` Q13; the 20 Coin fee and the 15-point recovery are experimental numbers.)
+Fatigue and Melancholy start at zero and points are accrued by working or studying, and reduced by resting; when the bar is maxed out, the player collapses and must immediately rest to recover. A collapse at home calls the physician: a fee of up to 20 Coin from the treasury (never into debt, charged once per collapse), then a forced week of convalescence that clears 15 Fatigue and 15 Melancholy. While a bar is still at its cap, further forced -15/-15 weeks follow without another fee. Recovery never extends the deadline: a collapse in the last week still pays the fee but gets no recovery week. (Rules settled in `docs/archive/open-questions-tasks.md` Q13; the 20 Coin fee and the 15-point recovery are experimental numbers.)
 
 Fatigue and Melancholy are in 0-100 range but have a lower starting cap that raises with stat gain:
 
