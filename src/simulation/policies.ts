@@ -30,7 +30,7 @@ export const DEFAULT_POLICY_PARAMS: Readonly<PolicyParams> = Object.freeze({
 const ESTATES: readonly Estate[] = ['bellatores', 'oratores', 'laboratores'];
 type Concrete = Exclude<AvailableAction, { type: 'BEGIN_PILGRIMAGE' }>;
 
-function modifiers(state: CampaignState, derived: DerivedStats, activityId: ActivityId,
+export function modifiers(state: CampaignState, derived: DerivedStats, activityId: ActivityId,
   kind: ModifierContext['kind'], config: RulesConfig) {
   return collectModifiers({
     activityId, kind, solar: derived.solarAspect, lunar: derived.lunarPhase,
@@ -42,7 +42,7 @@ function lunar(road: PilgrimageState, config: RulesConfig): LunarPhase {
   return config.astrology.lunarPhaseByWeek[road.segmentEntryWeek % config.calendar.weeksPerMonth]!;
 }
 
-function bestApproach(state: CampaignState, road: PilgrimageState, threat: Estate,
+export function bestApproach(state: CampaignState, road: PilgrimageState, threat: Estate,
   config: RulesConfig, specialist?: Estate): { estate: Estate; probability: number } {
   return (specialist ? [specialist] : ESTATES).map((estate) => ({
     estate, probability: encounterOdds({
@@ -52,7 +52,7 @@ function bestApproach(state: CampaignState, road: PilgrimageState, threat: Estat
   })).sort((a, b) => b.probability - a.probability)[0]!;
 }
 
-function failureCapacity(state: CampaignState, derived: DerivedStats, road: PilgrimageState,
+export function failureCapacity(state: CampaignState, derived: DerivedStats, road: PilgrimageState,
   estate: Estate, config: RulesConfig): number {
   const penalty = failurePenalty({
     approach: estate, lunar: lunar(road, config), equipmentId: road.equipmentId,
@@ -72,7 +72,7 @@ function failureCapacity(state: CampaignState, derived: DerivedStats, road: Pilg
  * spending that bottleneck resource. Independent threat/check approximation.
  */
 export function estimateSegmentSurvival(state: CampaignState, derived: DerivedStats,
-  config: RulesConfig, road = state.pilgrimage): number {
+  config: RulesConfig, road = state.pilgrimage, specialist?: Estate): number {
   if (!road) throw new Error('Survival estimation requires a pilgrimage');
   const count = (road.isFinal ? config.route.finalEncounters : config.route.encountersPerSegment)
     - road.encounterIndex;
@@ -83,7 +83,7 @@ export function estimateSegmentSurvival(state: CampaignState, derived: DerivedSt
   for (const threat of ESTATES) {
     const w = config.encounters.distribution[threat];
     if (w === 0) continue;
-    const best = bestApproach(state, road, threat, config);
+    const best = bestApproach(state, road, threat, config, specialist);
     probability += w * best.probability / 100;
     weight += w;
     capacity = Math.min(capacity, failureCapacity(state, derived, road, best.estate, config));

@@ -21,6 +21,7 @@ import {
 import { aggregate, runMetaFromConfig, runRecord, type Aggregate, type RunRecord } from './metrics.js';
 import { segmentLunarPhase } from '../core/pilgrimage.js';
 import { POLICIES, type PolicyFactory } from './policies.js';
+import { BUILD_POLICIES } from './build-policy.js';
 import { deriveBatchSeed, runCampaign, type CampaignResult } from './runner.js';
 import { writeReport, type TraceRun } from './report.js';
 
@@ -309,6 +310,8 @@ export interface CliIo {
 export function runCli(argv: readonly string[], io: CliIo): number {
   const cwd = io.cwd ?? process.cwd();
   const registry = io.policies ?? POLICIES;
+  // Build presets (balance testing) are selectable by name but not part of --all-policies.
+  const selectable = io.policies ?? { ...POLICIES, ...BUILD_POLICIES };
   try {
     const options = parseCliArgs(argv);
     if (options.help) {
@@ -326,8 +329,8 @@ export function runCli(argv: readonly string[], io: CliIo): number {
     const policyIds = options.policies === 'all' ? knownPolicies : options.policies;
     if (policyIds.length === 0) throw new UsageError('no policies are registered');
     for (const id of policyIds) {
-      if (!Object.hasOwn(registry, id)) {
-        throw new UsageError(`unknown policy "${id}"; registered: ${knownPolicies.join(', ') || '(none)'}`);
+      if (!Object.hasOwn(selectable, id)) {
+        throw new UsageError(`unknown policy "${id}"; registered: ${Object.keys(selectable).sort().join(', ') || '(none)'}`);
       }
     }
 
@@ -341,7 +344,7 @@ export function runCli(argv: readonly string[], io: CliIo): number {
       for (const sign of signs) {
         for (let runIndex = 0; runIndex < runs; runIndex++) {
           const seed = traceSeed ?? deriveBatchSeed(options.seed, sign, runIndex);
-          const policy = registry[policyId]!(config);
+          const policy = selectable[policyId]!(config);
           policyMetadata.set(policyId, { id: policyId, params: structuredClone(policy.params) });
           const result = runCampaign({ seed, sign, policy, config, trace, strict: options.strict });
           if (traceSeed !== undefined && options.out !== undefined) {
