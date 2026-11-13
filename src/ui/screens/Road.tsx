@@ -18,7 +18,7 @@ import {
   carryPresets, departureAction, departureOption, previewLeave, segmentInfo, segmentMoon,
 } from '../engine/road.js';
 import {
-  signed, ESTATES, ESTATE_LABEL, LUNAR_LABEL, MATCHUP_LABEL, THREAT_FLAVOUR, itemEffectLabel, penaltyLabel, roadMoonLabel,
+  signed, ESTATES, ESTATE_LABEL, LUNAR_LABEL, MATCHUP_LABEL, THREAT_FLAVOUR, itemEffectLabel, threatLabel, penaltyLabel, roadMoonLabel,
 } from '../text/labels.js';
 import { useGame } from '../useStore.js';
 
@@ -209,7 +209,7 @@ function ThreatCard({ state }: { state: CampaignState }) {
   return (
     <div className={`threat threat--${threat}`}>
       <EstateIcon estate={threat} size={96} />
-      <h2>A {ESTATE_LABEL[threat]} threat</h2>
+      <h2>{threatLabel(threat)}</h2>
       <p>{lines[(road.segmentIndex + road.encounterIndex) % lines.length]}</p>
     </div>
   );

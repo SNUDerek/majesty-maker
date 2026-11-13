@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { signToBirthMonth } from '../core/calendar.js';
 import {
   ACTIVITY_BLURB, ACTIVITY_LABEL, JOBS, MONTH_SIGN, RESTS, SIGN_LABEL, SIGNS_IN_SHEET_ORDER, TUTORS,
-  criticalPeriodLabel, fullName, modifierLabel, signed, times,
+  criticalPeriodLabel, fullName, modifierLabel, signed, threatLabel, times,
 } from '../ui/text/labels.js';
 import { loadShippedConfig } from './support/config.js';
 
@@ -43,6 +43,8 @@ describe('ui labels', () => {
     expect(signed(3)).toBe('+3');
     expect(signed(-5)).toBe('−5');
     expect(signed(0)).toBe('0');
+    expect(threatLabel('oratores')).toBe('An Oratores threat');
+    expect(threatLabel('bellatores')).toBe('A Bellatores threat');
     expect(fullName({ scionName: 'Elaine', playerName: { last: 'Wyke' } })).toBe('Elaine Wyke');
     expect(fullName({ scionName: ' Elaine ', playerName: { last: ' ' } })).toBe('Elaine');
     expect(criticalPeriodLabel({ aspect: 'square', startsInWeeks: 1 }, config)).toMatch(/^Square next week: /);

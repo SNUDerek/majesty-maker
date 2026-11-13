@@ -4,7 +4,7 @@
  * owns it, the engine keeps no history.
  */
 import type { CampaignState, Estate, GameAction, GameEvent, RulesConfig } from '../../core/index.js';
-import { ESTATE_LABEL } from '../text/labels.js';
+import { ESTATE_LABEL, threatLabel } from '../text/labels.js';
 import { segmentInfo } from './road.js';
 import { collectRows, summarize, type Quantity } from './summarize.js';
 
@@ -27,7 +27,7 @@ function itemName(id: string, config: RulesConfig): string {
 
 function threatLine(events: readonly GameEvent[]): string | undefined {
   const drawn = events.find((e): e is Extract<GameEvent, { type: 'encounter_drawn' }> => e.type === 'encounter_drawn');
-  return drawn === undefined ? undefined : `A ${ESTATE_LABEL[drawn.threat as Estate]} threat`;
+  return drawn === undefined ? undefined : threatLabel(drawn.threat);
 }
 
 /** Title and detail for actions that show no result panel. */
@@ -60,12 +60,16 @@ export function chronicleEntry(
 ): ChronicleEntry {
   const summary = summarize(action, events, after);
   const head = summary ?? silentHeadline(before, action, events, config);
+  // Name the matchup on encounter results, so an entry reads on its own.
+  const resolved = events.find((e): e is Extract<GameEvent, { type: 'encounter_resolved' }> => e.type === 'encounter_resolved');
+  const matchup = resolved === undefined ? undefined : `${threatLabel(resolved.threat)}, met with ${ESTATE_LABEL[resolved.approach]}.`;
+  const detail = [matchup, head.detail].filter((s): s is string => s !== undefined).join(' ') || undefined;
   const rows = (summary?.rows ?? collectRows(events)).map(({ quantity, amount }) => ({ quantity, amount }));
   return {
     week: before.elapsedWeeks,
     action,
     title: head.title,
-    ...(head.detail === undefined ? {} : { detail: head.detail }),
+    ...(detail === undefined ? {} : { detail }),
     rows,
     notes: summary?.notes ?? [],
   };

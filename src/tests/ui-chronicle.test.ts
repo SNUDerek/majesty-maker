@@ -8,6 +8,7 @@ import { readSlot, slotKey, writeSave, type SaveStorage } from '../ui/engine/per
 import { departureAction, departureOption } from '../ui/engine/road.js';
 import { activityOptions } from '../ui/engine/activities.js';
 import { GameStore } from '../ui/engine/store.js';
+import { ESTATE_LABEL } from '../ui/text/labels.js';
 import { loadShippedConfig } from './support/config.js';
 
 const config = loadShippedConfig();
@@ -41,17 +42,19 @@ describe('chronicleEntry', () => {
     const home = createCampaign(OPTIONS, items);
     const depart = step(home, { type: 'BEGIN_PILGRIMAGE', carry: 20, equipmentId: 'gambeson', consumableId: 'theriac' }, items);
     expect(depart.entry.title).toBe('Set out on Road to Waystation 1');
-    expect(depart.entry.detail).toMatch(/^Carrying 20 Coin and Gambeson, Theriac\. A (Bellatores|Oratores|Laboratores) threat\.$/);
+    expect(depart.entry.detail).toMatch(/^Carrying 20 Coin and Gambeson, Theriac\. (A Bellatores|An Oratores|A Laboratores) threat\.$/);
     expect(depart.entry.rows).toEqual([{ quantity: 'treasury', amount: -30 }, { quantity: 'carried', amount: 20 }]);
 
     // Play on until a press-on reveal and a remedy are possible.
     let state = depart.state;
-    let reveal; let remedy;
+    let reveal; let remedy; let fought;
     for (let i = 0; i < 20 && state.phase === 'pilgrimage' && (reveal === undefined || remedy === undefined); i++) {
       const stage = state.pilgrimage!.stage;
       if (stage === 'choose_approach') {
         const best = previewApproaches(state, items).sort((a, b) => b.odds.probability - a.odds.probability)[0]!;
-        state = step(state, { type: 'CHOOSE_APPROACH', estate: best.estate }, items).state;
+        const r = step(state, { type: 'CHOOSE_APPROACH', estate: best.estate }, items);
+        fought ??= { entry: r.entry, threat: state.pilgrimage!.currentThreat, approach: best.estate };
+        state = r.state;
       } else if (stage === 'reroll_or_accept') {
         state = step(state, { type: 'ACCEPT_RESULT' }, items).state;
       } else if (stage === 'continue_or_retreat') {
@@ -63,7 +66,9 @@ describe('chronicleEntry', () => {
         reveal = r.entry; state = r.state;
       } else break;
     }
-    expect(reveal?.title).toMatch(/^A (Bellatores|Oratores|Laboratores) threat$/);
+    expect(reveal?.title).toMatch(/^(A Bellatores|An Oratores|A Laboratores) threat$/);
+    // Encounter results name the matchup before the roll.
+    expect(fought!.entry.detail).toMatch(new RegExp(`^An? \\w+ threat, met with ${ESTATE_LABEL[fought!.approach]}\\. Rolled \\d+ against \\d+%\\.$`));
     expect(remedy).toMatchObject({ title: 'Used Theriac', rows: [{ quantity: 'fatigue', amount: -30 }] });
   });
 
@@ -115,6 +120,15 @@ describe('Chronicle storage', () => {
     storage.setItem(slotKey('slot2'), JSON.stringify({ ...old, log: [{ week: 'x' }, { week: 0, title: 'ok', rows: [], notes: [], action: { type: 'RETREAT' } }] }));
     const info2 = readSlot(storage, 'slot2', config);
     expect(info2.status === 'ok' && info2.save.log!.map((e) => e.title)).toEqual(['ok']);
+    // Rows and notes are checked too: a null row would crash the overlay.
+    storage.setItem(slotKey('slot2'), JSON.stringify({ ...old, log: [
+      { week: 0, title: 'bad row', rows: [null], notes: [] },
+      { week: 0, title: 'bad quantity', rows: [{ quantity: 'gold', amount: 1 }], notes: [] },
+      { week: 0, title: 'bad note', rows: [], notes: [3] },
+      { week: 0, title: 'ok', rows: [{ quantity: 'fatigue', amount: 5 }], notes: ['n'] },
+    ] }));
+    const info4 = readSlot(storage, 'slot2', config);
+    expect(info4.status === 'ok' && info4.save.log!.map((e) => e.title)).toEqual(['ok']);
     storage.setItem(slotKey('slot2'), JSON.stringify({ ...old, log: 'nope' }));
     const info3 = readSlot(storage, 'slot2', config);
     expect(info3.status === 'ok' && info3.save.log).toEqual([]);

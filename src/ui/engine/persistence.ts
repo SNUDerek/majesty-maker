@@ -48,12 +48,25 @@ export function writeSave(
   return save;
 }
 
-/** The saved Chronicle, keeping only well-formed entries; anything else reads as an empty log. */
+const QUANTITIES: readonly unknown[] = ['bellatores', 'oratores', 'laboratores', 'fatigue', 'melancholy', 'treasury', 'carried'];
+
+function isLogRow(r: unknown): boolean {
+  if (typeof r !== 'object' || r === null) return false;
+  const row = r as { quantity?: unknown; amount?: unknown };
+  return QUANTITIES.includes(row.quantity) && Number.isFinite(row.amount);
+}
+
+/** The saved Chronicle, keeping only well-formed entries (every field the overlay renders); anything else reads as an empty log. */
 function readLog(value: unknown): ChronicleEntry[] {
   if (!Array.isArray(value)) return [];
-  return value.filter((e): e is ChronicleEntry => typeof e === 'object' && e !== null
-    && Number.isSafeInteger((e as ChronicleEntry).week) && typeof (e as ChronicleEntry).title === 'string'
-    && Array.isArray((e as ChronicleEntry).rows) && Array.isArray((e as ChronicleEntry).notes));
+  return value.filter((e): e is ChronicleEntry => {
+    if (typeof e !== 'object' || e === null) return false;
+    const entry = e as Partial<Record<keyof ChronicleEntry, unknown>>;
+    return Number.isSafeInteger(entry.week) && typeof entry.title === 'string'
+      && (entry.detail === undefined || typeof entry.detail === 'string')
+      && Array.isArray(entry.rows) && entry.rows.every(isLogRow)
+      && Array.isArray(entry.notes) && entry.notes.every((n) => typeof n === 'string');
+  });
 }
 
 function isSaveFile(value: unknown): value is SaveFile {
