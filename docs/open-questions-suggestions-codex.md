@@ -2,7 +2,7 @@
 
 **Status:** Proposal for discussion; no rules or configuration changes are approved by this document.
 
-**Scope:** Q1–Q13 in [implementation-tasks.md §5](implementation-tasks.md#5-open-questions-found-while-planning), informed by the [thematic design](thematic-design-doc.md), [technical plan](technical-planning-doc.md), [unresolved-parameter register](unresolved-parameters.md), and current engine/configuration. Recommendations below are design judgments, not findings from balance batches.
+**Scope:** All entries in the [unresolved-parameter register](unresolved-parameters.md), including Q1–Q13 in [implementation-tasks.md §5](implementation-tasks.md#5-open-questions-found-while-planning), informed by the [thematic design](thematic-design-doc.md), [technical plan](technical-planning-doc.md), and current engine/configuration. Recommendations below are design judgments, not findings from balance batches.
 
 ## Q1 — Tutor burden mapping
 
@@ -103,11 +103,64 @@ Wipeout already costs money, provisional progress, and time. Resetting burdens p
 
 Bound all recovery weeks by the campaign deadline; never grant another playable week. Inspect repeated intentional wipeouts, treasury-empty campaigns, and home-collapse cycles before confirming these choices.
 
+## Additional entries in the unresolved-parameter register
+
+The register distinguishes **tbd** rule decisions from **experimental** numeric candidates. Retaining a current default below does not confirm it. Approval of an interpretation can settle a rule decision while its numerical tuning remains experimental.
+
+### Route length and final difficulty
+
+**Recommend:** Retain 5 regular segments, 5 encounters per regular segment, 8 final encounters, and a −20 final road bonus as the reference configuration. These cover `route.regularSegments`, `route.encountersPerSegment`, `route.finalEncounters`, and `route.finalRoadBonus`; all four remain experimental.
+
+This gives 25 regular encounters plus 8 final encounters on an uninterrupted successful route. The minimum travel cost is 6 weeks, one per segment including the finale, rather than 33 weeks. Whether the challenge feels appropriate depends on preparation and failed attempts; encounter totals alone cannot establish balance.
+
+Use the existing 4/5/6-segment, 6/8/10-final-encounter, and −10/−20/−30-final-road variants for separate sensitivity comparisons. Hold the regular road curve policy consistent when comparing route lengths and record the actual arrays. Regular encounters per segment has no named sweep in E6; propose a separate 3/5/7 comparison if baseline traces suggest segments are too easy or too punishing. That comparison would require new experiment configuration, not a change to the reference default. Inspect checkpoint progression and attempts per checkpoint alongside victories so final difficulty is distinguishable from failure to reach the finale.
+
+### Waning Moon and free rest
+
+**Recommend:** Retain `astrology.waning.appliesToRestAtHome: false`. Apply ×1.5 recovery only to Bathhouse, Shrine, and Banquet, as explicitly listed in the source.
+
+This gives paid recovery a distinct scheduling advantage while free rest remains a reliable −15/−15 fallback. If free rest also received the multiplier, both reductions would become 22 after flooring, potentially reducing the value of purchased rest. Test that alternative separately if paid rest is rarely selected. The scope decision remains tbd pending approval; do not infer approval from retaining `false`.
+
+### Retreat loss magnitudes
+
+**Recommend:** Retain `failure.retreatLootRetentionPct: 50` and `failure.retreatToll: 5` as experimental, alongside Q7's accounting recommendation. Retention means keeping half of the *remaining earned loot*, not keeping half of all carried Coin; the toll is an additional charge.
+
+Floor the retained amount before deriving the forfeiture: 3 remaining earned Coin yields 1 retained and 2 forfeited. Inspect repeated retreats, forfeited loot, actual toll paid, and recovery time before adjusting either value. Test retention and toll independently if retreat is either effectively free or so expensive that bots never use it. Q7 settles the payer and shortfall behavior only; it does not confirm these magnitudes.
+
+### Item acquisition and the test reward table
+
+**Recommend:** Retain `items.acquisition: 'disabled'` for the item-free baseline. Keep equal weights of 1 for all six entries in `items.testRewardTable` as a test fixture, with experimental provenance. Neither setting establishes a production drop rate or item rarity.
+
+The table specifies which item an explicit reward call chooses, not how often or when campaigns award one. In the current engine, `drawItemReward` exists in `src/core/items.ts`, but pilgrimage rewards only draw Coin and do not call it. Selecting `items-test-table` alone therefore does not demonstrate item acquisition during a campaign. Treat that as an experiment limitation to report, not evidence that items have no effect.
+
+For Phase 0 item-effect comparisons, use documented starting-inventory overrides and the same seed sets, recording the exact supplies given to each policy. Label these as provisioned-item experiments; they test item effects and policy use, not acquisition balance. The existing one-equipment/one-consumable carry restrictions still apply.
+
+If natural acquisition is required for F3, propose a separate rule and implementation task first. My preferred initial experiment is one uniformly drawn inventory item on the **first** securing of each regular waystation, with no grants on repeat visits and no immediate resupply of carried slots. This bounds rewards and avoids checkpoint farming. Five guaranteed grants per completed regular route may be too generous for the intended rarity, so compare it with item-free and provisioned-item runs before proposing a rarer drop probability. Reward timing, grant probability, safe ownership, and inventory events need explicit decisions and tests; the table alone cannot encode them. This is a new experimental proposal, not existing engine behavior or a confirmed acquisition rule.
+
+### Register coverage and documentation follow-up
+
+Every register entry now has a recommendation here:
+
+| Register path | Recommendation location |
+|---|---|
+| `route.regularSegments`, `route.encountersPerSegment`, `route.finalEncounters`, `route.finalRoadBonus` | Route length and final difficulty |
+| `classes.tutorBurden` | Q1 and Q5 |
+| `astrology.newMoon.activityBonus`, `astrology.fullMoon.surge` | Q12 |
+| `astrology.newMoon.skipFee` | Q3 and Q9 |
+| `astrology.waxing.mode` | Q4 |
+| `astrology.waning.appliesToRestAtHome` | Waning Moon and free rest |
+| `failure.retreatLootRetentionPct`, `failure.retreatToll` | Q7 and retreat loss magnitudes |
+| `failure.wipeoutBurdenReset`, `failure.homeCollapse` | Q13 |
+| `failure.purseProtection.appliesToLabFailures` | Q2 |
+| `items.acquisition`, `items.testRewardTable` | Item acquisition and the test reward table |
+
+Q6, Q8, Q10, and Q11 concern module-owned rule logic and remain covered above despite having no individual register row. The register's closing reference to implementation-task “§9” is stale: the current open-question section is §5. In a subsequent documentation update, correct that reference and clarify that absence from the parameter table does not approve the explicitly unresolved module-owned questions. This proposal leaves the register itself unchanged.
+
 ## How to use these recommendations before F3
 
-1. Agree on rule interpretations first: Q3–Q11 and Q13 specify timing, eligibility, accounting, and modifier semantics. Approval should be recorded explicitly; this proposal alone does not resolve their status.
+1. Agree on rule interpretations first: Q3–Q11, Q13, and Waning recovery scope specify timing, eligibility, accounting, and modifier semantics. Decide whether natural item acquisition is required for the evaluation. Approval should be recorded explicitly; this proposal alone does not resolve their status.
 2. Run the existing baseline unchanged. Compare Q1's mapping, Q2's protection toggle, and Q12's candidate bonuses independently on paired seeds across the seven policies and twelve signs. Then evaluate the combined candidate and interactions, particularly Laboratores protection plus skipping.
 3. Use victory uncertainty intervals, checkpoint reach, recovery weeks, approach shares, resource loops, and representative traces. Stables-only is an economy/control policy; its lack of victories is expected. Check that conclusions are robust to reasonable policy thresholds rather than treating bot performance as proof of optimal play.
-4. In a separately authorized implementation, update relevant configs, provenance, source docs, and regression tests for accepted decisions. Record remaining experimental values in F3 and distinguish config changes from any new rule logic.
+4. Evaluate route/finale sensitivity and item effects separately using the experiments above. In a separately authorized implementation, update relevant configs, provenance, source docs, and regression tests for accepted decisions. Record remaining experimental values and item-acquisition limitations in F3 and distinguish config changes from any new rule logic.
 
-Other unresolved parameters, including item acquisition and Waning recovery at home, remain outside these thirteen questions. This proposal does not settle them or claim the full ruleset is ready for final balance conclusions.
+All thirteen questions and all seventeen register entries are addressed as proposals. None of their statuses changes merely because this document recommends retaining or replacing a default; final balance conclusions must identify which decisions were approved and which values remain experimental.
