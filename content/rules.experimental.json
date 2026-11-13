@@ -1,6 +1,62 @@
 {
   "id": "experimental",
+  "calendar": {
+    "totalWeeks": 96,
+    "weeksPerMonth": 4,
+    "monthsPerYear": 12,
+    "startYear": 1450,
+    "startAge": 14,
+    "deadlineAge": 16
+  },
+  "startingState": {
+    "baseStat": 15,
+    "zodiacBonus": 5,
+    "zodiacEstate": {
+      "aries": "bellatores",
+      "taurus": "oratores",
+      "gemini": "laboratores",
+      "cancer": "bellatores",
+      "leo": "oratores",
+      "virgo": "laboratores",
+      "libra": "bellatores",
+      "scorpio": "oratores",
+      "sagittarius": "laboratores",
+      "capricorn": "bellatores",
+      "aquarius": "oratores",
+      "pisces": "laboratores"
+    },
+    "treasury": 50,
+    "fatigue": 0,
+    "melancholy": 0,
+    "statMin": 0,
+    "statMax": 100,
+    "treasuryMax": 9999,
+    "startingInventory": {}
+  },
   "classes": {
+    "tutors": {
+      "hedge_knight": {
+        "target": "bellatores",
+        "gain": 5,
+        "opposing": "laboratores",
+        "opposingLoss": 1,
+        "cost": 20
+      },
+      "hermit": {
+        "target": "oratores",
+        "gain": 5,
+        "opposing": "bellatores",
+        "opposingLoss": 1,
+        "cost": 20
+      },
+      "smuggler": {
+        "target": "laboratores",
+        "gain": 5,
+        "opposing": "oratores",
+        "opposingLoss": 1,
+        "cost": 20
+      }
+    },
     "tutorBurden": {
       "hedge_knight": {
         "fatigue": 5,
@@ -16,12 +72,136 @@
       }
     }
   },
+  "jobs": {
+    "baseSuccessBonus": 35,
+    "successMin": 5,
+    "successMax": 95,
+    "definitions": {
+      "stables": {
+        "checkStat": null,
+        "success": {
+          "coin": 6,
+          "coinDie": 0,
+          "gainStat": "laboratores",
+          "gain": 1,
+          "fatigue": 2,
+          "melancholy": 2
+        },
+        "failure": {
+          "coin": 0,
+          "fatigue": 0,
+          "melancholy": 0
+        }
+      },
+      "alehouse": {
+        "checkStat": "laboratores",
+        "success": {
+          "coin": 10,
+          "coinDie": 10,
+          "gainStat": "laboratores",
+          "gain": 2,
+          "fatigue": 5,
+          "melancholy": 0
+        },
+        "failure": {
+          "coin": 0,
+          "fatigue": 5,
+          "melancholy": 5
+        }
+      },
+      "village_watch": {
+        "checkStat": "bellatores",
+        "success": {
+          "coin": 15,
+          "coinDie": 0,
+          "gainStat": "bellatores",
+          "gain": 2,
+          "fatigue": 5,
+          "melancholy": 0
+        },
+        "failure": {
+          "coin": 0,
+          "fatigue": 10,
+          "melancholy": 0
+        }
+      },
+      "scriptorium": {
+        "checkStat": "oratores",
+        "success": {
+          "coin": 15,
+          "coinDie": 0,
+          "gainStat": "oratores",
+          "gain": 2,
+          "fatigue": 0,
+          "melancholy": 5
+        },
+        "failure": {
+          "coin": 0,
+          "fatigue": 0,
+          "melancholy": 10
+        }
+      }
+    }
+  },
+  "rest": {
+    "rest_home": {
+      "cost": 0,
+      "fatigue": 15,
+      "melancholy": 15
+    },
+    "bathhouse": {
+      "cost": 15,
+      "fatigue": 40,
+      "melancholy": 10
+    },
+    "shrine": {
+      "cost": 15,
+      "fatigue": 10,
+      "melancholy": 40
+    },
+    "banquet": {
+      "cost": 30,
+      "fatigue": 35,
+      "melancholy": 35
+    }
+  },
   "astrology": {
+    "lunarPhaseByWeek": [
+      "new",
+      "waxing",
+      "full",
+      "waning"
+    ],
     "solar": {
+      "distances": {
+        "return": [
+          0
+        ],
+        "opposition": [
+          6
+        ],
+        "trine": [
+          4,
+          8
+        ],
+        "square": [
+          3,
+          9
+        ]
+      },
+      "returnTutorGainPct": 120,
+      "returnBanquetCostPct": 50,
+      "oppositionJobBurdenPct": 150,
+      "trineJobSuccessPts": 15,
+      "squareTutorGainPct": 130,
       "squareTutorFatiguePct": 200,
       "squareTutorMelancholyPct": 200
     },
     "newMoon": {
+      "activities": [
+        "smuggler",
+        "alehouse"
+      ],
       "activityBonus": 20,
       "skipFee": 10
     },
@@ -30,15 +210,59 @@
       "bonusPct": 120
     },
     "fullMoon": {
-      "surge": 20
+      "surgeEstates": [
+        "bellatores",
+        "oratores"
+      ],
+      "surge": 20,
+      "advantageMultiplierPct": 200,
+      "pilgrimageBurdenPenaltyPct": 200
     },
     "waning": {
+      "paidRestRecoveryPct": 150,
       "appliesToRestAtHome": false
     }
+  },
+  "encounters": {
+    "distribution": {
+      "bellatores": 1,
+      "oratores": 1,
+      "laboratores": 1
+    },
+    "beats": {
+      "bellatores": "laboratores",
+      "laboratores": "oratores",
+      "oratores": "bellatores"
+    },
+    "matchupPct": {
+      "advantage": 150,
+      "neutral": 100,
+      "disadvantage": 75
+    },
+    "successMin": 5,
+    "successMax": 95,
+    "rewardCoinDie": 4,
+    "failurePenalty": 15
+  },
+  "route": {
+    "regularSegments": 5,
+    "encountersPerSegment": 5,
+    "finalEncounters": 8,
+    "roadBonus": [
+      40,
+      30,
+      20,
+      10,
+      0
+    ],
+    "finalRoadBonus": -20,
+    "departureFee": 10
   },
   "failure": {
     "retreatLootRetentionPct": 50,
     "retreatToll": 10,
+    "wipeoutMedicalFeeMax": 50,
+    "wipeoutConvalescenceWeeks": 1,
     "wipeoutBurdenReset": {
       "recovery": 35
     },
@@ -52,9 +276,35 @@
     }
   },
   "items": {
-    "acquisition": "disabled"
+    "acquisition": "disabled",
+    "maxEquipment": 1,
+    "maxConsumables": 1,
+    "testRewardTable": {
+      "theriac": 1,
+      "st_johns_wort": 1,
+      "metheglin": 1,
+      "gambeson": 1,
+      "saints_relic": 1,
+      "weighted_coin": 1
+    }
   },
   "provenance": {
+    "route.regularSegments": {
+      "status": "experimental",
+      "note": "Suggested initial balance value (tech \u00a77; R1 keeps it); a test parameter, not canon."
+    },
+    "route.encountersPerSegment": {
+      "status": "experimental",
+      "note": "Suggested initial balance value (tech \u00a77; R1 keeps it); a test parameter, not canon."
+    },
+    "route.finalEncounters": {
+      "status": "experimental",
+      "note": "Suggested initial balance value (tech \u00a77; R1 keeps it); a test parameter, not canon."
+    },
+    "route.finalRoadBonus": {
+      "status": "experimental",
+      "note": "Suggested initial test value (tech \u00a77; R1 keeps it), not canon."
+    },
     "classes.tutorBurden": {
       "status": "experimental",
       "note": "Q1 settled mapping (Knight Fatigue, Hermit Melancholy, Smuggler split); magnitudes 5/0, 0/5, 3/2 and the split are experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
@@ -67,6 +317,10 @@
       "status": "experimental",
       "note": "Q12 settled rule: New Moon boosts Smuggler/Alehouse positive gains and payouts; +20% magnitude experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
     },
+    "astrology.fullMoon.surge": {
+      "status": "experimental",
+      "note": "Q12 settled rule: Full Moon boosts Bellatores/Oratores home activities; +20% magnitude experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
+    },
     "astrology.newMoon.skipFee": {
       "status": "experimental",
       "note": "Q3/Q9 settled rule: one skip per New Moon segment from carried Coin, counts toward N; 10 Coin fee experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
@@ -78,10 +332,6 @@
     "astrology.waxing.bonusPct": {
       "status": "experimental",
       "note": "Q4: x1.20 so a 5-point lesson visibly rounds up; magnitude experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
-    },
-    "astrology.fullMoon.surge": {
-      "status": "experimental",
-      "note": "Q12 settled rule: Full Moon boosts Bellatores/Oratores home activities; +20% magnitude experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
     },
     "astrology.waning.appliesToRestAtHome": {
       "status": "confirmed",
@@ -106,6 +356,10 @@
     "failure.purseProtection.appliesToLabFailures": {
       "status": "confirmed",
       "note": "Q2 settled: Purse Protection reduces failed Laboratores encounter costs and wipeout losses. (T7 experimental baseline, see docs/balance-report-baseline.md)"
+    },
+    "items.testRewardTable": {
+      "status": "experimental",
+      "note": "B2/R5 test fixture: one uniformly sampled item per explicit reward call; no production drop rate implied. Used only in test_table mode."
     },
     "items.acquisition": {
       "status": "confirmed",

@@ -4,7 +4,7 @@ import { loadConfig } from '../../src/core/config.ts';
 import { createPolicy } from '../../src/simulation/policies.ts';
 import { deriveBatchSeed, runCampaign } from '../../src/simulation/runner.ts';
 const j = (p: string) => JSON.parse(readFileSync(new URL('../../' + p, import.meta.url), 'utf8'));
-const base = { rules: j('content/rules.default.json'), items: j('content/items.json') };
+const base = { rules: j('content/rules.legacy.json'), items: j('content/items.json') };
 const configs: Record<string, string[]> = {
   control: [], 'q4-waxing': ['content/experiments/open-questions/q4-waxing.json'],
   'q12-home-20': ['content/experiments/open-questions/q12-home-20.json'],

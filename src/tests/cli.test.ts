@@ -8,7 +8,7 @@ import { segmentLunarPhase } from '../core/pilgrimage.js';
 import { formatTrace, loadCliConfig, parseCliArgs, runCli, UsageError, variantPath } from '../simulation/cli.js';
 import type { Policy } from '../simulation/runner.js';
 import { deriveBatchSeed, runCampaign } from '../simulation/runner.js';
-import { loadContentConfig } from './support/config.js';
+import { loadShippedConfig as loadContentConfig } from './support/config.js';
 
 /** Deterministic stand-in until E3 policies land: rotates through whatever is offered. */
 function rotatingPolicy(id: string): Policy {
@@ -119,7 +119,7 @@ describe('runCli', () => {
     expect(formal.aggregates).toEqual(summary.aggregates);
     expect(formal.args).toEqual(summary.args);
     expect(readFileSync(join(dir, 'reports/baseline/runs.csv'), 'utf8').split('\r\n')).toHaveLength(50);
-    expect(readFileSync(join(dir, 'reports/baseline/summary.md'), 'utf8')).toContain('partial astrology');
+    expect(readFileSync(join(dir, 'reports/baseline/summary.md'), 'utf8')).toContain('configured astrology');
     expect(existsSync(join(dir, 'reports/baseline/events.ndjson'))).toBe(false);
   });
 

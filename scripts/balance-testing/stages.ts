@@ -39,7 +39,7 @@ export const STAGE1_CONFIGS: readonly ConfigSpec[] = [
 ];
 
 export function loadStageConfig(spec: ConfigSpec): RulesConfig {
-  return loadConfig({ rules: json('rules.default.json'), items: json('items.json'), variants: spec.overlays.map(json) });
+  return loadConfig({ rules: json('rules.legacy.json'), items: json('items.json'), variants: spec.overlays.map(json) });
 }
 
 const LEAD_KEYS: Record<string, Estate> = { b: 'bellatores', o: 'oratores', l: 'laboratores' };

@@ -4,7 +4,7 @@ import { hashConfig, type RulesConfig } from '../core/config.js';
 import type { AvailableAction, GameAction } from '../core/index.js';
 import { loadCliConfig, parseCliArgs, UsageError } from '../simulation/cli.js';
 import { runCampaign, type Policy } from '../simulation/runner.js';
-import { loadContentConfig, readContentJson } from './support/config.js';
+import { loadContentConfig, loadShippedConfig, readContentJson } from './support/config.js';
 
 const names = readdirSync(new URL('../../content/variants/', import.meta.url))
   .filter((file) => file.endsWith('.json'))
@@ -89,7 +89,7 @@ describe('E6 configuration variants', () => {
       expect(() => loadCliConfig(parseCliArgs([...args, '--variant', `route-${length}`, '--variant', curve])))
         .toThrow(/roadBonus: has 5 entries/);
       const reversed = loadCliConfig(parseCliArgs([...args, '--variant', curve, '--variant', `route-${length}`]));
-      expect(reversed.route).toEqual(load(`route-${length}`).route);
+      expect(reversed.route).toEqual(loadShippedConfig(`variants/route-${length}.json`).route);
     }
     expect(loadContentConfig('variants/route-5.json', `variants/${curve}.json`).route.roadBonus)
       .toEqual(load(curve).route.roadBonus);
