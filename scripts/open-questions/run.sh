@@ -7,7 +7,7 @@ RUNS=${2:-1000}
 mkdir -p "$OUT"
 E=content/experiments/open-questions
 run() { local name=$1; shift
-  node --import tsx src/simulation/cli.ts --all-policies --all-signs --runs "$RUNS" --seed 20261113 --strict "$@" --out "$OUT/$name" > "$OUT/$name.log" 2>&1
+  node --import tsx src/simulation/cli.ts --all-policies --all-signs --runs "$RUNS" --seed 20261113 --strict --config content/rules.legacy.json "$@" --out "$OUT/$name" > "$OUT/$name.log" 2>&1
   echo "$name exit=0" >> "$OUT/done.txt"; }
 run control
 for o in q1-burden q2-protection q4-waxing q5-square q9-skip-5 q9-skip-10 q12-home-10 q12-home-20 r3-toll q13-wipeout q13-home-fee; do run "$o" --variant $E/$o.json; done

@@ -1,0 +1,367 @@
+{
+  "id": "default",
+  "calendar": {
+    "totalWeeks": 96,
+    "weeksPerMonth": 4,
+    "monthsPerYear": 12,
+    "startYear": 1450,
+    "startAge": 14,
+    "deadlineAge": 16
+  },
+  "startingState": {
+    "baseStat": 15,
+    "zodiacBonus": 5,
+    "zodiacEstate": {
+      "aries": "bellatores",
+      "taurus": "oratores",
+      "gemini": "laboratores",
+      "cancer": "bellatores",
+      "leo": "oratores",
+      "virgo": "laboratores",
+      "libra": "bellatores",
+      "scorpio": "oratores",
+      "sagittarius": "laboratores",
+      "capricorn": "bellatores",
+      "aquarius": "oratores",
+      "pisces": "laboratores"
+    },
+    "treasury": 50,
+    "fatigue": 0,
+    "melancholy": 0,
+    "statMin": 0,
+    "statMax": 100,
+    "treasuryMax": 9999,
+    "startingInventory": {}
+  },
+  "classes": {
+    "tutors": {
+      "hedge_knight": {
+        "target": "bellatores",
+        "gain": 5,
+        "opposing": "laboratores",
+        "opposingLoss": 1,
+        "cost": 20
+      },
+      "hermit": {
+        "target": "oratores",
+        "gain": 5,
+        "opposing": "bellatores",
+        "opposingLoss": 1,
+        "cost": 20
+      },
+      "smuggler": {
+        "target": "laboratores",
+        "gain": 5,
+        "opposing": "oratores",
+        "opposingLoss": 1,
+        "cost": 20
+      }
+    },
+    "tutorBurden": {
+      "hedge_knight": {
+        "fatigue": 5,
+        "melancholy": 0
+      },
+      "hermit": {
+        "fatigue": 0,
+        "melancholy": 5
+      },
+      "smuggler": {
+        "fatigue": 5,
+        "melancholy": 5
+      }
+    }
+  },
+  "jobs": {
+    "baseSuccessBonus": 35,
+    "successMin": 5,
+    "successMax": 95,
+    "definitions": {
+      "stables": {
+        "checkStat": null,
+        "success": {
+          "coin": 6,
+          "coinDie": 0,
+          "gainStat": "laboratores",
+          "gain": 1,
+          "fatigue": 2,
+          "melancholy": 2
+        },
+        "failure": {
+          "coin": 0,
+          "fatigue": 0,
+          "melancholy": 0
+        }
+      },
+      "alehouse": {
+        "checkStat": "laboratores",
+        "success": {
+          "coin": 10,
+          "coinDie": 10,
+          "gainStat": "laboratores",
+          "gain": 2,
+          "fatigue": 5,
+          "melancholy": 0
+        },
+        "failure": {
+          "coin": 0,
+          "fatigue": 5,
+          "melancholy": 5
+        }
+      },
+      "village_watch": {
+        "checkStat": "bellatores",
+        "success": {
+          "coin": 15,
+          "coinDie": 0,
+          "gainStat": "bellatores",
+          "gain": 2,
+          "fatigue": 5,
+          "melancholy": 0
+        },
+        "failure": {
+          "coin": 0,
+          "fatigue": 10,
+          "melancholy": 0
+        }
+      },
+      "scriptorium": {
+        "checkStat": "oratores",
+        "success": {
+          "coin": 15,
+          "coinDie": 0,
+          "gainStat": "oratores",
+          "gain": 2,
+          "fatigue": 0,
+          "melancholy": 5
+        },
+        "failure": {
+          "coin": 0,
+          "fatigue": 0,
+          "melancholy": 10
+        }
+      }
+    }
+  },
+  "rest": {
+    "rest_home": {
+      "cost": 0,
+      "fatigue": 15,
+      "melancholy": 15
+    },
+    "bathhouse": {
+      "cost": 15,
+      "fatigue": 40,
+      "melancholy": 10
+    },
+    "shrine": {
+      "cost": 15,
+      "fatigue": 10,
+      "melancholy": 40
+    },
+    "banquet": {
+      "cost": 30,
+      "fatigue": 35,
+      "melancholy": 35
+    }
+  },
+  "astrology": {
+    "lunarPhaseByWeek": [
+      "new",
+      "waxing",
+      "full",
+      "waning"
+    ],
+    "solar": {
+      "distances": {
+        "return": [
+          0
+        ],
+        "opposition": [
+          6
+        ],
+        "trine": [
+          4,
+          8
+        ],
+        "square": [
+          3,
+          9
+        ]
+      },
+      "returnTutorGainPct": 120,
+      "returnBanquetCostPct": 50,
+      "oppositionJobBurdenPct": 150,
+      "trineJobSuccessPts": 15,
+      "squareTutorGainPct": 130,
+      "squareTutorFatiguePct": 100,
+      "squareTutorMelancholyPct": 200
+    },
+    "newMoon": {
+      "activities": [
+        "smuggler",
+        "alehouse"
+      ],
+      "activityBonus": 0,
+      "skipFee": null
+    },
+    "waxing": {
+      "mode": "single",
+      "bonusPct": 110
+    },
+    "fullMoon": {
+      "surgeEstates": [
+        "bellatores",
+        "oratores"
+      ],
+      "surge": 0,
+      "advantageMultiplierPct": 200,
+      "pilgrimageBurdenPenaltyPct": 200
+    },
+    "waning": {
+      "paidRestRecoveryPct": 150,
+      "appliesToRestAtHome": false
+    }
+  },
+  "encounters": {
+    "distribution": {
+      "bellatores": 1,
+      "oratores": 1,
+      "laboratores": 1
+    },
+    "beats": {
+      "bellatores": "laboratores",
+      "laboratores": "oratores",
+      "oratores": "bellatores"
+    },
+    "matchupPct": {
+      "advantage": 150,
+      "neutral": 100,
+      "disadvantage": 75
+    },
+    "successMin": 5,
+    "successMax": 95,
+    "rewardCoinDie": 4,
+    "failurePenalty": 15
+  },
+  "route": {
+    "regularSegments": 5,
+    "encountersPerSegment": 5,
+    "finalEncounters": 8,
+    "roadBonus": [
+      40,
+      30,
+      20,
+      10,
+      0
+    ],
+    "finalRoadBonus": -20,
+    "departureFee": 10
+  },
+  "failure": {
+    "retreatLootRetentionPct": 50,
+    "retreatToll": 5,
+    "wipeoutMedicalFeeMax": 50,
+    "wipeoutConvalescenceWeeks": 1,
+    "wipeoutBurdenReset": "zero",
+    "homeCollapse": {
+      "forcedWeek": true,
+      "recovery": 15,
+      "fee": 0
+    },
+    "purseProtection": {
+      "appliesToLabFailures": false
+    }
+  },
+  "items": {
+    "acquisition": "disabled",
+    "maxEquipment": 1,
+    "maxConsumables": 1,
+    "testRewardTable": {
+      "theriac": 1,
+      "st_johns_wort": 1,
+      "metheglin": 1,
+      "gambeson": 1,
+      "saints_relic": 1,
+      "weighted_coin": 1
+    }
+  },
+  "provenance": {
+    "route.regularSegments": {
+      "status": "experimental",
+      "note": "Suggested initial balance value (tech \u00a77; R1 keeps it); a test parameter, not canon."
+    },
+    "route.encountersPerSegment": {
+      "status": "experimental",
+      "note": "Suggested initial balance value (tech \u00a77; R1 keeps it); a test parameter, not canon."
+    },
+    "route.finalEncounters": {
+      "status": "experimental",
+      "note": "Suggested initial balance value (tech \u00a77; R1 keeps it); a test parameter, not canon."
+    },
+    "route.finalRoadBonus": {
+      "status": "experimental",
+      "note": "Suggested initial test value (tech \u00a77; R1 keeps it), not canon."
+    },
+    "classes.tutorBurden": {
+      "status": "experimental",
+      "note": "Legacy control: Smuggler +5F/+5M. Q1 settles the mapping; open-questions-decisions selects 3/2."
+    },
+    "astrology.solar.squareTutorFatiguePct": {
+      "status": "experimental",
+      "note": "Legacy control 100 (Square doubles Melancholy only). Q5 settles doubling both burdens (200) in open-questions-decisions."
+    },
+    "astrology.newMoon.activityBonus": {
+      "status": "experimental",
+      "note": "Legacy control 0 = off ('partial astrology'). Q12 settles the rule; open-questions-decisions selects +20%."
+    },
+    "astrology.fullMoon.surge": {
+      "status": "experimental",
+      "note": "Legacy control 0 = off ('partial astrology'). Q12 settles the rule; open-questions-decisions selects +20%."
+    },
+    "astrology.newMoon.skipFee": {
+      "status": "experimental",
+      "note": "Legacy control null = skipping disabled. Q3/Q9 settle the rule; open-questions-decisions selects 10 Coin."
+    },
+    "astrology.waxing.mode": {
+      "status": "confirmed",
+      "note": "Q4 settled: 'single' applies one non-compounding bonus."
+    },
+    "astrology.waxing.bonusPct": {
+      "status": "experimental",
+      "note": "Legacy control x1.10 (tech \u00a76). Q4 open-questions-decisions selects x1.20."
+    },
+    "astrology.waning.appliesToRestAtHome": {
+      "status": "confirmed",
+      "note": "R2 settled: Waning recovery applies only to paid rests."
+    },
+    "failure.retreatLootRetentionPct": {
+      "status": "experimental",
+      "note": "Simulation baseline (tech \u00a77, R3); only remaining earned loot is reduced, floor rounding."
+    },
+    "failure.retreatToll": {
+      "status": "experimental",
+      "note": "Legacy control 5. Q7 settles payer order; R3 open-questions-decisions selects 10."
+    },
+    "failure.wipeoutBurdenReset": {
+      "status": "experimental",
+      "note": "Legacy control 'zero', kept for historical comparison. Q13 open-questions-decisions selects { recovery: 35 }."
+    },
+    "failure.homeCollapse": {
+      "status": "experimental",
+      "note": "Legacy control: no physician fee. Q13 settles fee timing; open-questions-decisions selects fee 20, recovery 15."
+    },
+    "failure.purseProtection.appliesToLabFailures": {
+      "status": "experimental",
+      "note": "Legacy control false (wipeout only). Q2 settles true in open-questions-decisions."
+    },
+    "items.testRewardTable": {
+      "status": "experimental",
+      "note": "B2/R5 test fixture: one uniformly sampled item per explicit reward call; no production drop rate implied. Used only in test_table mode."
+    },
+    "items.acquisition": {
+      "status": "confirmed",
+      "note": "R4 settled: disabled for the item-free baseline; T8 item experiment is a separate follow-up."
+    }
+  }
+}

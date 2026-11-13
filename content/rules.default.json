@@ -39,21 +39,21 @@
         "target": "bellatores",
         "gain": 5,
         "opposing": "laboratores",
-        "opposingLoss": 1,
+        "opposingLoss": 0,
         "cost": 20
       },
       "hermit": {
         "target": "oratores",
         "gain": 5,
         "opposing": "bellatores",
-        "opposingLoss": 1,
+        "opposingLoss": 0,
         "cost": 20
       },
       "smuggler": {
         "target": "laboratores",
         "gain": 5,
         "opposing": "oratores",
-        "opposingLoss": 1,
+        "opposingLoss": 0,
         "cost": 20
       }
     },
@@ -67,8 +67,8 @@
         "melancholy": 5
       },
       "smuggler": {
-        "fatigue": 5,
-        "melancholy": 5
+        "fatigue": 3,
+        "melancholy": 2
       }
     }
   },
@@ -194,7 +194,7 @@
       "oppositionJobBurdenPct": 150,
       "trineJobSuccessPts": 15,
       "squareTutorGainPct": 130,
-      "squareTutorFatiguePct": 100,
+      "squareTutorFatiguePct": 200,
       "squareTutorMelancholyPct": 200
     },
     "newMoon": {
@@ -202,19 +202,19 @@
         "smuggler",
         "alehouse"
       ],
-      "activityBonus": 0,
-      "skipFee": null
+      "activityBonus": 20,
+      "skipFee": 10
     },
     "waxing": {
       "mode": "single",
-      "bonusPct": 110
+      "bonusPct": 120
     },
     "fullMoon": {
       "surgeEstates": [
         "bellatores",
         "oratores"
       ],
-      "surge": 0,
+      "surge": 20,
       "advantageMultiplierPct": 200,
       "pilgrimageBurdenPenaltyPct": 200
     },
@@ -247,7 +247,7 @@
   "route": {
     "regularSegments": 5,
     "encountersPerSegment": 5,
-    "finalEncounters": 8,
+    "finalEncounters": 10,
     "roadBonus": [
       40,
       30,
@@ -255,22 +255,24 @@
       10,
       0
     ],
-    "finalRoadBonus": -20,
+    "finalRoadBonus": -30,
     "departureFee": 10
   },
   "failure": {
     "retreatLootRetentionPct": 50,
-    "retreatToll": 5,
+    "retreatToll": 10,
     "wipeoutMedicalFeeMax": 50,
     "wipeoutConvalescenceWeeks": 1,
-    "wipeoutBurdenReset": "zero",
+    "wipeoutBurdenReset": {
+      "recovery": 35
+    },
     "homeCollapse": {
       "forcedWeek": true,
       "recovery": 15,
-      "fee": 0
+      "fee": 20
     },
     "purseProtection": {
-      "appliesToLabFailures": false
+      "appliesToLabFailures": true
     }
   },
   "items": {
@@ -289,71 +291,71 @@
   "provenance": {
     "route.regularSegments": {
       "status": "experimental",
-      "note": "Suggested initial balance value (tech §7; R1 keeps it); a test parameter, not canon."
+      "note": "Suggested initial balance value (tech \u00a77; R1 keeps it); a test parameter, not canon."
     },
     "route.encountersPerSegment": {
       "status": "experimental",
-      "note": "Suggested initial balance value (tech §7; R1 keeps it); a test parameter, not canon."
+      "note": "Suggested initial balance value (tech \u00a77; R1 keeps it); a test parameter, not canon."
     },
     "route.finalEncounters": {
       "status": "experimental",
-      "note": "Suggested initial balance value (tech §7; R1 keeps it); a test parameter, not canon."
+      "note": "POC default: ten finale encounters, selected after stage 1 balance testing."
     },
     "route.finalRoadBonus": {
       "status": "experimental",
-      "note": "Suggested initial test value (tech §7; R1 keeps it), not canon."
+      "note": "POC default: -30 finale road bonus, selected after stage 1 balance testing."
     },
     "classes.tutorBurden": {
       "status": "experimental",
-      "note": "Legacy control: Smuggler +5F/+5M. Q1 settles the mapping; open-questions-decisions selects 3/2."
+      "note": "Q1 settled mapping (Knight Fatigue, Hermit Melancholy, Smuggler split); magnitudes 5/0, 0/5, 3/2 and the split are experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
     },
     "astrology.solar.squareTutorFatiguePct": {
-      "status": "experimental",
-      "note": "Legacy control 100 (Square doubles Melancholy only). Q5 settles doubling both burdens (200) in open-questions-decisions."
+      "status": "confirmed",
+      "note": "Q5 settled: Square doubles both tutor burdens (with squareTutorMelancholyPct 200) and keeps +30% gain. (T7 experimental baseline, see docs/balance-report-baseline.md)"
     },
     "astrology.newMoon.activityBonus": {
       "status": "experimental",
-      "note": "Legacy control 0 = off ('partial astrology'). Q12 settles the rule; open-questions-decisions selects +20%."
+      "note": "Q12 settled rule: New Moon boosts Smuggler/Alehouse positive gains and payouts; +20% magnitude experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
     },
     "astrology.fullMoon.surge": {
       "status": "experimental",
-      "note": "Legacy control 0 = off ('partial astrology'). Q12 settles the rule; open-questions-decisions selects +20%."
+      "note": "Q12 settled rule: Full Moon boosts Bellatores/Oratores home activities; +20% magnitude experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
     },
     "astrology.newMoon.skipFee": {
       "status": "experimental",
-      "note": "Legacy control null = skipping disabled. Q3/Q9 settle the rule; open-questions-decisions selects 10 Coin."
+      "note": "Q3/Q9 settled rule: one skip per New Moon segment from carried Coin, counts toward N; 10 Coin fee experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
     },
     "astrology.waxing.mode": {
       "status": "confirmed",
-      "note": "Q4 settled: 'single' applies one non-compounding bonus."
+      "note": "Q4 settled: one non-compounding bonus for repeating the previous week's exact activity. (T7 experimental baseline, see docs/balance-report-baseline.md)"
     },
     "astrology.waxing.bonusPct": {
       "status": "experimental",
-      "note": "Legacy control x1.10 (tech §6). Q4 open-questions-decisions selects x1.20."
+      "note": "Q4: x1.20 so a 5-point lesson visibly rounds up; magnitude experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
     },
     "astrology.waning.appliesToRestAtHome": {
       "status": "confirmed",
-      "note": "R2 settled: Waning recovery applies only to paid rests."
+      "note": "R2 settled: Waning x1.5 recovery applies only to paid rests. (T7 experimental baseline, see docs/balance-report-baseline.md)"
     },
     "failure.retreatLootRetentionPct": {
       "status": "experimental",
-      "note": "Simulation baseline (tech §7, R3); only remaining earned loot is reduced, floor rounding."
+      "note": "R3: retain 50% of remaining earned loot, floored; experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
     },
     "failure.retreatToll": {
       "status": "experimental",
-      "note": "Legacy control 5. Q7 settles payer order; R3 open-questions-decisions selects 10."
+      "note": "Q7/R3 settled order: forfeit loot, then toll from carried Coin then treasury, never debt; 10 Coin experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
     },
     "failure.wipeoutBurdenReset": {
       "status": "experimental",
-      "note": "Legacy control 'zero', kept for historical comparison. Q13 open-questions-decisions selects { recovery: 35 }."
+      "note": "Q13 settled rule: bounded recovery in the actual wipeout convalescence week, none without a week; -35 magnitude experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
     },
     "failure.homeCollapse": {
       "status": "experimental",
-      "note": "Legacy control: no physician fee. Q13 settles fee timing; open-questions-decisions selects fee 20, recovery 15."
+      "note": "Q13 settled rule: physician fee once per new collapse, then forced -15/-15 weeks; fee 20 and recovery 15 experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
     },
     "failure.purseProtection.appliesToLabFailures": {
-      "status": "experimental",
-      "note": "Legacy control false (wipeout only). Q2 settles true in open-questions-decisions."
+      "status": "confirmed",
+      "note": "Q2 settled: Purse Protection reduces failed Laboratores encounter costs and wipeout losses. (T7 experimental baseline, see docs/balance-report-baseline.md)"
     },
     "items.testRewardTable": {
       "status": "experimental",
@@ -361,7 +363,7 @@
     },
     "items.acquisition": {
       "status": "confirmed",
-      "note": "R4 settled: disabled for the item-free baseline; T8 item experiment is a separate follow-up."
+      "note": "R4 settled for the item-free baseline; the first-waystation item experiment (T8) is a separate opt-in follow-up. (T7 experimental baseline, see docs/balance-report-baseline.md)"
     }
   }
 }

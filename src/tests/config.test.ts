@@ -16,7 +16,7 @@ import { loadContentConfig, readContentJson } from './support/config.js';
 
 /** Deep copy of the parsed default rules, safe to mutate in a test. */
 function defaultRules(): Record<string, any> {
-  return structuredClone(readContentJson('rules.default.json')) as Record<string, any>;
+  return structuredClone(readContentJson('rules.legacy.json')) as Record<string, any>;
 }
 
 function loadWith(mutate: (rules: Record<string, any>) => void): RulesConfig {
@@ -258,7 +258,7 @@ describe('validateConfig', () => {
     expect(config.astrology.solar.squareTutorFatiguePct).toBe(100);
     expect(config.failure.homeCollapse.fee).toBe(0);
     // A snapshot overlay written before these fields existed still loads through the defaults.
-    const snapshot = structuredClone(readContentJson('rules.default.json')) as Record<string, any>;
+    const snapshot = structuredClone(readContentJson('rules.legacy.json')) as Record<string, any>;
     delete snapshot.astrology.solar.squareTutorFatiguePct;
     delete snapshot.failure.homeCollapse.fee;
     expect(hashConfig(withOverrides(config, snapshot))).toBe(hashConfig(config));
@@ -315,7 +315,7 @@ describe('variants', () => {
 
   it('applies variants in order', () => {
     const config = loadConfig({
-      rules: readContentJson('rules.default.json'),
+      rules: readContentJson('rules.legacy.json'),
       items: readContentJson('items.json'),
       variants: [{ route: { finalRoadBonus: -10 } }, { route: { finalRoadBonus: -30 } }],
     });
@@ -348,7 +348,7 @@ describe('hashConfig', () => {
 
   it('is stable across loads and key orderings', () => {
     const reordered = loadConfig({
-      rules: reverseKeys(readContentJson('rules.default.json')),
+      rules: reverseKeys(readContentJson('rules.legacy.json')),
       items: reverseKeys(readContentJson('items.json')),
     });
     expect(hashConfig(loadContentConfig())).toBe(hashConfig(loadContentConfig()));
