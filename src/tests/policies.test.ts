@@ -262,3 +262,21 @@ describe('CLI policy registry', () => {
     expect(out.join('\n')).toContain('policy=pragmatic sign=aries');
   });
 });
+
+describe('departure preparation', () => {
+  it('rests with the largest recovery once stats are ready but burdens block departure', () => {
+    const ready = home({ stats: { bellatores: 90, oratores: 15, laboratores: 15 }, treasury: 200, fatigue: 60 });
+    expect(decide('specialist-b', ready)).toEqual({ type: 'REST', rest: 'bathhouse' });
+    expect(decide('specialist-b', { ...ready, fatigue: 15 }).type).toBe('BEGIN_PILGRIMAGE');
+    // Not stat-ready: keep training rather than resting early.
+    expect(decide('specialist-b', { ...ready, stats: { ...ready.stats, bellatores: 39 } }).type).toBe('TRAIN');
+  });
+
+  it('lets prepared bots leave home on default rules', () => {
+    for (const id of ['specialist-b', 'specialist-o', 'specialist-l', 'pragmatic'] as const) {
+      const result = runCampaign({ seed: deriveBatchSeed(7, 'aries', 0), sign: 'aries',
+        policy: createPolicy(id, config), config, strict: true });
+      expect(result.decisions.some((d) => d.action.type === 'BEGIN_PILGRIMAGE'), id).toBe(true);
+    }
+  });
+});

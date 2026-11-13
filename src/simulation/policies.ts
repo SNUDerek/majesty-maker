@@ -161,28 +161,31 @@ export function createPolicy(id: PolicyId, config: RulesConfig,
         || state.melancholy >= derived.melancholyCeiling - params.restMargin;
       if (rest && nearCeiling) return rest;
       if (id === 'stables-only') return actions.find((a) => a.type === 'WORK' && a.job === 'stables')!;
+      // Largest affordable recovery; ties follow action order.
+      const bestRest = () => {
+        const rests = actions.filter((a) => a.type === 'REST');
+        const score = (a: typeof rests[number]) => {
+          const def = config.rest[a.rest];
+          const mod = modifiers(state, derived, a.rest, 'rest', config);
+          return Math.min(state.fatigue, applyModifier(def.fatigue, mod, 'recoveryPct'))
+            + Math.min(state.melancholy, applyModifier(def.melancholy, mod, 'recoveryPct'));
+        };
+        return rests.sort((a, b) => score(b) - score(a))[0];
+      };
       // Prefer paid recovery during Waning, only when there is a useful burden to recover.
       if (id === 'pragmatic' && derived.lunarPhase === 'waning'
         && Math.max(state.fatigue, state.melancholy) >= params.waningRestMinimum) {
-        const rests = actions.filter((a) => a.type === 'REST');
-        rests.sort((a, b) => {
-          const score = (a: typeof rests[number]) => {
-            const def = config.rest[a.rest];
-            const mod = modifiers(state, derived, a.rest, 'rest', config);
-            return Math.min(state.fatigue, applyModifier(def.fatigue, mod, 'recoveryPct'))
-              + Math.min(state.melancholy, applyModifier(def.melancholy, mod, 'recoveryPct'));
-          };
-          return score(b) - score(a);
-        });
-        if (rests[0]) return rests[0];
+        const best = bestRest();
+        if (best) return best;
       }
+      const statReady = (specialist ? state.stats[specialist] : Math.min(...Object.values(state.stats)))
+        >= params.departureStat;
+      const rested = Math.max(state.fatigue, state.melancholy) <= params.departureBurden;
       const departure = available.find((a) => a.type === 'BEGIN_PILGRIMAGE');
       if (departure?.type === 'BEGIN_PILGRIMAGE') {
         const target = id === 'reckless' ? departure.minCarry
           : Math.max(departure.minCarry, params.carryFailures * config.encounters.failurePenalty);
-        const prepared = id === 'reckless' || (
-          (specialist ? state.stats[specialist] : Math.min(...Object.values(state.stats))) >= params.departureStat
-          && Math.max(state.fatigue, state.melancholy) <= params.departureBurden);
+        const prepared = id === 'reckless' || (statReady && rested);
         if (prepared && departure.maxCarry >= target) {
           const equipmentId = departure.equipmentIds.find((item) => config.items.catalog[item]!.estate === specialist)
             ?? departure.equipmentIds[0];
@@ -198,6 +201,12 @@ export function createPolicy(id: PolicyId, config: RulesConfig,
               ...(equipmentId ? { equipmentId } : {}), ...(consumableId ? { consumableId } : {}) };
           }
         }
+      }
+      // Recover toward the departure burden once stats are ready; otherwise ceiling-only
+      // rests leave burdens permanently above departureBurden.
+      if (departure && id !== 'reckless' && statReady && !rested) {
+        const best = bestRest();
+        if (best) return best;
       }
       const jobs = actions.filter((a) => a.type === 'WORK');
       const job = specialist ? jobs.find((a) => config.jobs.definitions[a.job].checkStat === specialist)!
