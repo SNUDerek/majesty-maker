@@ -1,0 +1,37 @@
+Fonts
+
+all fonts here are cleared for personal and commercial use.
+
+obtained from 1001fonts.com and converted with https://fontsource.org/tools/converter to woff2 for web.
+
+
+"Fancy" Fonts for titles and headings:
+
+try canterbury first. reserve carrick for title only?
+
+
+
+Textbox Fonts:
+
+try IM FELL DW Pica first. 
+
+alternates:
+
+Black Chancery for more fancy, Junicode for more plain
+
+
+Sources:
+
+https://www.1001fonts.com/canterbury-font.html (1001Fonts FFC)
+
+https://www.1001fonts.com/carrick-caps-font.html (1001Fonts FFC)
+
+https://www.1001fonts.com/im-fell-dw-pica-font.html (SIL OFL)
+
+https://www.1001fonts.com/im-fell-english-font.html (SIL OFL)
+
+https://www.1001fonts.com/junicode-font.html (SIL OFL)
+
+https://www.1001fonts.com/blackchancery-font.html (Public Domain CC0)
+
+

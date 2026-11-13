@@ -1,0 +1,13 @@
+all items are from the dungeon crawl 32 x 32 tiles supplemental pack, released as CC0:
+
+https://opengameart.org/content/dungeon-crawl-32x32-tiles-supplemental
+
+items have been renamed to suit this game.
+
+gold directory has coin stacks of various numbers.
+
+the icon_xxx pictures are meant to represent the estates:
+
+bellatores (sword)
+oratores (book)
+laboratores (hammer)
