@@ -1,0 +1,12 @@
+{
+  "id": "final-n6",
+  "route": {
+    "finalEncounters": 6
+  },
+  "provenance": {
+    "route.finalEncounters": {
+      "status": "experimental",
+      "note": "E6 sensitivity: 6 final-gauntlet encounters."
+    }
+  }
+}

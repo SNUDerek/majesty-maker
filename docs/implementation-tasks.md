@@ -146,11 +146,9 @@ Implemented in `src/simulation/cli.ts`, with regression coverage in `src/tests/c
 - **Work:** write `runs.csv`, `summary.json` (with config hash, full config snapshot, unresolved-parameter list, git commit if available, and CLI args), `summary.md` (tables per policy × sign, flagged anomalies, and a "partial astrology" label when TBD astrology values are off), and `events.ndjson` for `--trace-seed` runs.
 - **Acceptance:** a golden-file test on a 5-run batch with a fixed seed.
 
-### E6 Configuration variants
-- **Depends on:** T0.3. **Parallel with:** nearly everything.
-- **Files:** `content/variants/*.json`.
-- **Work:** named variants for route length 4, 5, and 6; flat versus steep road bonus curves; final N of 6, 8, and 10 and final road bonus of −10, −20, and −30; `items-test-table`; `astrology-full` (enables the TBD lunar bonuses with candidate values); and `weeks-48`.
-- **Acceptance:** all variants validate and their hashes differ.
+### E6 Configuration variants — completed
+
+All 14 named overlays are available under `content/variants/`, with distinct hashes and experimental provenance. Validation, strict campaign smoke tests, CLI loading over the experimental baseline, and ordered stacking are covered in `src/tests/variants.test.ts`. The completed task specification and compatibility notes are archived in [archive/implementation-tasks-phase0-variants.md](archive/implementation-tasks-phase0-variants.md).
 
 ---
 
