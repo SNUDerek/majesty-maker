@@ -35,6 +35,21 @@ import itemGambeson from '../../assets/items/item_gambeson.png';
 import itemRelic from '../../assets/items/item_saints_relic.png';
 import itemWeightedCoin from '../../assets/items/item_weighted_coin.png';
 import coin from '../../assets/items/gold/gold_pile.png';
+import barBackL from '../../assets/ui/PNG/barBack_horizontalLeft.png';
+import barBackM from '../../assets/ui/PNG/barBack_horizontalMid.png';
+import barBackR from '../../assets/ui/PNG/barBack_horizontalRight.png';
+import barRedL from '../../assets/ui/PNG/barRed_horizontalLeft.png';
+import barRedM from '../../assets/ui/PNG/barRed_horizontalMid.png';
+import barRedR from '../../assets/ui/PNG/barRed_horizontalRight.png';
+import barBlueL from '../../assets/ui/PNG/barBlue_horizontalLeft.png';
+import barBlueM from '../../assets/ui/PNG/barBlue_horizontalMid.png';
+import barBlueR from '../../assets/ui/PNG/barBlue_horizontalRight.png';
+import barGreenL from '../../assets/ui/PNG/barGreen_horizontalLeft.png';
+import barGreenM from '../../assets/ui/PNG/barGreen_horizontalMid.png';
+import barGreenR from '../../assets/ui/PNG/barGreen_horizontalRight.png';
+import barYellowL from '../../assets/ui/PNG/barYellow_horizontalLeft.png';
+import barYellowM from '../../assets/ui/PNG/barYellow_horizontalMid.png';
+import barYellowR from '../../assets/ui/PNG/barYellow_horizontalRight.png';
 
 export type SceneId = 'title' | 'home' | 'school' | 'job' | 'pilgrimage' | 'waystation' | 'capital';
 
@@ -81,3 +96,20 @@ export const ITEM_ICON: Record<string, string> = {
 };
 
 export const IMAGES = { parchment, zodiacSheet, princessFull, portraitPrincess, coin };
+
+export type BarColour = 'back' | 'red' | 'blue' | 'green' | 'yellow';
+
+/** Three-part bars: [left cap, repeating middle, right cap]. */
+export const BAR: Record<BarColour, readonly [string, string, string]> = {
+  back: [barBackL, barBackM, barBackR],
+  red: [barRedL, barRedM, barRedR],
+  blue: [barBlueL, barBlueM, barBlueR],
+  green: [barGreenL, barGreenM, barGreenR],
+  yellow: [barYellowL, barYellowM, barYellowR],
+};
+
+export const ESTATE_BAR: Record<Estate, BarColour> = {
+  bellatores: 'red',
+  oratores: 'blue',
+  laboratores: 'green',
+};
