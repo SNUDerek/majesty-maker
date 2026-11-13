@@ -6,13 +6,14 @@
 import {
   getAvailableActions,
   previewHomeActivity,
+  type ActivityOutcome,
   type AvailableAction,
   type CampaignState,
   type GameAction,
   type HomePreview,
   type RulesConfig,
 } from '../../core/index.js';
-import { JOBS, RESTS, TUTORS } from '../text/labels.js';
+import { ESTATES, ESTATE_LABEL, JOBS, RESTS, TUTORS, signed } from '../text/labels.js';
 
 export type ActivityKind = 'tutor' | 'job' | 'rest';
 export type HomeAction = Extract<GameAction, { type: 'TRAIN' | 'WORK' | 'REST' }>;
@@ -49,4 +50,14 @@ export function activityOptions(state: CampaignState, kind: ActivityKind, config
     else if (!preview.affordable) reason = `Costs ${preview.cost}, treasury ${state.treasury}`;
     return { action, preview, enabled: false, reason };
   });
+}
+
+/** The non-zero lines of a previewed outcome, e.g. ['Bellatores +5', 'Fatigue +5', 'Coin −20']. */
+export function outcomeLines(outcome: ActivityOutcome): string[] {
+  const lines = ESTATES.filter((e) => outcome.stats[e] !== 0).map((e) => `${ESTATE_LABEL[e]} ${signed(outcome.stats[e])}`);
+  if (outcome.fatigue !== 0) lines.push(`Fatigue ${signed(outcome.fatigue)}`);
+  if (outcome.melancholy !== 0) lines.push(`Melancholy ${signed(outcome.melancholy)}`);
+  const { min, max } = outcome.coin;
+  if (min !== 0 || max !== 0) lines.push(`Coin ${min === max ? signed(min) : `${signed(min)} to ${signed(max)}`}`);
+  return lines.length > 0 ? lines : ['No change'];
 }

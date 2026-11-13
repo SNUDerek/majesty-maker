@@ -1,8 +1,9 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { App } from './App.js';
 import './styles/tokens.css';
 import './styles/base.css';
+import './styles/components.css';
+import { App } from './App.js';
 
 const FONTS = ['18px "IM Fell English"', '22px "Canterbury"', '32px "Carrick Caps"'];
 

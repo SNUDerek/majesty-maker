@@ -33,6 +33,8 @@ describe('ui labels', () => {
     for (const source of sources) expect(modifierLabel(source, config)).not.toBe(source);
     expect(modifierLabel('solar:trine', config)).toBe(`Trine: +${config.astrology.solar.trineJobSuccessPts}% job success`);
     expect(modifierLabel('unknown:x', config)).toBe('unknown:x');
+    expect(modifierLabel('solar:return', config, 'banquet')).toBe('Solar Return: Banquet costs ×0.5');
+    expect(modifierLabel('solar:return', config, 'hermit')).toBe('Solar Return: lessons ×1.2 gain');
   });
 
   it('formats numbers', () => {

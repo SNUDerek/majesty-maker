@@ -151,11 +151,16 @@ export function times(pct: number): string {
   return `×${(pct / 100).toString()}`;
 }
 
-/** Plain-English text for a `ModifierSet.sources` entry, using the live config numbers. */
-export function modifierLabel(source: string, config: RulesConfig): string {
+/**
+ * Plain-English text for a `ModifierSet.sources` entry, using the live config
+ * numbers. `activityId` narrows Solar Return to the part that applies.
+ */
+export function modifierLabel(source: string, config: RulesConfig, activityId?: ActivityId): string {
   const { solar, newMoon, waxing, fullMoon, waning } = config.astrology;
   switch (source) {
     case 'solar:return':
+      if (activityId === 'banquet') return `Solar Return: Banquet costs ${times(solar.returnBanquetCostPct)}`;
+      if (activityId !== undefined) return `Solar Return: lessons ${times(solar.returnTutorGainPct)} gain`;
       return `Solar Return: lessons ${times(solar.returnTutorGainPct)} gain; Banquet costs ${times(solar.returnBanquetCostPct)}`;
     case 'solar:opposition':
       return `Opposition: work strain ${times(solar.oppositionJobBurdenPct)}`;

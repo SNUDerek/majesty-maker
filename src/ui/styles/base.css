@@ -67,12 +67,13 @@ button, input, select { font: inherit; color: inherit; }
 }
 .scene {
   position: absolute; inset: 0;
+  isolation: isolate;
   background-size: cover;
   background-position: center;
 }
-.scene--scrim::after {
+.scene--scrim::before {
   content: ''; position: absolute; inset: 0;
   background: var(--scrim);
   pointer-events: none;
+  z-index: -1;
 }
-.scene > * { position: relative; z-index: 1; }
