@@ -1,6 +1,6 @@
 # The Hidden Scion — UI Technical Plan (Playtest PoC)
 
-**Status:** planning, ready to implement
+**Status:** U1 implemented; U2–U8 remain.
 **Derived from:** [ui-handoff.md](ui-handoff.md) (design intent), the rules engine in `src/core/` (authoritative), and an audit of `assets/`.
 **Goal:** the smallest browser UI that lets a person play a full 96-week campaign to test gameplay, and doesn't look horrendous. Polish, audio, transitions and pitch-quality composition come later.
 
@@ -105,7 +105,7 @@ Facts the UI relies on:
 The handoff requires showing costs, gains and odds before commit, computed by the backend. Nothing public does this today; the needed pieces exist as internal functions. Add one module, export it from `src/core/index.ts`, and cover it with tests. It must pass `core-purity.test.ts`.
 
 ```ts
-export interface BurdenOutcome {
+export interface ActivityOutcome {
   stats: Record<Estate, number>;        // signed, clamped deltas
   fatigue: number;
   melancholy: number;
@@ -118,10 +118,11 @@ export interface HomePreview {
   kind: 'tutor' | 'job' | 'rest';
   cost: number;                 // modified fee (0 for jobs)
   affordable: boolean;
+  convalescence: boolean;       // forced recovery instead of ordinary rest
   modifiers: string[];          // ModifierSet.sources, e.g. ['solar:trine', 'lunar:waxing']
   chance: number | null;        // job success %, null = automatic (Stables) or not a job
-  success: BurdenOutcome;       // the guaranteed outcome for tutor/rest
-  failure?: BurdenOutcome;      // jobs with a check only
+  success: ActivityOutcome;       // the guaranteed outcome for tutor/rest
+  failure?: ActivityOutcome;      // jobs with a check only
 }
 
 export function previewHomeActivity(
@@ -133,7 +134,7 @@ export function previewHomeActivity(
 export interface ApproachPreview {
   estate: Estate;
   odds: EncounterOdds;          // matchup, multiplierPct, roadBonus, flatBonus, probability
-  reward: { min: 1; max: number };       // carried Coin on success (1..rewardCoinDie)
+  reward: { min: number; max: number };       // carried Coin on success (1..rewardCoinDie)
   failure: FailurePenalty;      // resource + amount + sources
   failureWipesOut: boolean;     // same test as applyFailure: coin > carried, or burden reaches ceiling
 }

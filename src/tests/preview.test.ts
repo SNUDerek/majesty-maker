@@ -215,7 +215,15 @@ describe.each(CONFIGS)('previewApproaches (%s)', (_label, config) => {
     for (let seed = 1; seed <= 40 && seen === 0; seed++) {
       for (const state of walk(seed, config)) {
         if (state.pilgrimage?.stage !== 'reroll_or_accept') continue;
-        expect(previewApproaches(state, config)).toHaveLength(3);
+        const snapshot = structuredClone(state);
+        const previews = previewApproaches(state, config);
+        expect(previews.map((preview) => preview.estate)).toEqual([state.pilgrimage.currentApproach]);
+        const rerolled = applyAction(state, { type: 'USE_CONSUMABLE', itemId: 'metheglin' }, config);
+        const roll = rerolled.events.find((event) => event.type === 'encounter_resolved');
+        expect(roll?.type === 'encounter_resolved' ? roll.probability : undefined).toBe(previews[0]!.odds.probability);
+        const accepted = applyAction(state, { type: 'ACCEPT_RESULT' }, config);
+        expect(accepted.events.some((event) => event.type === 'wipeout')).toBe(previews[0]!.failureWipesOut);
+        expect(state).toEqual(snapshot);
         seen++;
       }
     }

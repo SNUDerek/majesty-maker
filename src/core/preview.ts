@@ -161,7 +161,8 @@ function jobPreview(
 
 /**
  * Odds and failure cost of each approach against the current threat. Valid at
- * `choose_approach` and `reroll_or_accept`; throws `RuleError` otherwise.
+ * `choose_approach`, or for the current approach at `reroll_or_accept`; throws
+ * `RuleError` otherwise.
  */
 export function previewApproaches(state: CampaignState, config: RulesConfig): ApproachPreview[] {
   const road = state.pilgrimage;
@@ -176,7 +177,12 @@ export function previewApproaches(state: CampaignState, config: RulesConfig): Ap
 
   const lunar = segmentLunarPhase(state, config);
   const equipment = road.equipmentId === undefined ? {} : { equipmentId: road.equipmentId };
-  return (['bellatores', 'oratores', 'laboratores'] as const).map((estate) => {
+  let estates: readonly Estate[] = ['bellatores', 'oratores', 'laboratores'];
+  if (road.stage === 'reroll_or_accept') {
+    if (road.currentApproach === undefined) throw new Error('previewApproaches: no chosen approach');
+    estates = [road.currentApproach];
+  }
+  return estates.map((estate) => {
     const odds = encounterOdds(
       { stat: state.stats[estate], approach: estate, threat, lunar, segmentIndex: road.segmentIndex,
         isFinal: road.isFinal, ...equipment },
