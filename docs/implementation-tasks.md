@@ -126,29 +126,21 @@ These are done and merged. Their full task specs, contract notes and decisions a
 
 Implemented in `src/simulation/metrics.ts`, with synthetic event-stream and engine consistency tests in `src/tests/metrics.test.ts`. The completed task specification is archived in [archive/implementation-tasks-phase0-metrics.md](archive/implementation-tasks-phase0-metrics.md). E5 can consume `runRecord` and the policy × sign aggregates.
 
-### E3 Policy bots
-- **Interface:** `Policy = { id, params, decide(state, available, derived, calendar) → GameAction }`. Policies may only use observable state. Any thresholds come from params or the CLI.
-- **E3a Stables-only baseline**: depends on E1. Work Stables; rest when a burden is within X of its ceiling.
-- **E3b remaining families**: depends on C3, C4, E1. **The four families below can be built in parallel by different people:**
-  1. **Greedy specialist (B/O/L variants):** trains and works its Estate, always approaches with its Estate, and departs and retreats on simple thresholds.
-  2. **Balanced:** trains the weakest stat, works the best-odds job, picks the highest-probability approach, and rests near the ceilings.
-  3. **Reckless pilgrim:** departs early with minimal carry and retreats only when the next failure would wipe it out.
-  4. **Pragmatic pilgrim:** an expected-survival heuristic. It estimates P(survive remaining encounters) from the current probabilities and burdens, chooses carry ≥ k × 15, uses Waning for rest and Trine for jobs, and retreats below a survival threshold.
-  - Each bot gets one smoke test: 20 seeds, no thrown errors, and a valid decision trace.
+### E3 Policy bots — completed
+
+E3a and E3b are implemented in `src/simulation/policies.ts`: Stables-only, B/O/L specialists, Balanced, Reckless and Pragmatic. The factories expose validated params and stable policy IDs for E4. Tests in `src/tests/policies.test.ts` include 20 seeded campaigns per bot with strict invariants and decision-trace replay. See [archive/implementation-tasks-phase0-policies.md](archive/implementation-tasks-phase0-policies.md) for the completed specification and README for usage and heuristic assumptions.
 
 ### E4 CLI — implementation reviewed
 
-Implemented in `src/simulation/cli.ts`, with regression coverage in `src/tests/cli.test.ts`. The task specification and review notes are archived in [archive/implementation-tasks-phase0-cli.md](archive/implementation-tasks-phase0-cli.md). The production commands still require E3 to populate the policy registry; end-to-end acceptance with real policies remains pending that integration. E5 adds the formal report formats.
+Implemented in `src/simulation/cli.ts`, with regression coverage in `src/tests/cli.test.ts`. The task specification and review notes are archived in [archive/implementation-tasks-phase0-cli.md](archive/implementation-tasks-phase0-cli.md). E3 populates the policy registry, and the tech §14 commands run with the real policies. E5 adds the formal report formats.
 
 ### E5 Report exports — completed
 
 Implemented in `src/simulation/report.ts` and integrated with CLI `--out`: `runs.csv`, `summary.json`, `summary.md`, plus tagged `events.ndjson` for `--trace-seed`. Reports include the effective config snapshot/hash, unresolved assumptions, source Git revision, CLI args, policy params, diagnostic flags and partial-astrology status. Tests include fixed five-run golden files and CLI output/replay coverage. See [archive/implementation-tasks-phase0-reports.md](archive/implementation-tasks-phase0-reports.md) for the completed spec and README for format details.
 
-### E6 Configuration variants
-- **Depends on:** T0.3. **Parallel with:** nearly everything.
-- **Files:** `content/variants/*.json`.
-- **Work:** named variants for route length 4, 5, and 6; flat versus steep road bonus curves; final N of 6, 8, and 10 and final road bonus of −10, −20, and −30; `items-test-table`; `astrology-full` (enables the TBD lunar bonuses with candidate values); and `weeks-48`.
-- **Acceptance:** all variants validate and their hashes differ.
+### E6 Configuration variants — completed
+
+All 14 named overlays are available under `content/variants/`, with distinct hashes and experimental provenance. Validation, strict campaign smoke tests, CLI loading over the experimental baseline, and ordered stacking are covered in `src/tests/variants.test.ts`. The completed task specification and compatibility notes are archived in [archive/implementation-tasks-phase0-variants.md](archive/implementation-tasks-phase0-variants.md).
 
 ---
 

@@ -1,0 +1,24 @@
+{
+  "id": "route-6",
+  "route": {
+    "regularSegments": 6,
+    "roadBonus": [
+      40,
+      32,
+      24,
+      16,
+      8,
+      0
+    ]
+  },
+  "provenance": {
+    "route.regularSegments": {
+      "status": "experimental",
+      "note": "E6 sensitivity: 6 regular segments."
+    },
+    "route.roadBonus": {
+      "status": "experimental",
+      "note": "Linear +40 to +0 across 6 segments, floored (tech §7)."
+    }
+  }
+}

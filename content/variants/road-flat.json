@@ -1,0 +1,18 @@
+{
+  "id": "road-flat",
+  "route": {
+    "roadBonus": [
+      30,
+      25,
+      20,
+      15,
+      10
+    ]
+  },
+  "provenance": {
+    "route.roadBonus": {
+      "status": "experimental",
+      "note": "E6 sensitivity: half the default slope, same mean (+20). Five-segment routes only."
+    }
+  }
+}

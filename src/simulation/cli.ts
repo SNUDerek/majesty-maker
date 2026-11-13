@@ -339,7 +339,7 @@ export function runCli(argv: readonly string[], io: CliIo): number {
       for (const sign of signs) {
         for (let runIndex = 0; runIndex < runs; runIndex++) {
           const seed = traceSeed ?? deriveBatchSeed(options.seed, sign, runIndex);
-          const policy = registry[policyId]!();
+          const policy = registry[policyId]!(config);
           policyMetadata.set(policyId, { id: policyId, params: structuredClone(policy.params) });
           const result = runCampaign({ seed, sign, policy, config, trace, strict: options.strict });
           if (traceSeed !== undefined && options.out !== undefined) {

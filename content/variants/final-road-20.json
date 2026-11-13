@@ -1,0 +1,12 @@
+{
+  "id": "final-road-20",
+  "route": {
+    "finalRoadBonus": -20
+  },
+  "provenance": {
+    "route.finalRoadBonus": {
+      "status": "experimental",
+      "note": "E6 sensitivity: final gauntlet road bonus -20."
+    }
+  }
+}
