@@ -15,7 +15,7 @@ export function SidePanel() {
   const derived = getDerivedStats(state, store.config);
   const items = Object.entries(state.inventory).filter(([, n]) => n > 0);
   return (
-    <Panel variant="parchment" className="home-side">
+    <Panel variant="parchment" className="home-side panel--tall">
       <h2>{state.scionName}</h2>
       <span className="muted">Born under {SIGN_LABEL[state.birthSign]}</span>
       <h3>Estates</h3>

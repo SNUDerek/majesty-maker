@@ -6,12 +6,22 @@
   padding: var(--space-3) var(--space-4);
   color: var(--ink);
 }
+/*
+ * Parchment on a Kenney brown board. The texture is stretched to the panel (not cropped), so its
+ * torn edge always sits at the same fraction of the panel: ~4% in from the left, ~2.5% right,
+ * ~3% top (curl at top-left) and 5-7% bottom. Content padding keeps text inside that edge.
+ */
 .panel--parchment {
   border-image: url('../../../assets/ui/PNG/panel_brown.png') 12 / 12px stretch;
-  background-color: var(--parchment);
-  background-size: cover;
+  background-color: var(--board);
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
   background-clip: padding-box;
+  padding: 22px 26px 34px 34px;
 }
+.panel--parchment .panel__title { margin-left: 14px; }
+/* Tall fixed-height panels: the bottom torn edge is 5-7% of the height. */
+.panel--parchment.panel--tall { padding-bottom: 46px; }
 .panel--inset {
   border-image: url('../../../assets/ui/PNG/panelInset_beige.png') 12 fill / 12px stretch;
 }

@@ -58,7 +58,7 @@ function PreviewPanel({ option, state, config, onCommit, onBack }: {
   const projected = projectedConditions(state, preview, config);
   const collapse = preview.success.collapse ?? preview.failure?.collapse ?? null;
   return (
-    <Panel variant="parchment" className="preview">
+    <Panel variant="parchment" className="preview panel--tall">
       <h2>{ACTIVITY_LABEL[preview.activityId]}</h2>
       <p className="muted">{ACTIVITY_BLURB[preview.activityId]}</p>
       {preview.cost > 0 && (
