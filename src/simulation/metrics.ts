@@ -17,7 +17,7 @@
  *    from the final state recovers the starting balances exactly.
  *  - Event `week` is the elapsed-week count when the event happened, so the
  *    per-week series value at index w is the balance after every event
- *    stamped with week ≤ w.
+ *    stamped with week ≤ w (terminal events settle the last spent week).
  */
 import { getCalendar, getDerivedStats, hashConfig } from '../core/index.js';
 import type { RulesConfig } from '../core/config.js';
@@ -161,7 +161,7 @@ export interface RunRecord {
   furthestWaystation: number;
   /** Week each waystation was first reached, keyed by waystation number. */
   firstReachWeek: Record<number, number>;
-  /** Cards cleared (won or skipped) in the best single final-gauntlet attempt. */
+  /** Cards completed (including survivable failures and skips) in the best single final-gauntlet attempt. */
   finalEncountersCompleted: number;
   finalAttempts: number;
 
@@ -196,6 +196,8 @@ export interface RunRecord {
 
   /** Weeks (indices < finalWeek) ending with treasury + carried at 0. */
   zeroPurseWeeks: number;
+  /** Weeks ending with an empty treasury, even when Coin is carried. */
+  zeroTreasuryWeeks: number;
   /** End-of-week balances, length `totalWeeks`, forward-filled after the final week. */
   fatigueByWeek: number[];
   melancholyByWeek: number[];
@@ -229,6 +231,7 @@ export function runRecord(
   options: RecordOptions = {},
 ): RunRecord {
   const totalWeeks = meta.totalWeeks;
+  const finalWeek = finalState.elapsedWeeks;
   const window = options.resourceLoopWindowWeeks ?? 24;
 
   // Starting balances: final minus every (clamped) delta.
@@ -271,6 +274,10 @@ export function runRecord(
   // Per-attempt road state.
   let onFinal = false;
   let finalCleared = 0;
+  const finishFinal = (): void => {
+    if (onFinal) finalEncountersCompleted = Math.max(finalEncountersCompleted, finalCleared);
+    onFinal = false;
+  };
   let lastResolved: { key: string; segmentIndex: number; encounterIndex: number; matchup: Matchup; success: boolean;
     probability: number } | undefined;
   // A wipeout's medical fee is settled by the end of the same action; track the open wipeout.
@@ -312,7 +319,9 @@ export function runRecord(
 
   for (const event of events) {
     // Every event stamped with a later week closes the earlier weeks' snapshots.
-    fillThrough(event.week - 1);
+    // Settlements at the final elapsed week belong to the last spent week,
+    // including early victory and a final segment played at the deadline.
+    fillThrough(Math.min(event.week, Math.max(0, finalWeek - 1), totalWeeks - 1) - 1);
     // The wipeout's own Coin events (loss, retention, fee) belong to it; anything else closes it.
     if (event.type !== 'coin_changed' || !WIPEOUT_COIN_SOURCES.has(event.source)) closeWipeout();
 
@@ -366,6 +375,7 @@ export function runRecord(
         distressWeeks.push(event.week);
         break;
       case 'pilgrimage_started':
+        finishFinal();
         segmentStarts += 1;
         lastResolved = undefined;
         onFinal = event.isFinal;
@@ -385,12 +395,10 @@ export function runRecord(
         if (isReroll) {
           unrecord(encounters[lastResolved!.key]!, lastResolved!.success, lastResolved!.probability);
           unrecord(encountersByMatchup[lastResolved!.matchup], lastResolved!.success, lastResolved!.probability);
-          if (onFinal && lastResolved!.success) finalCleared -= 1;
         }
         record(tally, event.success, event.probability);
         record(encountersByMatchup[m], event.success, event.probability);
-        if (onFinal && event.success) finalCleared += 1;
-        if (onFinal) finalEncountersCompleted = Math.max(finalEncountersCompleted, finalCleared);
+        if (onFinal && !isReroll) finalCleared += 1;
         lastResolved = {
           key, segmentIndex: event.segmentIndex, encounterIndex: event.encounterIndex, matchup: m,
           success: event.success, probability: event.probability,
@@ -401,7 +409,6 @@ export function runRecord(
         encountersSkipped += 1;
         if (onFinal) {
           finalCleared += 1;
-          finalEncountersCompleted = Math.max(finalEncountersCompleted, finalCleared);
         }
         break;
       case 'reroll_used':
@@ -411,15 +418,20 @@ export function runRecord(
         if (!(event.waystation in firstReachWeek)) firstReachWeek[event.waystation] = event.week;
         break;
       case 'retreat':
+        finishFinal();
         retreats += 1;
         break;
       case 'wipeout':
+        // The fatal check was attempted but never advanced the encounter.
+        if (onFinal) finalCleared -= 1;
+        finishFinal();
         wipeouts += 1;
         wipeoutCauses[event.cause] += 1;
         distressWeeks.push(event.week);
         openWipeout = { paid: 0 };
         break;
       case 'victory':
+        finishFinal();
         victoryWeek = event.week;
         break;
       case 'deadline':
@@ -431,13 +443,17 @@ export function runRecord(
     }
   }
   closeWipeout();
+  // An unfinished Metheglin decision has not yet applied the failure.
+  if (onFinal && finalState.pilgrimage?.pendingFailure) finalCleared -= 1;
+  finishFinal();
 
-  const finalWeek = finalState.elapsedWeeks;
   fillThrough(totalWeeks - 1);
   // Calendar left over (victory frees weeks); every run's buckets sum to totalWeeks.
   weeks.unused = Math.max(0, totalWeeks - sumWhere(WEEK_KINDS, (kind) => weeks[kind]));
 
   let zeroPurseWeeks = 0;
+  let zeroTreasuryWeeks = 0;
+  for (let w = 0; w < Math.min(finalWeek, totalWeeks); w++) if (treasuryByWeek[w] === 0) zeroTreasuryWeeks += 1;
   for (let w = 0; w < Math.min(finalWeek, totalWeeks); w++) if (purseByWeek[w] === 0) zeroPurseWeeks += 1;
 
   let coinEarned = 0;
@@ -497,6 +513,7 @@ export function runRecord(
     coinLost,
     items,
     zeroPurseWeeks,
+    zeroTreasuryWeeks,
     fatigueByWeek,
     melancholyByWeek,
     treasuryByWeek,
@@ -581,6 +598,8 @@ export interface Aggregate {
   finalEncountersCompleted: Distribution;
   /** Fraction of runs with at least one week ending at an empty purse. */
   zeroPurseRunRate: number;
+  zeroTreasuryRunRate: number;
+  zeroTreasuryWeeks: Distribution;
   zeroPurseWeeks: Distribution;
   failedDepartureAttempts: Distribution;
   /** Fraction of wipeouts whose medical fee was not paid in full. */
@@ -709,6 +728,8 @@ export function aggregateGroup(records: readonly RunRecord[], policy: string, bi
     firstReach,
     finalEncountersCompleted: distribution(records.map((r) => r.finalEncountersCompleted)),
     zeroPurseRunRate: perRun(records.filter((r) => r.zeroPurseWeeks > 0).length),
+    zeroTreasuryRunRate: perRun(records.filter((r) => r.zeroTreasuryWeeks > 0).length),
+    zeroTreasuryWeeks: distribution(records.map((r) => r.zeroTreasuryWeeks)),
     zeroPurseWeeks: distribution(records.map((r) => r.zeroPurseWeeks)),
     failedDepartureAttempts: distribution(records.map((r) => r.failedDepartureAttempts)),
     medicalFeeShortfallRate: wipeouts === 0 ? null : shortfalls / wipeouts,

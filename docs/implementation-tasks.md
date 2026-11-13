@@ -122,13 +122,9 @@ These are done and merged. Their full task specs, contract notes and decisions a
   - Optional `assertInvariants` in strict mode.
   - Seed derivation for batches: `seed = hash(baseSeed, sign, runIndex)`, independent of the policy, so policies are compared on paired seeds.
 
-### E2 Metrics
-- **Depends on:** T0.2 (event schema only). **Parallel with:** everything in A/B/C.
-- **File:** `src/simulation/metrics.ts`.
-- **Work:**
-  - `runRecord(events, finalState, meta)`: every per-run field from tech §12, derived from events. There is no peeking into rules internals.
-  - `aggregate(records)` by policy × sign: victory rate with a Wilson 95% CI, median victory week, checkpoint distribution, first-reach week per checkpoint, wipeout causes, calendar utilization fractions, approach frequency by matchup, Coin flows by source, and deadline-versus-resource-loop failure attribution.
-- **Acceptance:** unit tests on synthetic event streams.
+### E2 Metrics — completed
+
+Implemented in `src/simulation/metrics.ts`, with synthetic event-stream and engine consistency tests in `src/tests/metrics.test.ts`. The completed task specification is archived in [archive/implementation-tasks-phase0-metrics.md](archive/implementation-tasks-phase0-metrics.md). E5 can consume `runRecord` and the policy × sign aggregates.
 
 ### E3 Policy bots
 - **Interface:** `Policy = { id, params, decide(state, available, derived, calendar) → GameAction }`. Policies may only use observable state. Any thresholds come from params or the CLI.

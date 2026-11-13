@@ -201,6 +201,67 @@ describe('runRecord: pilgrimage', () => {
     expect(r.fatigueByWeek).toHaveLength(TOTAL);
   });
 
+  it('counts survived failed final checks, excluding fatal and pending checks', () => {
+    const start: GameEvent[] = [
+      week(0, 'segment_entry'),
+      { type: 'pilgrimage_started', week: 0, segmentIndex: 3, isFinal: true },
+      resolved(1, 3, 0, 'oratores', 'bellatores', false, 10, true),
+      { type: 'burden_changed', week: 1, burden: 'fatigue', amount: 15, source: 'encounter_penalty' },
+      { type: 'encounter_drawn', week: 1, threat: 'oratores', encounterIndex: 1 },
+      resolved(1, 3, 1, 'oratores', 'bellatores', false, 10, true),
+    ];
+    const won = runRecord([...start, { type: 'victory', week: 1 }],
+      finalState({ elapsedWeeks: 1, fatigue: 30, phase: 'victory', outcome: 'victory' }), meta());
+    expect(won.finalEncountersCompleted).toBe(2);
+    expect(won.encountersByMatchup.disadvantage.successes).toBe(0);
+
+    const wiped = runRecord([...start, { type: 'wipeout', week: 1, cause: 'fatigue' }],
+      finalState({ elapsedWeeks: 1 }), meta());
+    expect(wiped.finalEncountersCompleted).toBe(1);
+
+    const state = createCampaign({ seed: 1, birthSign: 'aries', playerName: { first: 'A', last: 'B' },
+      scionName: 'C' }, loadContentConfig());
+    const road = applyAction(state, { type: 'BEGIN_PILGRIMAGE', carry: 0 }, loadContentConfig()).state.pilgrimage!;
+    const pending = runRecord(start, finalState({ elapsedWeeks: 1, phase: 'pilgrimage',
+      pilgrimage: { ...road, isFinal: true, encounterIndex: 1, pendingFailure: true } }), meta());
+    expect(pending.finalEncountersCompleted).toBe(1);
+  });
+
+  it.each([2, TOTAL])('settles final-week balances at elapsed week %i', (endWeek) => {
+    const events: GameEvent[] = [
+      coin(endWeek - 1, 'treasury', -20, 'carry_out'),
+      coin(endWeek - 1, 'carried', 20, 'carry_out'),
+      week(endWeek - 1, 'segment_entry'),
+      { type: 'pilgrimage_started', week: endWeek - 1, segmentIndex: 3, isFinal: true },
+      resolved(endWeek, 3, 0, 'oratores', 'bellatores', false, 10, true),
+      { type: 'burden_changed', week: endWeek, burden: 'fatigue', amount: 15, source: 'encounter_penalty' },
+      coin(endWeek, 'carried', -20, 'bank_carried'),
+      coin(endWeek, 'treasury', 20, 'bank_carried'),
+      { type: 'victory', week: endWeek },
+    ];
+    const r = runRecord(events, finalState({ elapsedWeeks: endWeek, phase: 'victory', outcome: 'victory', treasury: 20, fatigue: 15 }), meta());
+    expect(r.treasuryByWeek[endWeek - 1]).toBe(20);
+    expect(r.treasuryByWeek.at(-1)).toBe(20);
+    expect(r.fatigueByWeek.at(-1)).toBe(15);
+  });
+
+  it('reports empty treasury separately from an empty total purse', () => {
+    const events: GameEvent[] = [
+      coin(0, 'treasury', -20, 'carry_out'), coin(0, 'carried', 20, 'carry_out'),
+      week(0, 'segment_entry'),
+    ];
+    const state = createCampaign({ seed: 1, birthSign: 'aries', playerName: { first: 'A', last: 'B' },
+      scionName: 'C' }, loadContentConfig());
+    const road = applyAction(state, { type: 'BEGIN_PILGRIMAGE', carry: 20 }, loadContentConfig()).state.pilgrimage!;
+    const r = runRecord(events, finalState({ elapsedWeeks: 1, phase: 'pilgrimage', treasury: 0,
+      pilgrimage: { ...road, carriedCoin: 20 } }), meta());
+    expect(r.zeroTreasuryWeeks).toBe(1);
+    expect(r.zeroPurseWeeks).toBe(0);
+    expect(aggregateGroup([r], 'test', 'aries')).toMatchObject({
+      zeroTreasuryRunRate: 1, zeroTreasuryWeeks: { mean: 1 }, zeroPurseRunRate: 0,
+    });
+  });
+
   it('keeps the first week each waystation was reached', () => {
     const events: GameEvent[] = [
       { type: 'waystation_reached', week: 3, waystation: 1 },
