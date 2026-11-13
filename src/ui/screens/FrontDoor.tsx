@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createCampaign, getCalendar, type ZodiacSign } from '../../core/index.js';
 import { BACKGROUND, IMAGES, INTRO_PANEL } from '../assets.js';
 import { Button, CoinAmount, Panel } from '../components/basic.js';
 import { ZodiacGlyph } from '../components/chrome.js';
 import { StatBlock } from '../components/meters.js';
+import { ParchmentSheet } from '../components/ParchmentSheet.js';
 import { Scene } from '../components/Stage.js';
+import { isLineComplete, revealPress, revealStart, revealTick, type Reveal } from '../engine/reveal.js';
 import { INTRO } from '../text/intro.js';
 import { ESTATES, MONTHS, SIGNS_IN_SHEET_ORDER, SIGN_LABEL } from '../text/labels.js';
 import { useGame } from '../useStore.js';
@@ -36,36 +38,77 @@ export function TitleScreen() {
   );
 }
 
+const INTRO_LINES = INTRO.map((l) => l.text);
+/** Letters per second for the text reveal. */
+const REVEAL_RATE = 40;
+/** Picture fade duration, matching `.intro__picture` in components.css. */
+const FADE_MS = 300;
+
+function prefersReducedMotion(): boolean {
+  return typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+/**
+ * Prologue on an unframed parchment over black: picture near the top, text
+ * revealed letter by letter below it. Click / Space / Enter completes the
+ * line, then advances (fading the picture); Esc or Skip goes to setup.
+ */
 export function IntroScreen() {
   const { store } = useGame();
-  const [index, setIndex] = useState(0);
+  const [reduced] = useState(prefersReducedMotion);
+  const [reveal, setReveal] = useState<Reveal>(() => revealStart(INTRO_LINES, reduced));
+  const [fading, setFading] = useState(false);
+  const fadeTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => clearTimeout(fadeTimer.current), []);
   const toSetup = () => store.setUi({ menu: 'setup' });
-  const next = () => (index + 1 < INTRO.length ? setIndex(index + 1) : toSetup());
+  const line = INTRO[reveal.index]!;
+  const complete = isLineComplete(reveal, INTRO_LINES);
+
+  useEffect(() => {
+    if (complete || fading) return undefined;
+    const id = setInterval(() => setReveal((r) => revealTick(r, INTRO_LINES)), 1000 / REVEAL_RATE);
+    return () => clearInterval(id);
+  }, [complete, fading, reveal.index]);
+
+  const press = () => {
+    if (fading) return;
+    const next = revealPress(reveal, INTRO_LINES, reduced);
+    if (next === 'done') { toSetup(); return; }
+    if (next.index === reveal.index || reduced) { setReveal(next); return; }
+    // Fade the picture out, swap the line, fade back in.
+    setFading(true);
+    fadeTimer.current = setTimeout(() => { setReveal(next); setFading(false); }, FADE_MS);
+  };
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') toSetup();
-      else if ((e.key === ' ' || e.key === 'Enter') && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); next(); }
+      else if ((e.key === ' ' || e.key === 'Enter') && !(e.target instanceof HTMLButtonElement)) { e.preventDefault(); press(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   });
-  const line = INTRO[index]!;
+
+  const last = reveal.index + 1 >= INTRO.length;
   return (
-    <Scene image={BACKGROUND.title} scrim>
-      <div className="intro">
-        <button type="button" className="intro__panel" onClick={next} aria-label="Next">
-          <img src={INTRO_PANEL[line.panel]} alt="" />
+    <div className="intro-stage">
+      <ParchmentSheet className="intro">
+        <button type="button" className="intro__picture-button" onClick={press} aria-label={complete ? 'Next' : 'Show the whole line'}>
+          <img key={line.panel} className={`intro__picture ${fading ? 'intro__picture--out' : ''}`}
+            src={INTRO_PANEL[line.panel]} alt="" />
         </button>
-        <Panel variant="parchment" className="intro__text">
-          <p aria-live="polite">{line.text}</p>
-          <div className="intro__actions">
-            <span className="muted">{index + 1} / {INTRO.length}</span>
-            <Button onClick={toSetup}>Skip</Button>
-            <Button primary autoFocus onClick={next}>{index + 1 < INTRO.length ? 'Next' : 'Begin'}</Button>
-          </div>
-        </Panel>
-      </div>
-    </Scene>
+        <p className="visually-hidden" aria-live="polite">{line.text}</p>
+        <p className="intro__line" aria-hidden="true">
+          {line.text.slice(0, reveal.shown)}
+          <span className="intro__unrevealed">{line.text.slice(reveal.shown)}</span>
+        </p>
+        <div className="intro__actions">
+          <span className="muted">{reveal.index + 1} / {INTRO.length}</span>
+          <Button onClick={toSetup}>Skip</Button>
+          <Button primary autoFocus onClick={press}>{last && complete ? 'Begin' : 'Next'}</Button>
+        </div>
+      </ParchmentSheet>
+    </div>
   );
 }
 

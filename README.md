@@ -26,7 +26,7 @@ npm install
 
 ## Running the UI
 
-`npm run dev` serves the playtest UI at the printed URL (default `http://localhost:5173/`). A full campaign is playable: title, intro (Esc or *Skip* jumps ahead), setup (names and birth sign), the home hub with Tutoring / Work / Rest, pilgrimage preparation, encounters, waystations, the Final Gauntlet, and the victory or deadline outcome. The game autosaves after every action; *Menu* (top right) opens Save / Load with three manual slots and Quit to title. Keys: 1/2/3 choose an encounter approach, Esc leaves a sub-screen, Enter confirms dialogs.
+`npm run dev` serves the playtest UI at the printed URL (default `http://localhost:5173/`). A full campaign is playable: title, intro (text appears letter by letter; Enter, Space or a click completes the line, then advances; Esc or *Skip* jumps ahead), setup (names and birth sign), the home hub with Tutoring / Work / Rest, pilgrimage preparation, encounters, waystations, the Final Gauntlet, and the victory or deadline outcome. The game autosaves after every action; *Menu* (top right) opens Save / Load with three manual slots and Quit to title. Keys: 1/2/3 choose an encounter approach, Esc leaves a sub-screen, Enter confirms dialogs.
 
 The layout is a fixed 1280×720 stage scaled to fit the window, so any 16:9 window looks the same; browser zoom is not needed.
 
