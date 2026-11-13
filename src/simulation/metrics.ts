@@ -434,7 +434,8 @@ export function runRecord(
 
   const finalWeek = finalState.elapsedWeeks;
   fillThrough(totalWeeks - 1);
-  weeks.unused = Math.max(0, totalWeeks - finalWeek);
+  // Calendar left over (victory frees weeks); every run's buckets sum to totalWeeks.
+  weeks.unused = Math.max(0, totalWeeks - sumWhere(WEEK_KINDS, (kind) => weeks[kind]));
 
   let zeroPurseWeeks = 0;
   for (let w = 0; w < Math.min(finalWeek, totalWeeks); w++) if (purseByWeek[w] === 0) zeroPurseWeeks += 1;
