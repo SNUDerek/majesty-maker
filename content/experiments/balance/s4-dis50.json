@@ -1,0 +1,7 @@
+{
+  "id": "bal-s4-dis50",
+  "encounters": { "matchupPct": { "disadvantage": 50 } },
+  "provenance": {
+    "encounters.matchupPct.disadvantage": { "status": "experimental", "note": "Balance testing S4: disadvantage multiplier 75 -> 50." }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "id": "bal-s3-opp0",
+  "classes": {
+    "tutors": {
+      "hedge_knight": { "opposingLoss": 0 },
+      "hermit": { "opposingLoss": 0 },
+      "smuggler": { "opposingLoss": 0 }
+    }
+  },
+  "provenance": {
+    "classes.tutors.hedge_knight.opposingLoss": { "status": "experimental", "note": "Balance testing S3: tutor opposing loss 1 -> 0." },
+    "classes.tutors.hermit.opposingLoss": { "status": "experimental", "note": "Balance testing S3: tutor opposing loss 1 -> 0." },
+    "classes.tutors.smuggler.opposingLoss": { "status": "experimental", "note": "Balance testing S3: tutor opposing loss 1 -> 0." }
+  }
+}
