@@ -17,6 +17,8 @@ import { Scene } from '../components/Stage.js';
 import {
   carryPresets, departureAction, departureOption, previewLeave, segmentInfo, segmentMoon,
 } from '../engine/road.js';
+import { markTutorialSeen, pilgrimageTutorial, tutorialSeen } from '../engine/tutorial.js';
+import { browserStorage } from '../storage.js';
 import {
   signed, ESTATES, ESTATE_LABEL, LUNAR_LABEL, MATCHUP_LABEL, THREAT_FLAVOUR, itemEffectLabel, threatLabel, penaltyLabel, roadMoonLabel,
 } from '../text/labels.js';
@@ -56,8 +58,8 @@ function ConsumableButton({ action, config, onUse }: { action: UseConsumable; co
 // HUD
 // ---------------------------------------------------------------------------
 
-export function PilgrimageHud({ state, config, onMenu, onChronicle }: {
-  state: CampaignState; config: RulesConfig; onMenu: () => void; onChronicle: () => void;
+export function PilgrimageHud({ state, config, onMenu, onChronicle, onHelp }: {
+  state: CampaignState; config: RulesConfig; onMenu: () => void; onChronicle: () => void; onHelp: () => void;
 }) {
   const road = state.pilgrimage!;
   const info = segmentInfo(road.segmentIndex, config);
@@ -86,10 +88,65 @@ export function PilgrimageHud({ state, config, onMenu, onChronicle }: {
         <ConditionGauge kind="melancholy" value={state.melancholy} ceiling={derived.melancholyCeiling} />
       </div>
       <div className="hud__buttons">
+        <HelpButton onClick={onHelp} />
         <Button onClick={onChronicle}>Chronicle</Button>
         <Button onClick={onMenu}>Menu</Button>
       </div>
     </header>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tutorial
+// ---------------------------------------------------------------------------
+
+function HelpButton({ onClick }: { onClick: () => void }) {
+  return <Button className="btn--help" onClick={onClick} aria-label="How the pilgrimage works" title="How the pilgrimage works">?</Button>;
+}
+
+/** The four-page pilgrimage guide on the unframed parchment (plan §6 T1). */
+export function TutorialOverlay() {
+  const { store } = useGame();
+  const pages = pilgrimageTutorial(store.config);
+  const [index, setIndex] = useState(0);
+  const page = pages[index]!;
+  const last = index === pages.length - 1;
+  const close = () => store.closeOverlay();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close();
+      else if (e.key === 'ArrowRight') setIndex((i) => Math.min(pages.length - 1, i + 1));
+      else if (e.key === 'ArrowLeft') setIndex((i) => Math.max(0, i - 1));
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+  return (
+    <Modal sheet className="tutorial" title={
+      <div className="tutorial__head">
+        <h2>{page.title}</h2>
+        <span className="muted" aria-label={`Page ${index + 1} of ${pages.length}`}>{index + 1} / {pages.length}</span>
+      </div>
+    } actions={<>
+      <Button className="tutorial__close" onClick={close}>Close</Button>
+      <Button disabled={index === 0} onClick={() => setIndex(index - 1)}>Back</Button>
+      <Button primary onClick={() => (last ? close() : setIndex(index + 1))}>{last ? 'Done' : 'Next'}</Button>
+    </>}>
+      <div className="tutorial__body" aria-live="polite">
+        {page.beats !== undefined && (
+          <ul className="tutorial__beats">
+            {page.beats.map(({ winner, loser }) => (
+              <li key={winner}>
+                <EstateIcon estate={winner} size={32} /> <EstateName estate={winner} />
+                <span className="muted"> beat </span>
+                <EstateIcon estate={loser} size={32} /> <EstateName estate={loser} />
+              </li>
+            ))}
+          </ul>
+        )}
+        {page.paragraphs.map((p) => <p key={p}>{p}</p>)}
+      </div>
+    </Modal>
   );
 }
 
@@ -106,8 +163,17 @@ export function PrepScreen() {
   const [equipmentId, setEquipment] = useState<string>('');
   const [consumableId, setConsumable] = useState<string>('');
   const back = () => store.setUi({ homeView: 'hub' });
+  const help = () => store.setUi({ overlay: 'tutorial' });
+  // The guide opens by itself on the first visit in this browser (plan §6 T2).
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') back(); };
+    const storage = browserStorage();
+    if (tutorialSeen(storage)) return;
+    markTutorialSeen(storage);
+    help();
+  }, []);
+  const overlayOpen = snap.ui.overlay !== undefined;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !overlayOpen) back(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   });
@@ -124,12 +190,7 @@ export function PrepScreen() {
           <RouteStrip furthest={state.furthestWaystation} total={config.route.regularSegments} />
           <h2 style={{ marginTop: 16 }}>{info.name}</h2>
           <p>{info.length} encounters · road bonus {signed(info.roadBonus)}%</p>
-          <p style={{ marginTop: 8 }}>Moon this week: {roadMoonLabel(derived.lunarPhase, config)}. It stays fixed for the whole segment.</p>
-          <p className="muted" style={{ marginTop: 8 }}>
-            Each Estate beats one other: Bellatores beat Laboratores, Laboratores beat Oratores, Oratores beat Bellatores.
-            Failing costs Fatigue (Bellatores), Melancholy (Oratores) or carried Coin (Laboratores).
-            Reaching a burden's ceiling, or being unable to pay, is a wipeout.
-          </p>
+          <p style={{ marginTop: 8 }}>Moon this week: {roadMoonLabel(derived.lunarPhase, config)}.</p>
         </Panel>
         <Panel variant="parchment" title="Provisions">
           {option === null || action === null ? <p>She cannot depart now.</p> : (
@@ -179,6 +240,7 @@ export function PrepScreen() {
             </>
           )}
           <div className="preview__actions" style={{ marginTop: 12 }}>
+            <HelpButton onClick={help} />
             <Button onClick={back}>Back</Button>
             <Button primary disabled={action === null} onClick={() => action !== null && store.dispatch(action)}>
               {info.isFinal ? 'Begin the Final Gauntlet' : 'Depart'}
@@ -324,7 +386,7 @@ export function EncounterScreen() {
   return (
     <Scene image={road.isFinal ? BACKGROUND.capital : BACKGROUND.pilgrimage}>
       <PilgrimageHud state={state} config={store.config} onMenu={() => store.setUi({ overlay: 'saveload' })}
-        onChronicle={() => store.setUi({ overlay: 'chronicle' })} />
+        onChronicle={() => store.setUi({ overlay: 'chronicle' })} onHelp={() => store.setUi({ overlay: 'tutorial' })} />
       <div className="road">
         <ThreatCard state={state} />
         {!blocked && road.stage === 'choose_approach' && <ChooseApproach state={state} config={store.config} onAct={act} />}
@@ -358,7 +420,7 @@ export function WaystationScreen() {
   return (
     <Scene image={BACKGROUND.waystation}>
       <PilgrimageHud state={state} config={config} onMenu={() => store.setUi({ overlay: 'saveload' })}
-        onChronicle={() => store.setUi({ overlay: 'chronicle' })} />
+        onChronicle={() => store.setUi({ overlay: 'chronicle' })} onHelp={() => store.setUi({ overlay: 'tutorial' })} />
       <Panel variant="parchment" className="centre-panel" title={`Waystation ${road.segmentIndex + 1} secured`}>
         <RouteStrip furthest={state.furthestWaystation} total={config.route.regularSegments} />
         <p style={{ marginTop: 10 }}>Carried <CoinAmount amount={road.carriedCoin} /> · earned this run <CoinAmount amount={road.earnedCoin} /></p>

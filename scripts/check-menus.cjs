@@ -27,7 +27,10 @@ const { chromium } = require('playwright');
     assert.equal(await focused(), 'Yes');
     await button('Cancel').click();
     await button('Close').click();
-    await button('Pilgrimage').click(); await button('Depart').click();
+    // The first Prep visit opens the pilgrimage guide; close it before departing.
+    await button('Pilgrimage').click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).click();
+    await button('Depart').click();
     await button('Menu').click();
     await slot(2).getByRole('button', { name: 'Save', exact: true }).click();
     await slot(1).getByRole('button', { name: 'Load', exact: true }).click();

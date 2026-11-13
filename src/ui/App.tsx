@@ -10,7 +10,7 @@ import { Gallery } from './screens/Gallery.js';
 import { HomeHub } from './screens/Home.js';
 import { ChronicleOverlay, CreditsOverlay, DevPanel, SaveLoadOverlay } from './screens/Menus.js';
 import { OutcomeScreen } from './screens/Outcome.js';
-import { EncounterScreen, PrepScreen, WaystationScreen } from './screens/Road.js';
+import { EncounterScreen, PrepScreen, TutorialOverlay, WaystationScreen } from './screens/Road.js';
 import { browserStorage } from './storage.js';
 import { StoreContext, useGame } from './useStore.js';
 
@@ -42,6 +42,7 @@ function Game({ dev }: { dev?: { configId: ConfigId; onConfig: (id: ConfigId) =>
       {overlay === 'saveload' && <SaveLoadOverlay />}
       {overlay === 'credits' && <CreditsOverlay />}
       {overlay === 'chronicle' && <ChronicleOverlay />}
+      {overlay === 'tutorial' && <TutorialOverlay />}
       {snap.error !== null && <Toast message={snap.error} onClose={clearError} />}
       {dev !== undefined && <DevPanel configId={dev.configId} onConfig={dev.onConfig} />}
     </>

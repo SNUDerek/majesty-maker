@@ -1,5 +1,5 @@
 /**
- * Letter-by-letter text for the intro (docs/ui-playtest-plan.md §5 I2). Pure:
+ * Letter-by-letter text for the intro (docs/archive/ui-playtest-plan.md §5 I2). Pure:
  * the component drives `tick` from a timer and `press` from click/Space/Enter.
  */
 

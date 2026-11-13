@@ -1,6 +1,6 @@
 # UI Playtest Follow-up — Plan
 
-**Status:** PR 1 (P1–P6) merged (#34); PR 2 (C1–C3) merged (#35); PR 3 (I1–I2) implemented on `feature/ui-intro`; PR 4 planned. Open questions (§8) keep their defaults: no approach verbs, grey condition text, tutorial flag per browser.
+**Status:** PR 1 (P1–P6) merged (#34); PR 2 (C1–C3) merged (#35); PR 3 (I1–I2) merged (#36); PR 4 (T1–T2) merged (#37). Complete; archived. Open questions (§8) keep their defaults: no approach verbs, grey condition text, tutorial flag per browser.
 **Source:** [ui-feedback.md](ui-feedback.md) (first playtest) and the follow-up discussion. Builds on the shipped playtest UI ([archive/ui-technical-plan.md](archive/ui-technical-plan.md), PRs #31–#33).
 **Scope:** presentation and UI-layer features only. No change to `src/core` or the rules. The setup screen rework, emoji/icon sets and a calendar view are out of scope (§7).
 
