@@ -1,6 +1,6 @@
 # Balance testing plan: rewarding a rounded scion
 
-**Status:** plan only. Nothing here is implemented. It selects candidate changes from [proposal A](balance-proposal-a.md) and [proposal B](balance-proposal-b.md), guided by [the design opinions](balance-opinions.md), in response to finding 1 of the [baseline report](balance-report-baseline.md) (specialist dominance). Revised after [the critique](balance-testing-critique.md).
+**Status:** B1–B3 implemented and stages 0–1 run; see the [interim report](balance-report-stage1.md). **At the gate:** no config-only change meets §6, and the designer chooses R1, R2 or both. R1–R3 and E1 are not implemented. It selects candidate changes from [proposal A](archive/balance-proposal-a.md) and [proposal B](archive/balance-proposal-b.md), guided by [the design opinions](archive/balance-opinions.md), in response to finding 1 of the [baseline report](balance-report-baseline.md) (specialist dominance). Revised after [the critique](balance-testing-critique.md).
 
 **Goal:** one strong Estate, one useful secondary and a modest third should be a competitive way to play, with real tradeoffs against a one-stat build. A strict even split need not be optimal, and a specialist need not be made to lose.
 
@@ -154,7 +154,7 @@ One parametrised policy. Its three concerns are kept separate.
 | `mainTarget`, `secondaryTarget`, `thirdTarget` | **minimum** stats. Secondary is the Estate the lead beats. A target of 0 means "never train this stat". |
 | `endingFloor` | every stat must reach this (S2); 0 = off |
 
-- Targets are minimums, not ceilings and not preferences. They and `endingFloor` are **hard requirements for entering the finale**, so every victory has at least the preset's shape.
+- Targets are minimums, not ceilings and not preferences. In ordinary presets they and `endingFloor` are **hard requirements for entering the finale**, so every victory has at least the preset's shape. Budget probes have one explicit exception: after the tutor budget cannot fund another lesson, build targets become allocation objectives rather than finale requirements. `endingFloor` remains mandatory even then.
 - Training choice: the trainable stat with the lowest `current / target` ratio; ties go lead → secondary → third.
 - When all targets are met but she is still not ready, she keeps training past them: lead first, then secondary, then third, skipping stats with target 0. If nothing is trainable (all at the stat cap), she departs anyway.
 
@@ -186,7 +186,7 @@ Every report prints the **achieved** stat profile (median and 10th–90th percen
 
 ### Budget-matched comparison
 
-To test whether secondary investment has value, not just whether mastery is dear: for each lead and each config, a script picks builds with the same total tutor spend under that config's prices (for example 300 and 500 Coin), one all-in-main and one or two split shapes, and runs them paired. A rule set passes only if a split build is at least as good as the pure build at the same budget.
+To test whether secondary investment has value, not just whether mastery is dear: for each lead and each config, a script picks builds with the same total tutor spend under that config's prices (for example 300 and 500 Coin), one all-in-main and one or two split shapes, and runs them paired. A rule set passes only if a split build is at least as good as the pure build at the same budget. The initial B3 probes use the same spending cap, not necessarily equal realized spend; read actual tutor Coin alongside the cap. Equal realized-spend validation remains follow-up work before treating this criterion as established.
 
 ### Policy tuning
 
@@ -249,13 +249,16 @@ To be agreed before stage 1 results are read.
 
 ## 7. Implementation tasks
 
+The reviewed B1–B3 delivery is [archived](archive/balance-testing-b1-b3.md).
+The gate, conditional engine tasks, and final validation remain active here.
+
 Each task is its own branch, worktree and PR, with tests, per `AGENTS.md`. B1–B4 change no rules. R1–R3 change no defaults and are **conditional**: each is started only when its stage is reached and the gate calls for it.
 
 | Task | Branch | Contents | Tests |
 |---|---|---|---|
-| B1 | `feature/balance-bots` | build policy (§4), presets, `endingFloor`, budget logic, expected-Coin jobs, skip use | unit tests per decision: finale blocked until targets and floor are met, over-target fallback, carry fallback when capped; published bots give identical `runs.csv` on a fixed seed |
-| B2 | `feature/balance-metrics` | metrics and paired-difference analysis (§4) | metrics tests from hand-built event logs |
-| B3 | `feature/balance-stage0-1` | S3/S4 overlays, stage scripts, budget-matched script, stages 0–1, interim report | script smoke test at small N |
+| B1 (done) | `feature/balance-testing` | build policy (§4), presets, `endingFloor`, budget logic, expected-Coin jobs, skip use | unit tests per decision: finale blocked until targets and floor are met, over-target fallback, carry fallback when capped; published bots give identical `runs.csv` on a fixed seed |
+| B2 (done) | `feature/balance-testing` | metrics and paired-difference analysis (§4) | metrics tests from hand-built event logs |
+| B3 (done) | `feature/balance-testing` | S3/S4 overlays, stage scripts, budget-matched script, stages 0–1, interim report | script smoke test at small N |
 | — | **gate** | review the interim report; choose which of R1/R2 to build | — |
 | R1 | `feature/training-bands` | S5 engine, schema, overlays, stage 2 | band boundaries (39 / 40 / 69 / 70), gap basis, each field optional, job cap before astrology, `null` equals legacy |
 | R2 | `feature/road-successes` | S6 engine, schema, survival estimate, invariants, overlays, stage 3 | failure does not advance, skip does, `maxCards` forces retreat, finale needs N successes, legacy equality |

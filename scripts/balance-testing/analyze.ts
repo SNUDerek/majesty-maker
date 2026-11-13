@@ -1,0 +1,299 @@
+/**
+ * B3 analysis: Markdown tables for stages 0 and 1 (docs/balance-testing.md §4–§6).
+ *
+ *   npx tsx scripts/balance-testing/analyze.ts --stage0 <dir> [--stage1 <dir>] > tables.md
+ *
+ * All comparisons are paired differences with a 95% interval (pairs = sign + seed).
+ */
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { parseArgs } from 'node:util';
+import type { Estate, ZodiacSign } from '../../src/core/types.js';
+import {
+  pairedDifference, summarizeBalance, WIN_BY_WEEKS, wonBy, type BalanceRecord, type BalanceSummary, type Spread,
+} from '../../src/simulation/balance-metrics.js';
+import { BUDGETS, BUDGET_SHAPES, ENDING_FLOORS, SIGNS, STAGE1_CONFIGS } from './stages.js';
+import { deriveBatchSeed } from '../../src/simulation/runner.js';
+
+const { values } = parseArgs({ options: { stage0: { type: 'string' }, stage1: { type: 'string' } } });
+if (!values.stage0) throw new Error('--stage0 is required');
+
+type Slim = Pick<BalanceRecord, 'birthSign' | 'seed' | 'victoryWeek' | 'outcome'>;
+interface Group { summary: BalanceSummary; slim: BalanceRecord[] }
+const data = new Map<string, Map<string, Group>>(); // config -> policy -> group
+const manifests: Record<string, unknown>[] = [];
+
+function load(dir: string): void {
+  const manifest = JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf8'));
+  if (manifest.status !== undefined && manifest.status !== 'complete') throw new Error(`incomplete stage: ${dir}`);
+  manifests.push(manifest);
+  for (const task of manifest.tasks ?? []) {
+    if (!existsSync(join(dir, task.config, `${task.policy.name}.ndjson`))) {
+      throw new Error(`missing task ${task.config}/${task.policy.name}`);
+    }
+  }
+  const signs: readonly ZodiacSign[] = manifest.signs ?? SIGNS;
+  const seeds = new Set(signs.flatMap((sign) => Array.from({ length: manifest.runs }, (_, i) =>
+    `${sign}:${deriveBatchSeed(manifest.seed, sign, i)}`)));
+  for (const config of readdirSync(dir, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name)) {
+    const byPolicy = data.get(config) ?? new Map<string, Group>();
+    data.set(config, byPolicy);
+    for (const file of readdirSync(join(dir, config)).filter((f) => f.endsWith('.ndjson'))) {
+      const records = readFileSync(join(dir, config, file), 'utf8').trim().split('\n')
+        .map((line) => JSON.parse(line) as BalanceRecord);
+      const policy = file.replace(/\.ndjson$/, '');
+      const keys = new Set(records.map((r) => `${r.birthSign}:${r.seed}`));
+      if (records.length !== seeds.size || keys.size !== records.length
+        || records.some((r) => !seeds.has(`${r.birthSign}:${r.seed}`) || r.config !== config || r.policy !== policy)) {
+        throw new Error(`invalid run coverage or metadata: ${config}/${policy}`);
+      }
+      byPolicy.set(file.replace(/\.ndjson$/, ''), {
+        summary: summarizeBalance(records),
+        slim: records.map((r): Slim => ({ birthSign: r.birthSign, seed: r.seed, victoryWeek: r.victoryWeek,
+          outcome: r.outcome })) as BalanceRecord[],
+      });
+    }
+  }
+}
+load(values.stage0);
+if (values.stage1) load(values.stage1);
+
+const get = (config: string, policy: string): Group | undefined => data.get(config)?.get(policy);
+const must = (config: string, policy: string): Group => {
+  const g = get(config, policy);
+  if (!g) throw new Error(`missing ${config}/${policy}`);
+  return g;
+};
+
+const ESTATES: readonly Estate[] = ['bellatores', 'oratores', 'laboratores'];
+const LEADS = ['b', 'o', 'l'] as const;
+const p1 = (x: number | null | undefined) => (x === null || x === undefined ? '–' : (100 * x).toFixed(1));
+const n0 = (x: number | null | undefined) => (x === null || x === undefined ? '–' : x.toFixed(0));
+const n1 = (x: number | null | undefined) => (x === null || x === undefined ? '–' : x.toFixed(1));
+const n2 = (x: number | null | undefined) => (x === null || x === undefined ? '–' : x.toFixed(2));
+const sp = (s: Spread) => `${n0(s.median)} [${n0(s.p10)}–${n0(s.p90)}]`;
+const profile = (p: Record<Estate, Spread>) => ESTATES.map((e) => n0(p[e].median)).join('/');
+const profileWide = (p: Record<Estate, Spread>) => ESTATES.map((e) => sp(p[e])).join(' · ');
+const diff = (a: Group, b: Group, week = Infinity) => {
+  const d = pairedDifference(a.slim, b.slim, wonBy(week));
+  return `${d.mean >= 0 ? '+' : ''}${(100 * d.mean).toFixed(1)} [${(100 * d.low).toFixed(1)}, ${(100 * d.high).toFixed(1)}]${d.significant ? ' **' : ''}`;
+};
+/** Paired speed: victory week, with a loss counted as week 97 (later = worse). */
+const weekOrLoss = (r: BalanceRecord) => r.victoryWeek ?? 97;
+const weekDiff = (a: Group, b: Group) => {
+  const d = pairedDifference(a.slim, b.slim, weekOrLoss);
+  return `${d.mean >= 0 ? '+' : ''}${d.mean.toFixed(1)} [${d.low.toFixed(1)}, ${d.high.toFixed(1)}]${d.significant ? ' **' : ''}`;
+};
+const medianGap = (a: Group, b: Group) => {
+  const x = a.summary.winWeekMedian, y = b.summary.winWeekMedian;
+  return x === null || y === null ? '–' : `${y - x >= 0 ? '+' : ''}${(y - x).toFixed(1)}`;
+};
+const table = (header: readonly string[], rows: readonly (readonly string[])[]) =>
+  [`| ${header.join(' | ')} |`, `|${header.map(() => '---').join('|')}|`, ...rows.map((r) => `| ${r.join(' | ')} |`)].join('\n');
+const out: string[] = [];
+const say = (...lines: string[]) => out.push(...lines, '');
+
+// ---------------------------------------------------------------------------
+say('<!-- generated by scripts/balance-testing/analyze.ts -->');
+say('## Run provenance', table(['stage', 'runs per sign', 'seed', 'strict', 'git', 'config ids'],
+  manifests.map((m) => [String(m.stage), String(m.runs), String(m.seed), String(m.strict), `\`${String(m.git).slice(0, 10)}\``,
+    Object.entries(m.configIds as Record<string, string>).map(([k, v]) => `${k} \`${v}\``).join('<br>')])));
+
+const B = 'baseline';
+const presets = ['spec-b', 'spec-o', 'spec-l', 'duo-b', 'duo-o', 'duo-l', 'hybrid-b', 'hybrid-o', 'hybrid-l', 'even', 'wealthy-l'];
+const published = ['stables-only', 'specialist-b', 'specialist-o', 'specialist-l', 'balanced', 'reckless', 'pragmatic'];
+
+say('## Stage 0: shapes on the baseline',
+  'Win-by-week columns are the share of **all** campaigns won by that week. Profiles are medians B/O/L.',
+  table(['policy', 'win % [95% CI]', ...WIN_BY_WEEKS.map((w) => `by ${w}`), 'median wk (mean)', 'profile at victory',
+    'first departure wk', 'lessons B/O/L', 'tutor Coin', 'wipeouts', 'retreats'],
+  [...presets, ...published].filter((p) => get(B, p)).map((p) => {
+    const s = must(B, p).summary;
+    return [p, `${p1(s.victoryRate.estimate)} [${p1(s.victoryRate.low)}–${p1(s.victoryRate.high)}]`,
+      ...WIN_BY_WEEKS.map((w) => p1(s.winByWeek[w])), `${n1(s.winWeekMedian)} (${n1(s.winWeekMean)})`,
+      profile(s.profileAtVictory), sp(s.weeksBeforeFirstDeparture), ESTATES.map((e) => n1(s.lessonsPerRun[e])).join('/'),
+      n0(s.tutorSpendPerRun), n2(s.wipeoutsPerRun), n2(s.retreatsPerRun)];
+  })));
+
+say('### Achieved stat profiles (median [p10–p90], B · O · L)',
+  table(['policy', 'at victory', 'at first departure', 'spread at victory'], presets.filter((p) => get(B, p)).map((p) => {
+    const s = must(B, p).summary;
+    return [p, profileWide(s.profileAtVictory), profileWide(s.profileAtFirstDeparture), sp(s.statSpreadAtVictory)];
+  })));
+
+say('### Road behaviour',
+  'Non-lead share is the mean per-run share of cards answered with an Estate other than the lead, by threat.',
+  table(['policy', 'non-lead all', 'vs B threat', 'vs O threat', 'vs L threat', 'cards / regular visit',
+    'cards / final attempt', 'failures survived / visit', 'carried / departure', 'peak carried', 'skips'],
+  [...presets, 'specialist-b', 'specialist-o', 'specialist-l'].filter((p) => get(B, p)).map((p) => {
+    const s = must(B, p).summary;
+    return [p, p1(s.nonLeadShare.all), ...ESTATES.map((e) => p1(s.nonLeadShare[e])), n2(s.cardsPerRegularVisit),
+      n2(s.cardsPerFinalAttempt), n2(s.failuresSurvivedPerVisit), n1(s.carriedPerDeparture), n1(s.peakCarried),
+      n2(s.skipsPerRun)];
+  })));
+
+say('## Stage 0: soft ending requirement (S2)',
+  '### Incidental eligibility',
+  'Victories with every final stat at or above the threshold, as a percentage of all campaigns / of victories.',
+  table(['policy', ...ENDING_FLOORS.map((t) => `≥ ${t}`)], [...presets, ...published].filter((p) => get(B, p)).map((p) => {
+    const s = must(B, p).summary;
+    return [p, ...ENDING_FLOORS.map((t) => `${p1(s.endingEligibility[t]!.ofAll)} / ${p1(s.endingEligibility[t]!.ofVictories)}`)];
+  })));
+
+say('### Deliberate price',
+  'Same preset with `endingFloor` X against floor 0, paired. Δ in percentage points with 95% CI; `**` = CI excludes 0. Median weeks are winners only.',
+  table(['policy', 'floor', 'win %', 'Δ win', 'Δ won by 70', 'Δ won by 80', 'median wk (floor 0 → X)', 'Δ median'],
+    presets.filter((p) => /^(spec|duo|hybrid)-/.test(p)).flatMap((p) => ENDING_FLOORS.map((f) => {
+      const a = must(B, p), b = get(B, `${p}@floor${f}`);
+      if (!b) return [p, String(f), '–', '–', '–', '–', '–', '–'];
+      return [p, String(f), p1(b.summary.victoryRate.estimate), diff(a, b), diff(a, b, 70), diff(a, b, 80),
+        `${n1(a.summary.winWeekMedian)} → ${n1(b.summary.winWeekMedian)}`, medianGap(a, b)];
+    }))));
+
+say('### Shapes under an enforced ending floor',
+  'Each shape played with the same `endingFloor`, paired against the specialist at that floor. Positive Δ week = slower than the specialist.',
+  table(['lead', 'floor', 'spec median', 'duo median', 'hybrid median', 'duo − spec Δ week', 'hybrid − spec Δ week', 'hybrid − spec Δ win'],
+    LEADS.flatMap((k) => ENDING_FLOORS.map((f) => {
+      const at = (shape: string) => get(B, `${shape}-${k}@floor${f}`);
+      const spec = at('spec'), duo = at('duo'), hybrid = at('hybrid');
+      if (!spec || !duo || !hybrid) return [k, String(f), '–', '–', '–', '–', '–', '–'];
+      return [k, String(f), n1(spec.summary.winWeekMedian), n1(duo.summary.winWeekMedian), n1(hybrid.summary.winWeekMedian),
+        weekDiff(spec, duo), weekDiff(spec, hybrid), diff(spec, hybrid)];
+    }))));
+
+if (get(B, 'wealthy-l')) {
+  const a = must(B, 'spec-l'), b = must(B, 'wealthy-l');
+  say('## Stage 0: Coin loophole (`wealthy-l` vs `spec-l`)',
+    table(['measure', 'spec-l', 'wealthy-l', 'paired Δ (wealthy − spec)'], [
+      ['win %', p1(a.summary.victoryRate.estimate), p1(b.summary.victoryRate.estimate), diff(a, b)],
+      ['won by 60', p1(a.summary.winByWeek[60]), p1(b.summary.winByWeek[60]), diff(a, b, 60)],
+      ['won by 70', p1(a.summary.winByWeek[70]), p1(b.summary.winByWeek[70]), diff(a, b, 70)],
+      ['median win wk', n1(a.summary.winWeekMedian), n1(b.summary.winWeekMedian), medianGap(a, b)],
+      ['carried / departure', n1(a.summary.carriedPerDeparture), n1(b.summary.carriedPerDeparture), ''],
+      ['skips / run', n2(a.summary.skipsPerRun), n2(b.summary.skipsPerRun), ''],
+    ]));
+}
+
+function shapeComparisons(config: string): string[][] {
+  const rows: string[][] = [];
+  for (const k of LEADS) {
+    for (const [x, y] of [['spec', 'hybrid'], ['spec', 'duo'], ['duo', 'hybrid']] as const) {
+      const a = get(config, `${x}-${k}`), b = get(config, `${y}-${k}`);
+      if (!a || !b) continue;
+      rows.push([`${y}-${k} − ${x}-${k}`, diff(a, b), diff(a, b, 70), diff(a, b, 80), medianGap(a, b), weekDiff(a, b)]);
+    }
+  }
+  return rows;
+}
+say('## Stage 0: shape comparisons (paired, same seeds)',
+  table(['comparison', 'Δ win', 'Δ won by 70', 'Δ won by 80', 'Δ median wk', 'Δ week (loss = 97)'], shapeComparisons(B)));
+
+function budgetRows(config: string): string[][] {
+  const rows: string[][] = [];
+  for (const k of LEADS) for (const budget of BUDGETS) {
+    const pure = get(config, `budget-${k}-${budget}-pure`);
+    if (!pure) continue;
+    for (const shape of Object.keys(BUDGET_SHAPES)) {
+      const g = must(config, `budget-${k}-${budget}-${shape}`);
+      const s = g.summary;
+      rows.push([`${k} ${budget}`, shape, BUDGET_SHAPES[shape]![budget].join('/'), p1(s.victoryRate.estimate),
+        p1(s.winByWeek[80]), n1(s.winWeekMedian), profile(s.profileAtVictory), n0(s.tutorSpendPerRun),
+        shape === 'pure' ? '' : diff(pure, g), shape === 'pure' ? '' : diff(pure, g, 80), shape === 'pure' ? '' : medianGap(pure, g),
+        shape === 'pure' ? '' : weekDiff(pure, g)]);
+    }
+  }
+  return rows;
+}
+say('## Stage 0: budget-matched builds',
+  'Same tutor Coin cap; lessons main/secondary/third. Δ is split − pure, paired.',
+  table(['lead, budget', 'shape', 'lessons', 'win %', 'won by 80', 'median wk', 'profile at victory', 'tutor Coin',
+    'Δ win', 'Δ won by 80', 'Δ median', 'Δ week (loss = 97)'], budgetRows(B)));
+
+// ---------------------------------------------------------------------------
+const stage1 = STAGE1_CONFIGS.map((c) => c.name).filter((c) => data.has(c));
+if (stage1.length > 1) {
+  say('## Stage 1: S3 × S4 grid', 'Cells: win % / median win week (winners).',
+    table(['policy', ...stage1], presets.map((p) => [p, ...stage1.map((c) => {
+      const g = get(c, p);
+      return g ? `${p1(g.summary.victoryRate.estimate)} / ${n1(g.summary.winWeekMedian)}` : '–';
+    })])));
+  say('### Won by week 70 (share of all campaigns)',
+    table(['policy', ...stage1], presets.map((p) => [p, ...stage1.map((c) => p1(get(c, p)?.summary.winByWeek[70]))])));
+  say('### Paired Δ win vs baseline (pp, 95% CI)',
+    table(['policy', ...stage1.slice(1)], presets.map((p) => [p, ...stage1.slice(1).map((c) => {
+      const a = get(B, p), b = get(c, p);
+      return a && b ? diff(a, b) : '–';
+    })])));
+  say('### Paired Δ won by week 70 vs baseline (pp, 95% CI)',
+    table(['policy', ...stage1.slice(1)], presets.map((p) => [p, ...stage1.slice(1).map((c) => {
+      const a = get(B, p), b = get(c, p);
+      return a && b ? diff(a, b, 70) : '–';
+    })])));
+  for (const c of stage1.slice(1)) {
+    say(`### Shape comparisons: ${c}`, table(['comparison', 'Δ win', 'Δ won by 70', 'Δ won by 80', 'Δ median wk', 'Δ week (loss = 97)'], shapeComparisons(c)));
+    say(`### Budget-matched: ${c}`, table(['lead, budget', 'shape', 'lessons', 'win %', 'won by 80', 'median wk',
+      'profile at victory', 'tutor Coin', 'Δ win', 'Δ won by 80', 'Δ median', 'Δ week (loss = 97)'], budgetRows(c)));
+  }
+}
+
+// ---------------------------------------------------------------------------
+// §6 scorecard
+function scorecard(config: string): string[] {
+  const s = (p: string) => get(config, p)?.summary;
+  const hybrids = LEADS.map((k) => s(`hybrid-${k}`)).filter((x): x is BalanceSummary => !!x);
+  const specs = LEADS.map((k) => s(`spec-${k}`)).filter((x): x is BalanceSummary => !!x);
+  if (hybrids.length < 3 || specs.length < 3) return [config, '–', '–', '–', '–', '–', '–', '–'];
+  const minHybrid = Math.min(...hybrids.map((h) => h.victoryRate.estimate));
+  // Best = earliest median among builds within 1 point of the highest win rate.
+  const best = (xs: BalanceSummary[]) => {
+    const top = Math.max(...xs.map((x) => x.victoryRate.estimate));
+    return xs.filter((x) => x.victoryRate.estimate >= top - 0.01)
+      .sort((a, b) => (a.winWeekMedian ?? 99) - (b.winWeekMedian ?? 99))[0]!;
+  };
+  const bh = best(hybrids), bs = best(specs);
+  const gap = (bh.winWeekMedian ?? 99) - (bs.winWeekMedian ?? 99);
+  const reliability = pairedDifference(must(config, bs.policy).slim, must(config, bh.policy).slim, wonBy());
+  const competitive = gap <= 5 || (reliability.significant && reliability.mean > 0);
+  const budgetOk = LEADS.every((k) => BUDGETS.every((budget) => {
+    const pure = get(config, `budget-${k}-${budget}-pure`);
+    if (!pure) return false;
+    return ['split', 'tri'].some((shape) => {
+      const d = pairedDifference(pure.slim, must(config, `budget-${k}-${budget}-${shape}`).slim, wonBy());
+      return d.high >= 0;
+    });
+  }));
+  const budgetSpeedOk = LEADS.every((k) => BUDGETS.every((budget) => {
+    const pure = get(config, `budget-${k}-${budget}-pure`);
+    if (!pure) return false;
+    return ['split', 'tri'].some((shape) =>
+      pairedDifference(pure.slim, must(config, `budget-${k}-${budget}-${shape}`).slim, weekOrLoss).low <= 0);
+  }));
+  const leadSpread = ['spec', 'duo', 'hybrid'].map((shape) => {
+    const xs = LEADS.map((k) => s(`${shape}-${k}`)!);
+    const rates = xs.map((x) => 100 * x.victoryRate.estimate), weeks = xs.map((x) => x.winWeekMedian ?? 99);
+    return `${shape} ${(Math.max(...rates) - Math.min(...rates)).toFixed(1)} pts / ${(Math.max(...weeks) - Math.min(...weeks)).toFixed(1)} wk`;
+  });
+  const leadsOk = ['spec', 'duo', 'hybrid'].every((shape) => {
+    const xs = LEADS.map((k) => s(`${shape}-${k}`)!);
+    const rates = xs.map((x) => 100 * x.victoryRate.estimate), weeks = xs.map((x) => x.winWeekMedian ?? 99);
+    return Math.max(...rates) - Math.min(...rates) <= 10 && Math.max(...weeks) - Math.min(...weeks) <= 5;
+  });
+  const all = [...presets].map(s).filter((x): x is BalanceSummary => !!x);
+  const bestOverall = best(all);
+  const mark = (ok: boolean) => (ok ? 'pass' : '**fail**');
+  return [config,
+    `${mark(minHybrid >= 0.95)} (min ${p1(minHybrid)})`,
+    `${mark(competitive)} (${bh.policy} ${n1(bh.winWeekMedian)} vs ${bs.policy} ${n1(bs.winWeekMedian)}; Δwin ${(100 * reliability.mean).toFixed(1)})`,
+    mark(budgetOk),
+    mark(budgetSpeedOk),
+    `${mark(leadsOk)} (${leadSpread.join('; ')})`,
+    `${mark((bestOverall.winWeekMedian ?? 99) < 80)} (${bestOverall.policy} ${n1(bestOverall.winWeekMedian)})`];
+}
+say('## Success criteria scorecard (§6 requirements)',
+  '"Best" is the earliest median win week among builds within 1 point of the highest win rate.',
+  'Budget (win): for every lead and budget, some split shape is not significantly worse than pure on win rate. '
+  + 'Budget (speed): the same on paired victory week, a loss counting as week 97.',
+  table(['config', 'hybrids ≥ 95%', 'best hybrid competitive', 'budget split ≥ pure (win)', 'budget split ≥ pure (speed)', 'leads within 10 pts / 5 wk',
+    'best median < 80'], [B, ...stage1.slice(1)].filter((c) => data.has(c)).map(scorecard)));
+
+process.stdout.write(out.join('\n'));
