@@ -37,6 +37,8 @@ um, i wanna rework this but it's the least important part in my opinion. so let'
 
 ## work screen
 
+- let's align the options in one column instead of 2x2, to reduce the dead space at the botton.
+
 ## rest screen
 
 - let's align the options in one column instead of 2x2, to reduce the dead space at the botton.
