@@ -14,11 +14,12 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
-import { hashConfig, loadConfig, withOverrides, type RulesConfig } from '../core/config.js';
+import { ConfigError, hashConfig, loadConfig, withOverrides, type RulesConfig } from '../core/config.js';
 import {
   getCalendar, getDerivedStats, type CampaignState, type GameAction, type GameEvent, type ZodiacSign,
 } from '../core/index.js';
 import { aggregate, runMetaFromConfig, runRecord, type Aggregate, type RunRecord } from './metrics.js';
+import { segmentLunarPhase } from '../core/pilgrimage.js';
 import { POLICIES, type PolicyFactory } from './policies.js';
 import { deriveBatchSeed, runCampaign, type CampaignResult } from './runner.js';
 
@@ -40,7 +41,7 @@ Runs:
   --strict              assert state invariants after every action
 
 Rules:
-  --config <path>       rules JSON (default content/rules.default.json)
+  --config <path>       rules JSON over defaults (full config or overlay)
   --variant <name>      overlay content/variants/<name>.json, or a path (repeatable)
   --weeks <n>           override calendar length (sensitivity runs only)
 
@@ -150,12 +151,20 @@ export function variantPath(variant: string, cwd: string): string {
 }
 
 export function loadCliConfig(options: CliOptions, cwd = process.cwd()): RulesConfig {
-  const config = loadConfig({
-    rules: readJson(options.config ? resolve(cwd, options.config) : resolve(CONTENT_DIR, 'rules.default.json')),
-    items: readJson(resolve(CONTENT_DIR, 'items.json')),
-    variants: options.variants.map((v) => readJson(variantPath(v, cwd))),
-  });
-  return options.weeks === undefined ? config : withOverrides(config, { calendar: { totalWeeks: options.weeks } });
+  try {
+    const config = loadConfig({
+      rules: readJson(resolve(CONTENT_DIR, 'rules.default.json')),
+      items: readJson(resolve(CONTENT_DIR, 'items.json')),
+      variants: [
+        ...(options.config ? [readJson(resolve(cwd, options.config))] : []),
+        ...options.variants.map((v) => readJson(variantPath(v, cwd))),
+      ],
+    });
+    return options.weeks === undefined ? config : withOverrides(config, { calendar: { totalWeeks: options.weeks } });
+  } catch (error) {
+    if (error instanceof ConfigError) throw new UsageError(error.message);
+    throw error;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -246,7 +255,9 @@ export function formatTrace(result: CampaignResult, config: RulesConfig, label: 
       lines.push(`Week ${week + 1} · year ${cal.displayYear} month ${cal.currentMonth + 1} week ${cal.weekOfMonth + 1} · `
         + `age ${cal.age} · ${derived.lunarPhase} moon, solar ${derived.solarAspect} · ${statusLine(before)}`);
     }
-    const detail = describeEvents(result.events.slice(d.eventStart, d.eventEnd));
+    const segment = before.pilgrimage;
+    const context = segment ? `segment moon=${segmentLunarPhase(before, config)} (entry week ${segment.segmentEntryWeek + 1})` : '';
+    const detail = [context, describeEvents(result.events.slice(d.eventStart, d.eventEnd))].filter(Boolean).join(' | ');
     lines.push(`  ${describeAction(d.action)}${detail ? ` — ${detail}` : ''}`);
   }
   const final = result.finalState;

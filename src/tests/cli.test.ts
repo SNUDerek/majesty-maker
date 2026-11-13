@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { AvailableAction, GameAction } from '../core/index.js';
 import { hashConfig } from '../core/config.js';
+import { segmentLunarPhase } from '../core/pilgrimage.js';
 import { formatTrace, loadCliConfig, parseCliArgs, runCli, UsageError, variantPath } from '../simulation/cli.js';
 import type { Policy } from '../simulation/runner.js';
 import { deriveBatchSeed, runCampaign } from '../simulation/runner.js';
@@ -67,6 +68,13 @@ describe('config loading', () => {
     expect(variantPath('x/y.json', '/w')).toBe('/w/x/y.json');
   });
 
+  it('loads the experimental config overlay before additional variants', () => {
+    const options = parseCliArgs(['--all-policies', '--all-signs',
+      '--config', 'content/rules.experimental.json', '--variant', 'items-test-table']);
+    expect(hashConfig(loadCliConfig(options)))
+      .toBe(hashConfig(loadContentConfig('rules.experimental.json', 'variants/items-test-table.json')));
+  });
+
   it('overrides the calendar length with --weeks', () => {
     expect(loadCliConfig(parseCliArgs(['--all-policies', '--all-signs', '--weeks', '48'])).calendar.totalWeeks).toBe(48);
   });
@@ -128,10 +136,11 @@ describe('runCli', () => {
       ['--policy', 'nope', '--birth-sign', 'aries'],
       ['--policy', 'pragmatic', '--birth-sign', 'ophiuchus'],
       ['--policy', 'pragmatic', '--birth-sign', 'aries', '--variant', 'missing-variant'],
+      ['--policy', 'pragmatic', '--birth-sign', 'aries', '--weeks', '3'],
     ]) {
       const r = run(argv);
       expect(r.code).toBe(2);
-      expect(r.stderr).toMatch(/^error: .*\n\nUsage:/);
+      expect(r.stderr).toMatch(/^error: [\s\S]*\n\nUsage:/);
     }
     expect(run(['--help']).stdout).toMatch(/^Usage:/);
   });
@@ -147,5 +156,19 @@ describe('runCli', () => {
     const code = runCli(['--policy', 'broken', '--birth-sign', 'aries'], { stdout: () => {}, stderr: (t) => err.push(t), policies: broken });
     expect(code).toBe(1);
     expect(err.join('\n')).toMatch(/Campaign policy=broken seed=\d+ sign=aries/);
+  });
+});
+
+describe('pilgrimage trace', () => {
+  it('labels each encounter with its locked segment moon across calendar boundaries', () => {
+    const config = loadContentConfig();
+    const result = runCampaign({ seed: 123, sign: 'aries', policy: rotatingPolicy('rotating'), config, trace: true });
+    const encounters = result.decisions.filter((d) => d.action.type === 'CHOOSE_APPROACH');
+    expect(encounters.length).toBeGreaterThan(0);
+    for (const d of encounters) {
+      const before = d.before!;
+      const trace = formatTrace({ ...result, decisions: [d] }, config, 'encounter');
+      expect(trace).toContain(`segment moon=${segmentLunarPhase(before, config)} (entry week ${before.pilgrimage!.segmentEntryWeek + 1})`);
+    }
   });
 });
