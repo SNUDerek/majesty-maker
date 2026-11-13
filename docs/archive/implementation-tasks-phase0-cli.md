@@ -8,4 +8,4 @@
 
 Implementation reviewed in PR #24. The CLI tests exercise single-run traces and policy × sign batches with injected policies. Review fixes load full or partial `--config` files over defaults before variants, report invalid configuration as usage errors, and label pilgrimage actions with the locked segment moon and entry week. README documents commands and current integration status.
 
-The production registry is intentionally empty until E3 lands. The two tech §14 commands therefore still exit with usage code 2 against the production registry; real-policy end-to-end acceptance must be checked after E3 integration. The batch command test uses two runs per policy × sign to keep it small. E5 owns the formal CSV/JSON/Markdown exports and trace NDJSON.
+E3 integration (PR #25) populated the registry with factories that take the loaded config; the trace command is covered with real policies in `src/tests/policies.test.ts`, and the batch command was run manually with all seven policies. The batch command test uses two runs per policy × sign to keep it small. E5 owns the formal CSV/JSON/Markdown exports and trace NDJSON.

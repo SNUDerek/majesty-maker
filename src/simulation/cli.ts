@@ -336,7 +336,7 @@ export function runCli(argv: readonly string[], io: CliIo): number {
       for (const sign of signs) {
         for (let runIndex = 0; runIndex < runs; runIndex++) {
           const seed = traceSeed ?? deriveBatchSeed(options.seed, sign, runIndex);
-          const policy = registry[policyId]!();
+          const policy = registry[policyId]!(config);
           const result = runCampaign({ seed, sign, policy, config, trace, strict: options.strict });
           if (trace) {
             io.stdout(formatTrace(result, config, `policy=${policyId} sign=${sign} seed=${seed}`

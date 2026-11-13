@@ -126,19 +126,13 @@ These are done and merged. Their full task specs, contract notes and decisions a
 
 Implemented in `src/simulation/metrics.ts`, with synthetic event-stream and engine consistency tests in `src/tests/metrics.test.ts`. The completed task specification is archived in [archive/implementation-tasks-phase0-metrics.md](archive/implementation-tasks-phase0-metrics.md). E5 can consume `runRecord` and the policy × sign aggregates.
 
-### E3 Policy bots
-- **Interface:** `Policy = { id, params, decide(state, available, derived, calendar) → GameAction }`. Policies may only use observable state. Any thresholds come from params or the CLI.
-- **E3a Stables-only baseline**: depends on E1. Work Stables; rest when a burden is within X of its ceiling.
-- **E3b remaining families**: depends on C3, C4, E1. **The four families below can be built in parallel by different people:**
-  1. **Greedy specialist (B/O/L variants):** trains and works its Estate, always approaches with its Estate, and departs and retreats on simple thresholds.
-  2. **Balanced:** trains the weakest stat, works the best-odds job, picks the highest-probability approach, and rests near the ceilings.
-  3. **Reckless pilgrim:** departs early with minimal carry and retreats only when the next failure would wipe it out.
-  4. **Pragmatic pilgrim:** an expected-survival heuristic. It estimates P(survive remaining encounters) from the current probabilities and burdens, chooses carry ≥ k × 15, uses Waning for rest and Trine for jobs, and retreats below a survival threshold.
-  - Each bot gets one smoke test: 20 seeds, no thrown errors, and a valid decision trace.
+### E3 Policy bots — completed
+
+E3a and E3b are implemented in `src/simulation/policies.ts`: Stables-only, B/O/L specialists, Balanced, Reckless and Pragmatic. The factories expose validated params and stable policy IDs for E4. Tests in `src/tests/policies.test.ts` include 20 seeded campaigns per bot with strict invariants and decision-trace replay. See [archive/implementation-tasks-phase0-policies.md](archive/implementation-tasks-phase0-policies.md) for the completed specification and README for usage and heuristic assumptions.
 
 ### E4 CLI — implementation reviewed
 
-Implemented in `src/simulation/cli.ts`, with regression coverage in `src/tests/cli.test.ts`. The task specification and review notes are archived in [archive/implementation-tasks-phase0-cli.md](archive/implementation-tasks-phase0-cli.md). The production commands still require E3 to populate the policy registry; end-to-end acceptance with real policies remains pending that integration. E5 adds the formal report formats.
+Implemented in `src/simulation/cli.ts`, with regression coverage in `src/tests/cli.test.ts`. The task specification and review notes are archived in [archive/implementation-tasks-phase0-cli.md](archive/implementation-tasks-phase0-cli.md). E3 populates the policy registry, and the tech §14 commands run with the real policies. E5 adds the formal report formats.
 
 ### E5 Report exports
 - **Depends on:** E2, E4. **Parallel with:** E3b.

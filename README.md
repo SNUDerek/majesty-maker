@@ -29,7 +29,7 @@ npm run sim -- --policy pragmatic --birth-sign aries --seed 123 --trace
 npm run sim -- --all-policies --all-signs --runs 1000 --out reports/baseline
 ```
 
-The campaign commands require E3's policy registry, which is not merged yet. Until E3 lands, policy selection exits with usage code 2; `--help` works now. Use `--config content/rules.experimental.json` for the experimental baseline and `--variant <name-or-path>` for additional overlays. `--trace-seed <seed>` replays a literal campaign seed from batch records; omit `--seed` and `--runs` when using it.
+Policy IDs are the seven E3 bots (see [Policy bots](#policy-bots-e3)). Use `--config content/rules.experimental.json` for the experimental baseline and `--variant <name-or-path>` for additional overlays. `--trace-seed <seed>` replays a literal campaign seed from batch records; omit `--seed` and `--runs` when using it.
 
 ## Layout
 
@@ -42,10 +42,41 @@ The campaign commands require E3's policy registry, which is not merged yet. Unt
   - `src/core/encounter.ts`: encounter matchups, probability breakdowns, roll-under checks, road bonuses, and failure penalties. Functions take config last and use the shared equipment hooks in `src/core/items.ts`. Regular segments use indices `0..regularSegments-1`; the final gauntlet uses index `regularSegments`.
 - `src/simulation/`: headless batch simulation tooling.
   - `src/simulation/runner.ts`: `runCampaign({ seed, sign, policy, config, trace?, strict?, maxSteps? })` drives one campaign to victory or deadline, asking a `Policy` (`decide(state, available, derived, calendar)`) for each action. It returns `{ finalState, events, decisions }`, where each decision records its week, the pre-roll probability of any check it resolved, and its event range; `trace` adds before/after snapshots and `strict` runs the D1 invariant checker on every transition. `deriveBatchSeed(baseSeed, sign, runIndex)` gives policy-independent paired seeds.
+  - `src/simulation/policies.ts`: `createPolicy(id, config, params?)` and `createPolicies(config, params?)` provide seven bots for E3: `stables-only`, `specialist-b`, `specialist-o`, `specialist-l`, `balanced`, `reckless`, and `pragmatic`. Pass a policy directly to `runCampaign`, or select it by ID in the CLI through the `POLICIES` registry (each factory receives the CLI's loaded config and uses default params). Policies use visible stats, burdens, carried Coin, threats, inventory and calendar, without reading the seed or RNG streams. Ties follow Estate/action order for deterministic replay.
   - `src/simulation/metrics.ts`: `runRecord(events, finalState, meta)` derives every tech §12 per-run field from the event stream (with `runMetaFromConfig` supplying calendar length, fee cap, matchup cycle and final ceilings via the public API). `aggregate(records)` groups by policy × sign, plus an `all` row per policy: Wilson 95% victory CI, victory-week and checkpoint distributions, wipeout causes, calendar utilization, matchup/approach rates, Coin flows by source, and deadline-versus-resource-loop attribution. Final-gauntlet progress includes survived failures and skips, excluding fatal or pending checks. Terminal settlements are included in the last spent week’s snapshot; empty treasury and empty total purse are reported separately. The resource-loop attribution uses a configurable closing window (default 24 weeks), so it is a reporting heuristic.
-  - `src/simulation/cli.ts`: `npm run sim -- …` (tech §14). Selects policies (`--policy`/`--all-policies`, from the `POLICIES` registry in `policies.ts`, which E3 fills) and signs (`--birth-sign`/`--all-signs`); runs `--runs` campaigns each on paired seeds derived from `--seed`; loads `--config` over defaults (a full rules file or overlay, including `content/rules.experimental.json`), then `--variant` overlays (a name under `content/variants/` or a path) and the `--weeks` sensitivity override; `--strict` checks invariants. `--trace` prints a week-by-week log (date, moon and solar aspect, condition, then each action with its probability, roll and deltas; pilgrimage actions label their locked segment moon); `--trace-seed S` replays one campaign with literal seed S. It prints a policy × sign summary table; `--out <dir>` writes `runs.ndjson` and `aggregates.json` (E5 adds the report formats). Exit codes: 0 ok, 1 campaign error, 2 usage error.
+  - `src/simulation/cli.ts`: `npm run sim -- …` (tech §14). Selects policies (`--policy`/`--all-policies`, from the `POLICIES` registry in `policies.ts`) and signs (`--birth-sign`/`--all-signs`); runs `--runs` campaigns each on paired seeds derived from `--seed`; loads `--config` over defaults (a full rules file or overlay, including `content/rules.experimental.json`), then `--variant` overlays (a name under `content/variants/` or a path) and the `--weeks` sensitivity override; `--strict` checks invariants. `--trace` prints a week-by-week log (date, moon and solar aspect, condition, then each action with its probability, roll and deltas; pilgrimage actions label their locked segment moon); `--trace-seed S` replays one campaign with literal seed S. It prints a policy × sign summary table; `--out <dir>` writes `runs.ndjson` and `aggregates.json` (E5 adds the report formats). Exit codes: 0 ok, 1 campaign error, 2 usage error.
 - `src/tests/`: Vitest tests. Import `describe`/`it`/`expect` from `vitest` explicitly. Use `loadContentConfig()` from `src/tests/support/config.ts` to get the default config.
 - `src/tests/scenarios/`: D2 deterministic rule and engine scenarios. Run with `npm test -- src/tests/scenarios`. Home scenarios activate when `src/core/index.ts` exists; C2–C4 owners must enable their `ENGINE_SUITES` flag in `harness.ts` when implementing the feature. Explicit flags prevent a regression from silently skipping an enabled suite. Pending engine scenarios are skipped until their dependencies land.
 - `content/`: game data. `rules.default.json` holds the rules with every unconfirmed value flagged in its `provenance` map, `items.json` is the item catalog, and `rules.experimental.json` is the overlay used for simulation baselines (config-only balance changes go there).
   - `content/variants/`: named overlays for sensitivity runs, each with its own `id` (so config hashes differ) and an `experimental` provenance note for every value it changes. `route-4`/`route-5`/`route-6` set the segment count with the linear +40 → +0 road bonus; `road-flat`/`road-steep` halve or double the road-bonus slope at the same mean (five-segment routes only); `final-n6`/`final-n8`/`final-n10` set the final gauntlet size and `final-road-10`/`-20`/`-30` its road bonus (negative); `items-test-table` enables item drops; `astrology-full` turns on the TBD lunar bonuses with candidate values (New Moon +10% to Smuggler/Alehouse gains and payouts, 10-Coin encounter skip, Full Moon +10% Bellatores/Oratores gains and payouts); `weeks-48` is the 48-week sensitivity calendar. Variants stack in order (`loadConfig({ variants })` or repeated `--variant` flags). Applying `road-flat`/`road-steep` after `route-4`/`route-6` fails validation (five bonuses for a different segment count); applying the route variant last replaces the curve. For example, `--variant route-6 --variant final-n10 --variant weeks-48` combines independent sensitivities.
 - `docs/`: planning docs. Finished ones move to `docs/archive/`.
+
+## Policy bots (E3)
+
+```ts
+import { createPolicy } from './src/simulation/policies.js';
+import { runCampaign } from './src/simulation/runner.js';
+
+// config is a validated RulesConfig from loadConfig().
+const policy = createPolicy('pragmatic', config, { survivalThreshold: 0.7 });
+const result = runCampaign({ seed: 123, sign: 'aries', policy, config, strict: true });
+```
+
+Stables-only works Stables and rests near either burden ceiling. Non-reckless bots whose stats meet `departureStat` take the largest affordable rest until burdens are within `departureBurden`, so they can depart. Specialists tutor, work and approach in their Estate. Balanced trains its weakest stat and chooses the highest-odds job and encounter approach. Automatic Stables counts as 100%, so Balanced uses it whenever it is available. Reckless departs as soon as possible with minimum carry; it exits when a failure using its preferred approach against any possible next threat would wipe it out. Pragmatic uses Waning recovery, Trine work and a survival estimate to gate departure and continuation. Bots take available equipment (preferring a specialist's Estate) and consumables (preferring Metheglin), and use recovery items when burdened.
+
+All strategy thresholds are copied into `policy.params` and validated. Defaults are experimental:
+
+| Parameter | Default | Meaning |
+| --- | --- | --- |
+| `restMargin` | 15 | Rest within this distance of either ceiling; also the recovery-item burden threshold |
+| `departureStat` | 40 | Minimum specialist stat, or minimum of all stats for Balanced/Pragmatic |
+| `departureBurden` | 15 | Maximum burden at a prepared departure |
+| `retreatMargin` | 20 | Distance from either ceiling that triggers a specialist/Balanced exit |
+| `trainingReserve` | 40 | Work below this treasury balance; otherwise tutor if affordable |
+| `carryFailures` | 3 | Carry at least this times the configured failure penalty (baseline 15); Reckless uses minimum legal carry |
+| `survivalThreshold` | 0.65 | Pragmatic's minimum estimated segment survival probability |
+| `waningRestMinimum` | 10 | Minimum burden for Pragmatic's Waning recovery |
+
+Pragmatic estimates remaining-segment survival using a binomial failure budget: average best-approach success odds over configured threat weights, with the smallest failure capacity of the resources those approaches spend. It uses segment-locked lunar phases, equipment penalties, current ceilings and carried Coin; next-segment decisions use the upcoming entry moon. The estimate conservatively charges every failure against the bottleneck resource and ignores future rewards and consumables. It is a heuristic for simulation comparisons, not an exact survival probability or a balance conclusion.
+
+Run bot tests, including 20 seeded campaigns per policy with strict invariants and decision-trace replay, with `npm test -- src/tests/policies.test.ts`.
