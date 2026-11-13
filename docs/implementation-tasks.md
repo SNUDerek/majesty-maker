@@ -136,11 +136,9 @@ Implemented in `src/simulation/metrics.ts`, with synthetic event-stream and engi
   4. **Pragmatic pilgrim:** an expected-survival heuristic. It estimates P(survive remaining encounters) from the current probabilities and burdens, chooses carry ≥ k × 15, uses Waning for rest and Trine for jobs, and retreats below a survival threshold.
   - Each bot gets one smoke test: 20 seeds, no thrown errors, and a valid decision trace.
 
-### E4 CLI
-- **Depends on:** E1. **Parallel with:** E3, E5.
-- **File:** `src/simulation/cli.ts`.
-- **Work:** use `node:util` `parseArgs`. Flags: `--policy`, `--all-policies`, `--birth-sign`, `--all-signs`, `--runs`, `--seed`, `--trace`, `--trace-seed`, `--config`, `--variant`, `--out`, `--strict`, `--weeks` (sensitivity only). `--trace` prints a readable week-by-week log: activity, probability, roll, deltas, and aspects.
-- **Acceptance:** the two commands in tech §14 work exactly as written.
+### E4 CLI — implementation reviewed
+
+Implemented in `src/simulation/cli.ts`, with regression coverage in `src/tests/cli.test.ts`. The task specification and review notes are archived in [archive/implementation-tasks-phase0-cli.md](archive/implementation-tasks-phase0-cli.md). The production commands still require E3 to populate the policy registry; end-to-end acceptance with real policies remains pending that integration. E5 adds the formal report formats.
 
 ### E5 Report exports
 - **Depends on:** E2, E4. **Parallel with:** E3b.
