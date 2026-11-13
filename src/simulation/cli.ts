@@ -8,9 +8,9 @@
  * `deriveBatchSeed(seed, sign, runIndex)`, shared by every policy (paired
  * seeds). `--trace-seed S` instead runs one traced campaign per policy × sign
  * with the literal campaign seed S, e.g. to replay a run from a batch.
- * `--out` writes raw run records and aggregates; E5 adds the report formats.
+ * `--out` writes CSV/JSON/Markdown reports and compatible raw metrics files.
  */
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -22,6 +22,7 @@ import { aggregate, runMetaFromConfig, runRecord, type Aggregate, type RunRecord
 import { segmentLunarPhase } from '../core/pilgrimage.js';
 import { POLICIES, type PolicyFactory } from './policies.js';
 import { deriveBatchSeed, runCampaign, type CampaignResult } from './runner.js';
+import { writeReport, type TraceRun } from './report.js';
 
 const CONTENT_DIR = fileURLToPath(new URL('../../content/', import.meta.url));
 
@@ -46,7 +47,7 @@ Rules:
   --weeks <n>           override calendar length (sensitivity runs only)
 
 Output:
-  --out <dir>           write runs.ndjson and aggregates.json to <dir>
+  --out <dir>           write CSV/JSON/Markdown reports (plus events for --trace-seed)
   --help                show this message`;
 
 export class UsageError extends Error {
@@ -332,12 +333,18 @@ export function runCli(argv: readonly string[], io: CliIo): number {
     const trace = options.trace || traceSeed !== undefined;
     const runs = traceSeed === undefined ? options.runs : 1;
     const records: RunRecord[] = [];
+    const traces: TraceRun[] = [];
+    const policyMetadata = new Map<string, { id: string; params: Readonly<Record<string, unknown>> }>();
     for (const policyId of policyIds) {
       for (const sign of signs) {
         for (let runIndex = 0; runIndex < runs; runIndex++) {
           const seed = traceSeed ?? deriveBatchSeed(options.seed, sign, runIndex);
           const policy = registry[policyId]!(config);
+          policyMetadata.set(policyId, { id: policyId, params: structuredClone(policy.params) });
           const result = runCampaign({ seed, sign, policy, config, trace, strict: options.strict });
+          if (traceSeed !== undefined && options.out !== undefined) {
+            traces.push({ policy: policyId, birthSign: sign, seed, events: result.events });
+          }
           if (trace) {
             io.stdout(formatTrace(result, config, `policy=${policyId} sign=${sign} seed=${seed}`
               + (traceSeed === undefined ? ` (base ${options.seed}, run ${runIndex})` : '')));
@@ -354,7 +361,7 @@ export function runCli(argv: readonly string[], io: CliIo): number {
     io.stdout(formatSummary(rows));
     if (options.out !== undefined) {
       const dir = resolve(cwd, options.out);
-      mkdirSync(dir, { recursive: true });
+      writeReport(dir, { records, config, args: argv, policies: [...policyMetadata.values()], traces }, cwd);
       writeFileSync(resolve(dir, 'runs.ndjson'), records.map((r) => JSON.stringify(r)).join('\n') + '\n');
       writeFileSync(resolve(dir, 'aggregates.json'), JSON.stringify({ configId, args: argv, aggregates: rows }, null, 2) + '\n');
       io.stderr(`wrote ${records.length} run records to ${dir}`);

@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -113,6 +113,14 @@ describe('runCli', () => {
     const summary = JSON.parse(readFileSync(join(dir, 'reports/baseline/aggregates.json'), 'utf8'));
     expect(summary.args).toContain('--all-policies');
     expect(summary.aggregates).toHaveLength(2 * 13);
+    const formal = JSON.parse(readFileSync(join(dir, 'reports/baseline/summary.json'), 'utf8'));
+    expect(formal).toMatchObject({ runCount: 48, configId: summary.configId,
+      policies: [{ id: 'pragmatic', params: {} }, { id: 'rotating', params: {} }] });
+    expect(formal.aggregates).toEqual(summary.aggregates);
+    expect(formal.args).toEqual(summary.args);
+    expect(readFileSync(join(dir, 'reports/baseline/runs.csv'), 'utf8').split('\r\n')).toHaveLength(50);
+    expect(readFileSync(join(dir, 'reports/baseline/summary.md'), 'utf8')).toContain('partial astrology');
+    expect(existsSync(join(dir, 'reports/baseline/events.ndjson'))).toBe(false);
   });
 
   it('pairs seeds across policies and is deterministic', () => {
@@ -129,6 +137,32 @@ describe('runCli', () => {
     const config = loadContentConfig();
     const result = runCampaign({ seed: 777, sign: 'virgo', policy: rotatingPolicy('rotating'), config, trace: true });
     expect(r.stdout).toContain(formatTrace(result, config, 'policy=rotating sign=virgo seed=777'));
+  });
+
+  it('exports literal-seed events for each policy/sign, then clears stale events for --trace batches', () => {
+    dir = mkdtempSync(join(tmpdir(), 'cli-'));
+    const r = run(['--all-policies', '--birth-sign', 'virgo', '--birth-sign', 'aries',
+      '--trace-seed', '777', '--out', 'reports'], dir);
+    expect(r.code, r.stderr).toBe(0);
+    const lines = readFileSync(join(dir, 'reports/events.ndjson'), 'utf8').trim().split('\n').map((line) => JSON.parse(line));
+    expect(new Set(lines.map((line) => `${line.policy}:${line.birthSign}`)))
+      .toEqual(new Set(['pragmatic:virgo', 'pragmatic:aries', 'rotating:virgo', 'rotating:aries']));
+    const result = runCampaign({ seed: 777, sign: 'virgo', policy: rotatingPolicy('rotating'), config: loadContentConfig() });
+    expect(lines.filter((line) => line.policy === 'rotating' && line.birthSign === 'virgo').map((line) => line.event))
+      .toEqual(result.events);
+    expect(lines.every((line) => line.seed === 777)).toBe(true);
+    const plain = run(['--policy', 'rotating', '--birth-sign', 'virgo', '--trace', '--out', 'reports'], dir);
+    expect(plain.code, plain.stderr).toBe(0);
+    expect(existsSync(join(dir, 'reports/events.ndjson'))).toBe(false);
+  });
+
+  it('reports output failures with exit code 1', () => {
+    dir = mkdtempSync(join(tmpdir(), 'cli-'));
+    writeFileSync(join(dir, 'blocked'), 'existing file');
+    const r = run(['--policy', 'rotating', '--birth-sign', 'aries', '--out', 'blocked'], dir);
+    expect(r.code).toBe(1);
+    expect(r.stderr).toContain('error:');
+    expect(readFileSync(join(dir, 'blocked'), 'utf8')).toBe('existing file');
   });
 
   it('reports usage errors with exit code 2', () => {
