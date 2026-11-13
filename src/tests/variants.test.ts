@@ -40,7 +40,8 @@ describe('E6 configuration variants', () => {
   it('ships every named variant', () => {
     expect(names).toEqual([
       'astrology-full', 'final-n10', 'final-n6', 'final-n8', 'final-road-10', 'final-road-20', 'final-road-30',
-      'items-test-table', 'road-flat', 'road-steep', 'route-4', 'route-5', 'route-6', 'weeks-48',
+      'items-test-table', 'open-questions-decisions', 'road-flat', 'road-steep', 'route-4', 'route-5', 'route-6',
+      'weeks-48',
     ]);
   });
 
@@ -55,14 +56,16 @@ describe('E6 configuration variants', () => {
     }
   });
 
-  it.each(names)('%s documents every value it changes in provenance as non-confirmed', (name) => {
+  it.each(names)('%s documents every value it changes in provenance as non-confirmed or a settled decision', (name) => {
     const overlay = readContentJson(`variants/${name}.json`) as { provenance?: Record<string, unknown> };
     const config = load(name);
     const changed = changedLeaves(base, config).filter((p) => p !== 'id' && !p.startsWith('provenance.'));
     for (const path of changed) {
       const documented = Object.keys(overlay.provenance ?? {}).find((p) => path === p || path.startsWith(`${p}.`));
       expect(documented, `${name}: ${path} lacks a provenance entry`).toBeDefined();
-      expect(config.provenance[documented!]!.status).not.toBe('confirmed');
+      const { status, note } = config.provenance[documented!]!;
+      // A settled design decision may be confirmed, but only with an explicit citation.
+      if (status === 'confirmed') expect(note, `${name}: ${path}`).toMatch(/\b(Q\d+|R\d+) settled\b/);
     }
   });
 
@@ -132,5 +135,65 @@ describe('E6 configuration variants', () => {
     expect(newMoon.skipFee).not.toBeNull();
     expect(fullMoon.surge).toBeGreaterThan(0);
     expect(load('weeks-48').calendar.totalWeeks).toBe(48);
+  });
+});
+
+describe('T1 open-questions-decisions candidate', () => {
+  const candidate = load('open-questions-decisions');
+
+  it('selects the exact Q1, Q2, Q4, Q5, Q9, Q12, Q13 and R3 values', () => {
+    expect(candidate.classes.tutorBurden).toEqual({
+      hedge_knight: { fatigue: 5, melancholy: 0 },
+      hermit: { fatigue: 0, melancholy: 5 },
+      smuggler: { fatigue: 3, melancholy: 2 },
+    });
+    expect(candidate.failure.purseProtection.appliesToLabFailures).toBe(true);
+    expect(candidate.astrology.waxing).toEqual({ mode: 'single', bonusPct: 120 });
+    expect(candidate.astrology.solar).toMatchObject({
+      squareTutorGainPct: 130, squareTutorFatiguePct: 200, squareTutorMelancholyPct: 200,
+    });
+    expect(candidate.astrology.newMoon).toMatchObject({ activityBonus: 20, skipFee: 10 });
+    expect(candidate.astrology.fullMoon.surge).toBe(20);
+    expect(candidate.astrology.waning.appliesToRestAtHome).toBe(false);
+    expect(candidate.failure).toMatchObject({
+      retreatLootRetentionPct: 50, retreatToll: 10, wipeoutBurdenReset: { recovery: 35 },
+      homeCollapse: { forcedWeek: true, recovery: 15, fee: 20 },
+    });
+    expect(candidate.items.acquisition).toBe('disabled');
+    // R1: the route is unchanged.
+    expect(candidate.route).toEqual(base.route);
+  });
+
+  it('records settled rules as confirmed and tunable numbers as experimental', () => {
+    const status = (path: string) => candidate.provenance[path]?.status;
+    for (const path of ['astrology.solar.squareTutorFatiguePct', 'astrology.waxing.mode',
+      'astrology.waning.appliesToRestAtHome', 'failure.purseProtection.appliesToLabFailures', 'items.acquisition']) {
+      expect(status(path), path).toBe('confirmed');
+    }
+    for (const path of ['classes.tutorBurden', 'astrology.waxing.bonusPct', 'astrology.newMoon.activityBonus',
+      'astrology.newMoon.skipFee', 'astrology.fullMoon.surge', 'failure.retreatToll', 'failure.retreatLootRetentionPct',
+      'failure.wipeoutBurdenReset', 'failure.homeCollapse']) {
+      expect(status(path), path).toBe('experimental');
+    }
+    expect(Object.values(candidate.provenance).some((entry) => entry.status === 'tbd')).toBe(false);
+  });
+
+  it('keeps the default and astrology-full controls unchanged and distinct', () => {
+    expect(base.astrology.solar.squareTutorFatiguePct).toBe(100);
+    expect(base.failure).toMatchObject({ wipeoutBurdenReset: 'zero', retreatToll: 5, homeCollapse: { fee: 0 } });
+    expect(base.classes.tutorBurden.smuggler).toEqual({ fatigue: 5, melancholy: 5 });
+    expect(load('astrology-full').astrology).toMatchObject({
+      newMoon: { activityBonus: 10, skipFee: 10 }, fullMoon: { surge: 10 }, waxing: { bonusPct: 110 },
+    });
+    const hashes = new Set([base, candidate, load('astrology-full')].map(hashConfig));
+    expect(hashes.size).toBe(3);
+  });
+
+  it('stacks under harder-finale variants in CLI order', () => {
+    const config = loadCliConfig(parseCliArgs(['--all-policies', '--all-signs',
+      '--variant', 'open-questions-decisions', '--variant', 'final-n10', '--variant', 'final-road-30']));
+    expect(config.route).toMatchObject({ finalEncounters: 10, finalRoadBonus: -30 });
+    expect(config.failure.homeCollapse.fee).toBe(20);
+    expect(config.id).toBe('final-road-30');
   });
 });

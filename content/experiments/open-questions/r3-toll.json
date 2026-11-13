@@ -1,0 +1,12 @@
+{
+  "id": "oq-r3-toll",
+  "failure": {
+    "retreatToll": 10
+  },
+  "provenance": {
+    "failure.retreatToll": {
+      "status": "experimental",
+      "note": "T6 single change: R3 toll 10."
+    }
+  }
+}

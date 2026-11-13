@@ -1,0 +1,17 @@
+{
+  "id": "oq-q1-burden",
+  "classes": {
+    "tutorBurden": {
+      "smuggler": {
+        "fatigue": 3,
+        "melancholy": 2
+      }
+    }
+  },
+  "provenance": {
+    "classes.tutorBurden": {
+      "status": "experimental",
+      "note": "T6 single change: Q1 Smuggler 3/2 over the legacy control."
+    }
+  }
+}

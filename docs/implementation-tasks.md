@@ -146,6 +146,8 @@ All 14 named overlays are available under `content/variants/`, with distinct has
 
 ## 4. Workstream F/G: Balance and wrap-up (M4)
 
+Status: the first pass of F1–F3 is done for the open-question decisions (tasks T6/T7). See [balance-report-baseline.md](balance-report-baseline.md). Specialist dominance and the bot gaps it lists (no skipping, no home collapses) remain open. G1 is not yet ticked.
+
 ### F1 Baseline batches
 - **Depends on:** E3b, E5, E6, D3.
 - **Work:** 1,000 runs × each policy (7 including B/O/L specialists) × 12 signs on `rules.experimental.json`, then the variant sweeps. Rerun at 5,000 only where comparisons are close. This is about 84k campaigns per config, so check the runtime and consider `worker_threads` in the runner if one config takes over ~2 min.
@@ -163,23 +165,23 @@ All 14 named overlays are available under `content/variants/`, with distinct has
 
 ## 5. Open questions found while planning
 
-Every task above already has a configurable default for these, so **none of them block implementation**, but they should be answered before F3 draws conclusions.
+All thirteen questions are now **resolved**. See [the archived decision record](archive/open-questions-tasks.md) and [remaining follow-up work](open-questions-tasks.md). The settled rules are implemented in the engine. Shipped defaults (`content/rules.default.json`) remain the legacy controls. The selected values live in the `open-questions-decisions` variant, and their numbers stay experimental until F1–F3.
 
-| # | Question | Source conflict | Default used | Affects |
+| # | Question | Resolution | Default (legacy control) | Candidate (`open-questions-decisions`) |
 |---|---|---|---|---|
-| Q1 | Tutor burden mapping | Unspecified | HK +5F, Hermit +5M, Smuggler +5F/+5M | A4, A3 |
-| Q2 | Does Purse Protection also reduce Coin lost on failed **Laboratores encounters**? | Thematic §2 says yes; tech §7 applies it only on wipeout | Wipeout only (flag) | B1, C2 |
-| Q3 | New Moon skip: once per **route** or once per **segment**? | Thematic §4 says "per route"; tech §6 says "per segment" | Per segment, feature off | C3 |
-| Q4 | Waxing: compounding streak or one-time ×1.1? | Thematic says "compounding"; tech says once | Once (`mode: 'single'`) | A3 |
-| Q5 | Square month with a tutor that generates no Melancholy (Hedge Knight under Q1's default) has no downside. Intended? | Interaction of Q1 with Square | As configured | A3, balance |
-| Q6 | Order of Full Moon ×2 and Gambeson −5 | Unspecified | Double first, then −5 (25) | B1 |
-| Q7 | Is the retreat toll paid from carried Coin or the treasury? If carried Coin can't cover it? | Tech §10 lists it as unconfirmed | Carried first, remainder from treasury, floor 0 | C2 |
-| Q8 | Can Theriac/Wort be used at a waystation, or only between encounters? | Unspecified | Both | B2, C3 |
-| Q9 | Is the New Moon skip fee paid from carried Coin? Does a skipped card count as "survived"? | Unspecified | Carried; counts toward N | C3 |
-| Q10 | Saint's Relic: +10 probability (helps) vs +10 to the die (hurts under roll-under) | Thematic wording ambiguous | +10 probability | B1 |
-| Q11 | Do Opposition's ×1.5 burdens apply to job *failure* burdens too? | "Job-generated" is ambiguous | Yes, both | A3 |
-| Q12 | Do Full Moon "surge" and New Moon "bonus" for home activities have values? | Unspecified | 0 (off) and report labeled "partial astrology" | A3, E5 |
-| Q13 | Post-wipeout burden recovery and home-collapse forced week | Unspecified | Reset to 0; forced week with −15/−15 | C1, C2 |
+| Q1 | Tutor burden mapping | Knight Fatigue, Hermit Melancholy, Smuggler split; base burden five each | HK +5F, Hermit +5M, Smuggler +5F/+5M | Smuggler +3F/+2M (experimental) |
+| Q2 | Purse Protection on failed Laboratores encounters? | Yes, and on wipeout: `floor(15 × (1 − P/100) × item)`, P = floor(Lab/2) | Wipeout only | Enabled |
+| Q3 | New Moon skip per route or per segment? | One per segment entered during New Moon, finale included; locked at entry, no rollover | Skipping off | 10 Coin fee |
+| Q4 | Waxing compounding or once? | Once (`mode: 'single'`), exact previous activity | ×1.10 | ×1.20 (experimental) |
+| Q5 | Square with no tutor Melancholy | Square doubles both tutor burdens, +30% gain kept | Melancholy only (`squareTutorFatiguePct` 100) | Both ×2 |
+| Q6 | Full Moon ×2 vs Gambeson −5 | Double first, then −5 (25) | Same | Same |
+| Q7 | Retreat toll payer | Forfeit loot first; toll from carried, then treasury; never blocks, never debt | Toll 5 | Toll 10 |
+| Q8 | Theriac/Wort at a waystation? | Between encounters and at waystations, no time spent; not during a pending failed roll | Same | Same |
+| Q9 | Skip fee source; does a skipped card count? | Carried Coin; counts toward N; no loot or roll; unaffordable = unavailable | Off | 10 Coin (experimental) |
+| Q10 | Relic +10 probability or die? | +10 percentage points vs Oratores threats, any approach, before clamp | Same | Same |
+| Q11 | Opposition on job failures? | Yes, success and failure burdens incl. Stables; floor once | Same | Same |
+| Q12 | Home New/Full Moon bonus values | New: Smuggler/Alehouse; Full: Knight/Hermit/Watch/Scriptorium; gains and payouts only | 0 (off, "partial astrology") | +20% each (experimental) |
+| Q13 | Post-wipeout recovery and home collapse | Wipeout: one −N/−N recovery week. Home: fee once per collapse plus forced −15/−15 weeks. No recovery without a week | Zero reset; no fee | Recovery 35; fee 20 (experimental) |
 
 ---
 

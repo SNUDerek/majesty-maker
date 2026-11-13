@@ -59,7 +59,7 @@ melancholyCeiling = clamp(floor(75 + (oratores - 15) / 2), 75, 100)
 
 Ceilings are computed from current stats whenever required; they are never separately mutated. The `floor` handles half-point ceilings consistently with integer mechanics. Negative burden changes floor at zero. If a stat reduction lowers a ceiling below the existing burden, apply the same collapse logic when resolving that action.
 
-**At home:** hitting either ceiling triggers a mandatory one-week rest/convalescence period, not the pilgrimage's financial and carried-loot penalties. **Provisional implementation rule:** forced home convalescence consumes the next available week and reduces both burdens by 15 (as Rest at Home), rather than repeatedly chaining collapse. Explicitly surface this provisional rule in configuration and test it. If this behavior has not been approved, do not present it as a finalized design decision.
+**At home (settled, Q13):** hitting either ceiling triggers a mandatory convalescence, not the pilgrimage's financial and carried-loot penalties. The home activity spends its normal week and resolves first. A new collapse then charges a physician fee of `min(failure.homeCollapse.fee, treasury)` exactly once (Coin source `physician_fee`, distinct from the pilgrimage `medical_fee`; Purse Protection does not reduce it), even when the triggering activity used the final week. If a week remains, the next week is forced convalescence that reduces both burdens by `homeCollapse.recovery`, floored at zero. While still at a ceiling, only further `REST rest_home` convalescence weeks are legal, at the same recovery and without a second fee. Recovery never extends the deadline, receives no Waning bonus and clears Waxing continuity. The `collapse` event records `fee: { nominal, paid }` when a fee is configured, so shortfalls are not inferred from the remaining treasury. Shipped defaults keep the legacy control (fee 0, recovery 15); the `open-questions-decisions` candidate overlay (`content/variants/open-questions-decisions.json`) selects fee 20 and recovery 15 (experimental numbers).
 
 **On pilgrimage:** hitting either ceiling causes immediate wipeout; see §8. **Financial wipeout** is separate: when a Laboratores encounter penalty would exceed remaining carried Coin, it causes the same pilgrimage wipeout without allowing a negative carried balance. Exactly zero remaining Coin is legal if the penalty was fully payable.
 
@@ -71,11 +71,11 @@ All purchases/fees require enough **treasury Coin** unless an explicitly defined
 
 | Tutor | Target stat | Base change | Opposing stat change | Cost | Burden |
 |---|---|---:|---|---:|---|
-| Hedge Knight | Bellatores | +5 | Laboratores −1 | 20 | +5 condition |
-| Hermit | Oratores | +5 | Bellatores −1 | 20 | +5 condition |
-| Smuggler | Laboratores | +5 | Oratores −1 | 20 | +5 condition |
+| Hedge Knight | Bellatores | +5 | Laboratores −1 | 20 | +5 Fatigue |
+| Hermit | Oratores | +5 | Bellatores −1 | 20 | +5 Melancholy |
+| Smuggler | Laboratores | +5 | Oratores −1 | 20 | +3 Fatigue / +2 Melancholy |
 
-**Still unspecified:** which burden(s) each tutor raises by +5. Do not bury an arbitrary choice in code; define a `tutorBurden` configuration map and mark the values **TBD**. For initial runs, a candidate baseline is Hedge Knight +5 Fatigue, Hermit +5 Melancholy, Smuggler +5 Fatigue/+5 Melancholy; these are explicitly **simulation assumptions, not settled rules**. Require them to be visible in report metadata.
+**Settled mapping (Q1):** every tutor has a base burden of five, as above, configured in `classes.tutorBurden`. The magnitudes and the Smuggler split are experimental. The shipped defaults keep the legacy control Smuggler +5/+5; the `open-questions-decisions` candidate overlay (`content/variants/open-questions-decisions.json`) selects 3/2.
 
 ### Jobs
 
@@ -97,7 +97,7 @@ For all jobs except Stables, success probability is `clamp(relevantStat + 35 + f
 | Shrine | 15 | −10 Fatigue and −40 Melancholy |
 | Banquet | 30 | −35 Fatigue and −35 Melancholy |
 
-The banquet costs 15 in Solar Return month. Waning Moon multiplies purchased rest reductions by 1.5. **Interpretation to confirm:** Waning applies to Bathhouse/Shrine/Banquet, not Rest at Home (source explicitly names the three paid actions). Prefer configuration over a hidden assumption.
+The banquet costs 15 in Solar Return month. Waning Moon multiplies purchased rest reductions by 1.5. **Settled (R2):** Waning applies to Bathhouse/Shrine/Banquet only, not Rest at Home or forced convalescence.
 
 ### Rounding and modifier order
 
@@ -121,19 +121,26 @@ Any different order must be a consciously approved rules change, not an incident
 | 0 — Solar Return | Tutor stat gain ×1.2; Banquet cost ×0.5 |
 | 6 — Opposition | Job-generated Fatigue and Melancholy ×1.5 |
 | 4 or 8 — Trine | Job success chance +15 **percentage points** |
-| 3 or 9 — Square | Tutor stat gain ×1.3; tutor-generated Melancholy ×2 |
+| 3 or 9 — Square | Tutor stat gain ×1.3; tutor-generated Fatigue and Melancholy ×2 (Q5) |
 | Other months | No solar modifier |
 
 ### Lunar: one phase per week, cycles every four turns
 
 | Week | Phase | Effect |
 |---|---|---|
-| 1 | New Moon | Bonus to Smuggler/Alehouse; optional pay-to-skip one encounter per route segment |
-| 2 | Waxing Moon | If the **same named job or class** was performed the preceding week, payout/stat gain ×1.1 |
-| 3 | Full Moon | Bellatores/Oratores activities surge; advantage multiplier becomes ×2.0 rather than ×1.5; failed pilgrimage Fatigue/Melancholy penalties ×2 |
+| 1 | New Moon | Smuggler/Alehouse gains and payouts +`activityBonus`%; one paid skip per segment entered during New Moon |
+| 2 | Waxing Moon | If the **same named job or class** was performed the preceding week, payout/stat gain ×`bonusPct`, applied once |
+| 3 | Full Moon | Hedge Knight/Hermit/Village Watch/Scriptorium gains and payouts +`surge`%; advantage multiplier becomes ×2.0 rather than ×1.5; failed pilgrimage Fatigue/Melancholy penalties ×2 |
 | 4 | Waning Moon | Bathhouse/Shrine/Banquet recovery magnitudes ×1.5 |
 
-**Missing values to resolve or configure before full balancing:** New Moon activity bonus magnitude, encounter skip fee, Full Moon home activity surge magnitude, stacking versus single-application interpretation of Waxing, and whether lunar effects are locked at **segment entry** (recommended, as a single segment is one week). Do not treat unassigned values as canon. For a minimal baseline, provide zero/off defaults for unspecified bonuses and label simulations as *partial astrology*, then enable and re-run once parameters are set. Waxing should only apply once to the immediately prior week's identical activity unless the rule is later changed.
+**Settled rules (Q3, Q4, Q6, Q9, Q12, R2):**
+
+- Lunar home bonuses affect only positive stat gains and job payouts. Costs, opposing-stat losses, burdens and success chances are unchanged. Applicable solar and lunar factors multiply before one floor: a boosted Square lesson gives `floor(5 × 1.3 × 1.2) = 7`. A +2 job gain stays +2 at ×1.20.
+- Waxing is single (non-compounding) and requires the exact named activity of the immediately preceding week. Rest, travel, convalescence and different activities break it.
+- Lunar effects lock at **segment entry**. The New Moon skip costs `skipFee` carried Coin, once per segment entered during New Moon (the finale included), with no rollover. It counts toward N, so it can complete a segment or win the finale. It consumes no check roll and no loot roll and yields no loot. An unaffordable skip is unavailable, and rejecting it leaves state and RNG unchanged.
+- The Full Moon doubles the base Fatigue/Melancholy penalty before flat equipment reductions (Gambeson: 15 × 2 − 5 = 25). It never doubles Coin losses.
+
+**Defaults versus candidate:** the shipped defaults keep the legacy controls (New/Full Moon bonuses 0, skipping disabled, Waxing ×1.10, Square doubling Melancholy only), and reports label them *partial astrology*. the `open-questions-decisions` candidate overlay (`content/variants/open-questions-decisions.json`) selects +20%/+20%, a 10-Coin skip, Waxing ×1.20 and Square ×2 on both tutor burdens. The magnitudes are experimental. Report completeness is computed from the effective settings, not from provenance status.
 
 ## 7. Pilgrimage model and encounter rules
 
@@ -167,7 +174,7 @@ successProbability = clamp(
 )
 ```
 
-Roll an integer 1..100; success iff `roll <= successProbability`. Use the **pre-roll probability** for explanations and simulation diagnostics. The Saint's Relic bonus should be interpreted as +10 to **success probability** against an Oratores-coded threat; this aligns with the intent to aid the roll-under check. If the design genuinely means +10 to the actual die result, that would worsen success and must be clarified.
+Roll an integer 1..100; success iff `roll <= successProbability`. Use the **pre-roll probability** for explanations and simulation diagnostics. **Settled (Q10):** the Saint's Relic adds 10 **percentage points** of success probability against an Oratores-coded threat, for any approach, before the 5–95 clamp (60% → 70%, 90% → 95%).
 
 On success: advance; award **1d4 Coin** to carried Coin (temporary segment/run loot until safely banked). Later replace/add card-specific rewards, items, and modest condition relief. On nonfatal failure: advance; Bellatores adds **15 Fatigue**, Oratores adds **15 Melancholy**, Laboratores deducts **15 carried Coin**. Full Moon doubles Fatigue/Melancholy damage, **not Coin loss** per source. The selected approach determines damage type, independent of encounter color.
 
@@ -176,10 +183,10 @@ On success: advance; award **1d4 Coin** to carried Coin (temporary segment/run l
 ### Retreat, waystation and wipeout
 
 - **Safe arrival:** After all N encounters, unlock new waystation; keep provisional Coin and loot, bank on return. May immediately continue to next segment at one additional week without a new preparation fee, or return home for free in time terms.
-- **Voluntary retreat before segment completion:** current week's segment time remains spent, partial segment encounter progress is lost, no extra convalescence week. For source-described loss of a *portion of run-specific loot* and a *Coin toll*, magnitudes are still **TBD**. Put `retreatLootRetention` and `retreatToll` in configuration, label their values experimental, and report their values. If no values are approved, make baseline `retreatLootRetention=0.5`, `retreatToll=5` solely for simulation exploration, with floor rounding and money never below zero; do not present as final rules. Clarify whether pre-existing carried Coin is protected from the loot forfeiture (recommended: yes; only the earned Coin/loot is reduced).
+- **Voluntary retreat before segment completion (settled, Q7/R3):** current week's segment time remains spent, partial segment encounter progress is lost, no extra convalescence or calendar penalty, and secured checkpoints persist. Order: first forfeit the unretained share of the **remaining earned loot** (`retreatLootRetentionPct`, floored in the player's favour; three earned Coin retain one); Coin brought from home is exempt. Then pay `retreatToll` from carried Coin, then from the treasury; an unaffordable toll is simply not collected, never blocks the retreat and never creates debt. Bank the remainder. Retention 50% is experimental; the shipped default toll is the legacy 5, and the `open-questions-decisions` candidate overlay (`content/variants/open-questions-decisions.json`) selects 10.
 - **Wipeout trigger:** Fatigue at/above ceiling; Melancholy at/above ceiling; or attempted Laboratores cost exceeds carried Coin. The failed segment is abandoned; its partial progress and all unbanked rewards are lost. Carried consumables are lost; equipment is preserved. For carried Coin, apply Purse Protection multiplier to the **nonnegative amount remaining immediately before the lethal cost**; do not first charge a deficit into negative territory. Ordinary carried Coin is lost unless protected.
-- **Wipeout fees:** deduct up to **50 Coin from treasury**, floored at zero, with no debt. Impose **one additional convalescence week**, bounded by campaign deadline. The source's post-collapse condition recovery amount is unspecified: set this in configuration and mark **TBD**; a provisional reset-to-0 of Fatigue and Melancholy is convenient for the first simulation, but it is **not** a finalized rule.
-- **Purse Protection:** item/effect multiplier specified as a design hook, not yet fully defined. Weighted Coin currently halves *failed Laboratores encounter Coin loss*, but does **not** automatically protect all carried Coin on wipeout unless explicitly approved. Keep these effects separate: `laboratoresPenaltyMultiplier=0.5` vs. `wipeoutCoinRetentionMultiplier`.
+- **Wipeout fees and recovery (settled, Q13):** settle carried losses, consumable loss, retained Coin and up to **50 Coin medical fee from treasury** (floored at zero, no debt) immediately. Equipment and secured checkpoints are kept. Impose **one additional convalescence week**, bounded by the campaign deadline. `failure.wipeoutBurdenReset: { recovery: N }` lowers both burdens by N in that actual week (floored at zero); with no week left, settle the losses and terminal outcome but grant no recovery. If still collapsed afterwards, subsequent forced home weeks use `homeCollapse.recovery` with no physician fee. A wipeout is not a home collapse and never charges the physician fee. The shipped default keeps the legacy `'zero'` reset for historical comparison (`'unchanged'` is also supported); the `open-questions-decisions` candidate overlay (`content/variants/open-questions-decisions.json`) selects recovery 35 (experimental).
+- **Purse Protection (settled, Q2):** `P = floor(Laboratores / 2)` integer percent. With `failure.purseProtection.appliesToLabFailures`, a failed Laboratores encounter costs `floor(15 × (1 − P/100) × equipmentMultiplier)`, floored once (Laboratores 50: 11, or 5 with Weighted Coin). On wipeout, retain `floor(preLethalCarried × P/100)`; Weighted Coin never affects retention. This integer-percent convention differs slightly from an unrounded `stat/200` rate at odd stats. Shipped defaults keep the legacy control (`appliesToLabFailures: false`, wipeout only); the candidate enables it.
 - **Time exhaustion:** victory succeeds only if the final encounter completes during an allowed week. Ending the campaign without victory is a terminal deadline failure.
 
 ### Equipment and consumables
@@ -195,7 +202,7 @@ At most **one equipment item and one consumable** may be taken when leaving home
 | Saint's Relic | Equipment | +10 success-probability points versus Oratores threats |
 | Weighted Coin | Equipment | Halve failed Laboratores carried-Coin penalty; floor the penalty magnitude after multiplication |
 
-Consumables usable between encounters, with Metheglin only at the post-failed-roll reaction window. Resolve rerolls against the same revealed encounter/approach, without paying the penalty for the first roll. If reroll fails, apply the usual failure consequences. No consumable use after a wipeout has already been committed. Preserve equipment on wipeout, but return it to inventory. Define how lost consumables are tracked; items already consumed must not be lost twice.
+Theriac/Wort are usable between encounters and at waystation decisions without spending time; no consumable is restocked mid-pilgrimage, and only Metheglin may be used during the post-failed-roll reaction window (Q8). Resolve rerolls against the same revealed encounter/approach, without paying the penalty for the first roll. If reroll fails, apply the usual failure consequences. No consumable use after a wipeout has already been committed. Preserve equipment on wipeout, but return it to inventory. Define how lost consumables are tracked; items already consumed must not be lost twice.
 
 ## 8. Final gauntlet and victory
 
@@ -276,7 +283,9 @@ All tunable game parameters live in one typed rules configuration with a seriali
 
 **Confirmed values:** 96 weeks; 4 weeks/month; start at age 14/year 1450/birth month; +5 Zodiac bonus; stat 0–100 and treasury 0–9999; initial stats 15, treasury 50, burdens 0; activity values listed above; 10 Coin pilgrimage departure; 15 base encounter penalty; 1d4 success Coin; 50 max treasury medical fee; one extra wiped-out week; carry one equipment/consumable; 5–95% roll clamp; floor rounding; regular segment completion persists as checkpoint.
 
-**Not yet confirmed (must be recorded in simulation metadata):** number of segments, final N, final negative road bonus, tutor burden mapping, New/Full Moon home activity bonuses, New Moon encounter skip fee, retreat toll and loot retention, exact convalescence recovery, starting item/drop rates, whether automatic home collapse forces a week, details of purse protection, and explicit carry/toll accounting on retreat. Set a documented experimental baseline for simulations but do not label these rules approved.
+**Settled rules (docs/archive/open-questions-tasks.md):** tutor burden mapping, Square on both tutor burdens, single Waxing, New/Full Moon activity eligibility, per-New-Moon-segment skips, Purse Protection rounding and scope, Relic percentage points, Full Moon/Gambeson order, Opposition on all job burdens, retreat order and accounting, consumable timing, Waning on paid rests only, and Q13 collapse/wipeout timing and fees.
+
+**Experimental numbers (must be recorded in simulation metadata):** number of segments, final N, road bonuses, tutor burden magnitudes, lunar bonus magnitudes, Waxing magnitude, skip fee, retreat toll and loot retention, wipeout and home recovery amounts, the physician fee, and starting item/drop rates. Shipped defaults are legacy controls for several of these; the `open-questions-decisions` overlay holds the selected candidate values. Neither is a claim of balance until the F1–F3 comparisons are done.
 
 ## 11. Simulation bots
 

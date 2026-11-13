@@ -28,7 +28,7 @@ export interface ReportInput {
 export interface ReportFlag {
   policy: string;
   birthSign: ZodiacSign;
-  code: 'unfinished' | 'zero_treasury' | 'medical_fee_shortfall' | 'resource_loop'
+  code: 'unfinished' | 'zero_treasury' | 'medical_fee_shortfall' | 'physician_fee_shortfall' | 'resource_loop'
     | 'home_collapse' | 'failed_departure';
   runs: number;
   description: string;
@@ -39,7 +39,7 @@ const RUN_FIELDS = [
   'finalStats', 'finalFatigue', 'finalMelancholy', 'finalCeilings', 'finalTreasury',
   'furthestWaystation', 'firstReachWeek', 'finalEncountersCompleted', 'finalAttempts', 'weeks',
   'segmentStarts', 'retreats', 'wipeouts', 'wipeoutCauses', 'homeCollapses', 'medicalFeeShortfalls',
-  'failedDepartureAttempts', 'jobs', 'encounters', 'encountersByMatchup', 'encounterRolls',
+  'physicianFeeShortfalls', 'failedDepartureAttempts', 'jobs', 'encounters', 'encountersByMatchup', 'encounterRolls',
   'encountersSkipped', 'rerolls', 'coinBySource', 'coinEarned', 'coinSpent', 'coinLost', 'items',
   'zeroPurseWeeks', 'zeroTreasuryWeeks', 'fatigueByWeek', 'melancholyByWeek', 'treasuryByWeek',
   'failureAttribution',
@@ -83,6 +83,7 @@ function reportFlags(records: readonly RunRecord[], rows: readonly Aggregate[]):
     { code: 'unfinished', test: (r) => r.outcome === 'unfinished', description: 'Campaign did not reach a terminal outcome.' },
     { code: 'zero_treasury', test: (r) => r.zeroTreasuryWeeks > 0, description: 'At least one spent week ended with empty treasury; carried Coin may remain.' },
     { code: 'medical_fee_shortfall', test: (r) => r.medicalFeeShortfalls > 0, description: 'At least one wipeout medical fee could not be paid in full.' },
+    { code: 'physician_fee_shortfall', test: (r) => r.physicianFeeShortfalls > 0, description: 'At least one home-collapse physician fee could not be paid in full.' },
     { code: 'resource_loop', test: (r) => r.failureAttribution === 'resource_loop', description: 'Deadline attributed to a closing resource loop (metrics heuristic, default 24-week window).' },
     { code: 'home_collapse', test: (r) => r.homeCollapses > 0, description: 'At least one home activity caused collapse.' },
     { code: 'failed_departure', test: (r) => r.failedDepartureAttempts > 0, description: 'At least one rejected departure was recorded by the caller.' },
@@ -97,14 +98,26 @@ function reportFlags(records: readonly RunRecord[], rows: readonly Aggregate[]):
     });
 }
 
+/** Lunar features that are off in this config (0 bonus or a null skip fee), sorted by path. */
+export function disabledAstrologyParameters(config: RulesConfig): string[] {
+  const { newMoon, fullMoon } = config.astrology;
+  return [
+    ['astrology.fullMoon.surge', fullMoon.surge === 0],
+    ['astrology.newMoon.activityBonus', newMoon.activityBonus === 0],
+    ['astrology.newMoon.skipFee', newMoon.skipFee === null],
+  ].filter(([, off]) => off).map(([path]) => path as string);
+}
+
 export function buildSummary(input: ReportInput) {
   const configId = hashConfig(input.config);
   if (input.records.some((record) => record.configId !== configId)) {
     throw new Error('Report records must use the supplied effective config');
   }
   const unresolved = getUnresolved(input.config);
-  const disabledAstrology = unresolved.filter((p) => p.status === 'tbd' && p.path.startsWith('astrology.')
-    && (p.value === 0 || p.value === null)).map((p) => p.path);
+  // Completeness depends on the effective settings, not on provenance status:
+  // confirming a field's status must not make a disabled bonus look configured.
+  const disabledAstrology = disabledAstrologyParameters(input.config);
+  const tbdPaths = new Set(unresolved.filter((p) => p.status === 'tbd').map((p) => p.path));
   const rows = aggregate(input.records, { includeAllSigns: new Set(input.records.map((r) => r.birthSign)).size > 1 });
   return {
     schemaVersion: 1,
@@ -115,7 +128,13 @@ export function buildSummary(input: ReportInput) {
     args: [...input.args],
     policies: input.policies ?? [],
     runCount: input.records.length,
-    astrology: { label: disabledAstrology.length ? 'partial astrology' : 'configured astrology', disabledTbdParameters: disabledAstrology },
+    astrology: {
+      label: disabledAstrology.length ? 'partial astrology' : 'configured astrology',
+      /** Every lunar feature switched off in the effective config. */
+      disabledParameters: disabledAstrology,
+      /** Legacy field (schema 1): the disabled features whose provenance is still `tbd`. */
+      disabledTbdParameters: disabledAstrology.filter((path) => tbdPaths.has(path)),
+    },
     aggregates: rows,
     flags: reportFlags(input.records, rows),
     traces: (input.traces ?? []).map(({ events, ...meta }) => ({ ...meta, eventCount: events.length })),
@@ -140,8 +159,8 @@ export function renderSummaryMarkdown(summary: ReportSummary): string {
   return [
     '# Simulation summary', '',
     `Config: \`${summary.configId}\`. Runs: ${summary.runCount}. Git commit: ${summary.gitCommit ? `\`${summary.gitCommit}\`` : 'unavailable'}.`, '',
-    `Astrology: **${summary.astrology.label}**.${summary.astrology.disabledTbdParameters.length
-      ? ` Disabled TBD parameters: ${summary.astrology.disabledTbdParameters.map((p) => `\`${p}\``).join(', ')}.` : ''}`, '',
+    `Astrology: **${summary.astrology.label}**.${summary.astrology.disabledParameters.length
+      ? ` Disabled parameters: ${summary.astrology.disabledParameters.map((p) => `\`${p}\``).join(', ')}.` : ''}`, '',
     'The full effective rules, unresolved assumptions, policy params and unrounded aggregates are in `summary.json`. Strategy comparisons require paired seeds and comparable configs; diagnostic flags indicate observations, not proven balance defects.', '',
     '## Reproduction', '', '```sh', command, '```', '',
     'Use the literal seed, policy and sign from a CSV row to inspect a run:', '',
@@ -160,13 +179,15 @@ export function renderSummaryMarkdown(summary: ReportSummary): string {
       Object.entries(r.firstReach).map(([k, v]) => `${k} / ${v.reached} / ${num(v.week.median, 0)}`).join('; ') || '—',
     ])), '',
     '## Risk and recovery', '',
-    table(['Policy', 'Sign', 'Wipeouts/run', 'Causes F/M/both/Coin', 'Retreats/run', 'Convalescence weeks', 'Empty treasury runs', 'Medical shortfall', 'Failed departures/run'], rows.map((r) => [
+    table(['Policy', 'Sign', 'Wipeouts/run', 'Causes F/M/both/Coin', 'Retreats/run', 'Home collapses/run', 'Convalescence weeks', 'Medical / physician fees paid per run', 'Empty treasury runs', 'Medical / physician shortfall', 'Skips/run', 'Failed departures/run'], rows.map((r) => [
       ...group(r), num(r.wipeoutsPerRun.mean, 2),
       `${r.wipeoutCauses.fatigue}/${r.wipeoutCauses.melancholy}/${r.wipeoutCauses.both}/${r.wipeoutCauses.coin}`,
-      num(r.retreatsPerRun.mean, 2), num(r.convalescenceWeeks.mean), pct(r.zeroTreasuryRunRate),
-      pct(r.medicalFeeShortfallRate), num(r.failedDepartureAttempts.mean, 2),
+      num(r.retreatsPerRun.mean, 2), num(r.homeCollapsesPerRun.mean, 2), num(r.convalescenceWeeks.mean),
+      `${num(-(r.coinBySource.medical_fee ?? 0))} / ${num(-(r.coinBySource.physician_fee ?? 0))}`,
+      pct(r.zeroTreasuryRunRate), `${pct(r.medicalFeeShortfallRate)} / ${pct(r.physicianFeeShortfallRate)}`,
+      num(r.encountersSkippedPerRun.mean, 2), num(r.failedDepartureAttempts.mean, 2),
     ])), '',
-    'Empty treasury includes runs with carried Coin remaining; medical shortfall is a fraction of wipeouts. Failed departures are only counted when the caller supplies rejected attempts to metrics; the standard runner records accepted actions.', '',
+    'Empty treasury includes runs with carried Coin remaining; medical shortfall is a fraction of wipeouts, physician shortfall a fraction of home collapses. Skips are New Moon bribes and are never counted as encounter rolls. Failed departures are only counted when the caller supplies rejected attempts to metrics; the standard runner records accepted actions.', '',
     '## Stats and economy', '',
     table(['Policy', 'Sign', 'Median B/O/L', 'Coin earned/spent/lost per run', 'Advantage/neutral/disadvantage share'], rows.map((r) => [
       ...group(r), `${num(r.finalStats.bellatores.median)}/${num(r.finalStats.oratores.median)}/${num(r.finalStats.laboratores.median)}`,

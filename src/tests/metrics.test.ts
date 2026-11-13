@@ -175,6 +175,28 @@ describe('runRecord: pilgrimage', () => {
     expect(r.failureAttribution).toBe('resource_loop');
   });
 
+  it('accounts home-collapse physician fees separately from medical fees (Q13)', () => {
+    const collapse = (w: number, nominal: number, paid: number): GameEvent[] => [
+      week(w, 'tutor'),
+      { type: 'collapse', week: w, cause: 'fatigue', ...(nominal > 0 ? { fee: { nominal, paid } } : {}) },
+      ...(paid === 0 ? [] : [coin(w, 'treasury', -paid, 'physician_fee')]),
+      { type: 'convalescence', week: w + 1, cause: 'home_collapse' },
+      week(w + 1, 'convalescence'),
+    ];
+    // Paid in full, partial, nothing (empty treasury), and a legacy collapse with no fee.
+    const events = [...collapse(0, 20, 20), ...collapse(2, 20, 5), ...collapse(4, 20, 0), ...collapse(6, 0, 0),
+      { type: 'deadline', week: TOTAL } as GameEvent];
+    const r = runRecord(events, finalState({ treasury: 0 }), meta());
+    expect(r.homeCollapses).toBe(4);
+    expect(r.physicianFeeShortfalls).toBe(2);
+    expect(r.medicalFeeShortfalls).toBe(0);
+    expect(r.coinBySource).toEqual({ physician_fee: -25 });
+    expect(r.coinSpent).toBe(25);
+    const row = aggregateGroup([r, { ...r, homeCollapses: 0, physicianFeeShortfalls: 0 }], 'test', 'aries');
+    expect(row.physicianFeeShortfallRate).toBe(0.5);
+    expect(row.medicalFeeShortfallRate).toBeNull();
+  });
+
   it('tracks the best final-gauntlet attempt, skips included, and frees unused weeks on victory', () => {
     const events: GameEvent[] = [
       week(0, 'segment_entry'),

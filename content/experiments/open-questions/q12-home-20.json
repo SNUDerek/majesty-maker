@@ -1,0 +1,21 @@
+{
+  "id": "oq-q12-home-20",
+  "astrology": {
+    "newMoon": {
+      "activityBonus": 20
+    },
+    "fullMoon": {
+      "surge": 20
+    }
+  },
+  "provenance": {
+    "astrology.newMoon.activityBonus": {
+      "status": "experimental",
+      "note": "T6 single change: Q12 +20% (skip held off)."
+    },
+    "astrology.fullMoon.surge": {
+      "status": "experimental",
+      "note": "T6 single change: Q12 +20% (skip held off)."
+    }
+  }
+}

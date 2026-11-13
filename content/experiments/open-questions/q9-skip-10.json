@@ -1,0 +1,14 @@
+{
+  "id": "oq-q9-skip-10",
+  "astrology": {
+    "newMoon": {
+      "skipFee": 10
+    }
+  },
+  "provenance": {
+    "astrology.newMoon.skipFee": {
+      "status": "experimental",
+      "note": "T6 single change: Q9 skip fee 10 (home bonuses held off)."
+    }
+  }
+}

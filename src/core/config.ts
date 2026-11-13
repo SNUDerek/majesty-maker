@@ -78,6 +78,8 @@ interface RecordSchema<K extends string = string, S extends Schema = Schema> {
 }
 /** An object with arbitrary string keys. */
 interface MapSchema<S extends Schema = Schema> { readonly kind: 'map'; readonly values: S }
+/** A value matching at least one of the alternatives. */
+interface AnyOfSchema<S extends readonly Schema[] = readonly Schema[]> { readonly kind: 'anyOf'; readonly options: S }
 
 type Schema =
   | IntSchema
@@ -88,7 +90,8 @@ type Schema =
   | ArraySchema
   | ObjectSchema
   | RecordSchema
-  | MapSchema;
+  | MapSchema
+  | AnyOfSchema;
 
 type Infer<S> = S extends IntSchema
   ? number
@@ -108,7 +111,9 @@ type Infer<S> = S extends IntSchema
                 ? { readonly [P in K]: Infer<V> }
                 : S extends MapSchema<infer V>
                   ? { readonly [key: string]: Infer<V> }
-                  : never;
+                  : S extends AnyOfSchema<infer O>
+                    ? Infer<O[number]>
+                    : never;
 
 const int = (min = Number.MIN_SAFE_INTEGER, max = Number.MAX_SAFE_INTEGER): IntSchema => ({
   kind: 'int',
@@ -138,6 +143,7 @@ const recordOf = <K extends string, S extends Schema>(keys: readonly K[], values
   values,
 });
 const mapOf = <S extends Schema>(values: S): MapSchema<S> => ({ kind: 'map', values });
+const anyOf = <const S extends readonly Schema[]>(...options: S): AnyOfSchema<S> => ({ kind: 'anyOf', options });
 
 // ---------------------------------------------------------------------------
 // RulesConfig schema
@@ -224,6 +230,8 @@ const rulesConfigSchema = object({
       oppositionJobBurdenPct: percent,
       trineJobSuccessPts: int(),
       squareTutorGainPct: percent,
+      /** Tutor-generated Fatigue during Square (Q5); 100 keeps the legacy Melancholy-only rule. */
+      squareTutorFatiguePct: percent,
       squareTutorMelancholyPct: percent,
     }),
     newMoon: object({
@@ -268,8 +276,13 @@ const rulesConfigSchema = object({
     retreatToll: nonNegative,
     wipeoutMedicalFeeMax: nonNegative,
     wipeoutConvalescenceWeeks: nonNegative,
-    wipeoutBurdenReset: oneOf(['zero', 'unchanged'] as const),
-    homeCollapse: object({ forcedWeek: bool, recovery: nonNegative }),
+    /**
+     * Burdens after a wipeout: legacy 'zero'/'unchanged', or `{ recovery }`, which
+     * lowers both burdens by that amount in each wipeout convalescence week (Q13).
+     */
+    wipeoutBurdenReset: anyOf(oneOf(['zero', 'unchanged'] as const), object({ recovery: nonNegative })),
+    /** `fee`: physician fee, min(fee, treasury), charged once per new home collapse (Q13). */
+    homeCollapse: object({ forcedWeek: bool, recovery: nonNegative, fee: nonNegative }),
     purseProtection: object({ appliesToLabFailures: bool }),
   }),
   items: object({
@@ -395,6 +408,17 @@ function checkSchema(schema: Schema, value: unknown, path: string, errors: strin
         checkSchema(schema.values, entry, join(path, key), errors);
       }
       return;
+    case 'anyOf': {
+      const attempts = schema.options.map((option) => {
+        const optionErrors: string[] = [];
+        checkSchema(option, value, path, optionErrors);
+        return optionErrors;
+      });
+      if (attempts.every((optionErrors) => optionErrors.length > 0)) {
+        errors.push(`${at}: matches no allowed form (${attempts.map((e) => e.join('; ')).join(' | ')})`);
+      }
+      return;
+    }
   }
 }
 
@@ -565,8 +589,18 @@ export function loadConfig({ rules, items, variants = [] }: ConfigSources): Rule
   for (const [label, part] of [['rules', rules], ['items', items], ...variants.map((v, i) => [`variants[${i}]`, v])] as const) {
     if (!isPlainObject(part)) throw new ConfigError([`${label}: expected a JSON object`]);
   }
+  // Historical snapshots omit these additive fields. Explicit values (including
+  // invalid ones) still override the defaults and go through normal validation.
   let merged = mergeOverlay(rules, { items: { catalog: items } });
   for (const variant of variants) merged = mergeOverlay(merged, variant);
+  const solar = valueAt(merged, 'astrology.solar').value;
+  if (isPlainObject(solar) && !Object.hasOwn(solar, 'squareTutorFatiguePct')) {
+    merged = mergeOverlay(merged, { astrology: { solar: { squareTutorFatiguePct: 100 } } });
+  }
+  const homeCollapse = valueAt(merged, 'failure.homeCollapse').value;
+  if (isPlainObject(homeCollapse) && !Object.hasOwn(homeCollapse, 'fee')) {
+    merged = mergeOverlay(merged, { failure: { homeCollapse: { fee: 0 } } });
+  }
 
   const errors = validateConfig(merged);
   if (errors.length > 0) throw new ConfigError(errors);

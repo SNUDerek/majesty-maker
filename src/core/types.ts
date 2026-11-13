@@ -159,7 +159,9 @@ export type CoinSource =
   | 'retreat_toll'
   | 'wipeout_retained'
   | 'wipeout_lost'
-  | 'medical_fee';
+  | 'medical_fee'
+  /** Home-collapse physician fee (Q13), distinct from the pilgrimage medical fee. */
+  | 'physician_fee';
 
 export type StatSource = 'tutor' | 'tutor_opposing' | 'job' | 'zodiac' | 'item';
 
@@ -205,7 +207,12 @@ export type GameEvent =
       roll?: number;
       automatic: boolean;
     })
-  | (EventBase & { type: 'collapse'; cause: 'fatigue' | 'melancholy' | 'both' })
+  | (EventBase & {
+      type: 'collapse';
+      cause: 'fatigue' | 'melancholy' | 'both';
+      /** Physician fee (Q13), present only when `failure.homeCollapse.fee` > 0; paid < nominal is a shortfall. */
+      fee?: { nominal: number; paid: number };
+    })
   | (EventBase & { type: 'convalescence'; cause: 'home_collapse' | 'wipeout' })
   | (EventBase & { type: 'pilgrimage_started'; segmentIndex: number; isFinal: boolean })
   | (EventBase & { type: 'encounter_drawn'; threat: Estate; encounterIndex: number })

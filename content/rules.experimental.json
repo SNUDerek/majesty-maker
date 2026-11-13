@@ -1,3 +1,115 @@
 {
-  "id": "experimental"
+  "id": "experimental",
+  "classes": {
+    "tutorBurden": {
+      "hedge_knight": {
+        "fatigue": 5,
+        "melancholy": 0
+      },
+      "hermit": {
+        "fatigue": 0,
+        "melancholy": 5
+      },
+      "smuggler": {
+        "fatigue": 3,
+        "melancholy": 2
+      }
+    }
+  },
+  "astrology": {
+    "solar": {
+      "squareTutorFatiguePct": 200,
+      "squareTutorMelancholyPct": 200
+    },
+    "newMoon": {
+      "activityBonus": 20,
+      "skipFee": 10
+    },
+    "waxing": {
+      "mode": "single",
+      "bonusPct": 120
+    },
+    "fullMoon": {
+      "surge": 20
+    },
+    "waning": {
+      "appliesToRestAtHome": false
+    }
+  },
+  "failure": {
+    "retreatLootRetentionPct": 50,
+    "retreatToll": 10,
+    "wipeoutBurdenReset": {
+      "recovery": 35
+    },
+    "homeCollapse": {
+      "forcedWeek": true,
+      "recovery": 15,
+      "fee": 20
+    },
+    "purseProtection": {
+      "appliesToLabFailures": true
+    }
+  },
+  "items": {
+    "acquisition": "disabled"
+  },
+  "provenance": {
+    "classes.tutorBurden": {
+      "status": "experimental",
+      "note": "Q1 settled mapping (Knight Fatigue, Hermit Melancholy, Smuggler split); magnitudes 5/0, 0/5, 3/2 and the split are experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
+    },
+    "astrology.solar.squareTutorFatiguePct": {
+      "status": "confirmed",
+      "note": "Q5 settled: Square doubles both tutor burdens (with squareTutorMelancholyPct 200) and keeps +30% gain. (T7 experimental baseline, see docs/balance-report-baseline.md)"
+    },
+    "astrology.newMoon.activityBonus": {
+      "status": "experimental",
+      "note": "Q12 settled rule: New Moon boosts Smuggler/Alehouse positive gains and payouts; +20% magnitude experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
+    },
+    "astrology.newMoon.skipFee": {
+      "status": "experimental",
+      "note": "Q3/Q9 settled rule: one skip per New Moon segment from carried Coin, counts toward N; 10 Coin fee experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
+    },
+    "astrology.waxing.mode": {
+      "status": "confirmed",
+      "note": "Q4 settled: one non-compounding bonus for repeating the previous week's exact activity. (T7 experimental baseline, see docs/balance-report-baseline.md)"
+    },
+    "astrology.waxing.bonusPct": {
+      "status": "experimental",
+      "note": "Q4: x1.20 so a 5-point lesson visibly rounds up; magnitude experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
+    },
+    "astrology.fullMoon.surge": {
+      "status": "experimental",
+      "note": "Q12 settled rule: Full Moon boosts Bellatores/Oratores home activities; +20% magnitude experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
+    },
+    "astrology.waning.appliesToRestAtHome": {
+      "status": "confirmed",
+      "note": "R2 settled: Waning x1.5 recovery applies only to paid rests. (T7 experimental baseline, see docs/balance-report-baseline.md)"
+    },
+    "failure.retreatLootRetentionPct": {
+      "status": "experimental",
+      "note": "R3: retain 50% of remaining earned loot, floored; experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
+    },
+    "failure.retreatToll": {
+      "status": "experimental",
+      "note": "Q7/R3 settled order: forfeit loot, then toll from carried Coin then treasury, never debt; 10 Coin experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
+    },
+    "failure.wipeoutBurdenReset": {
+      "status": "experimental",
+      "note": "Q13 settled rule: bounded recovery in the actual wipeout convalescence week, none without a week; -35 magnitude experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
+    },
+    "failure.homeCollapse": {
+      "status": "experimental",
+      "note": "Q13 settled rule: physician fee once per new collapse, then forced -15/-15 weeks; fee 20 and recovery 15 experimental. (T7 experimental baseline, see docs/balance-report-baseline.md)"
+    },
+    "failure.purseProtection.appliesToLabFailures": {
+      "status": "confirmed",
+      "note": "Q2 settled: Purse Protection reduces failed Laboratores encounter costs and wipeout losses. (T7 experimental baseline, see docs/balance-report-baseline.md)"
+    },
+    "items.acquisition": {
+      "status": "confirmed",
+      "note": "R4 settled for the item-free baseline; the first-waystation item experiment (T8) is a separate opt-in follow-up. (T7 experimental baseline, see docs/balance-report-baseline.md)"
+    }
+  }
 }

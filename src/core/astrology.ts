@@ -81,6 +81,8 @@ export function collectModifiers(ctx: ModifierContext, config: RulesConfig): Mod
     result.sources.push('solar:trine');
   } else if (ctx.solar === 'square' && isTutor) {
     multiply('statGainPct', solar.squareTutorGainPct);
+    // Q5: the candidate doubles both tutor burdens; legacy configs keep Fatigue at 100.
+    if (solar.squareTutorFatiguePct !== 100) multiply('fatiguePct', solar.squareTutorFatiguePct);
     multiply('melancholyPct', solar.squareTutorMelancholyPct);
     result.sources.push('solar:square');
   }

@@ -1,8 +1,8 @@
 # Simulation summary
 
-Config: `25b1bbe9c1df22f6`. Runs: 5. Git commit: `1111111111111111111111111111111111111111`.
+Config: `96200e1e7e3ea9fd`. Runs: 5. Git commit: `1111111111111111111111111111111111111111`.
 
-Astrology: **partial astrology**. Disabled TBD parameters: `astrology.fullMoon.surge`, `astrology.newMoon.activityBonus`, `astrology.newMoon.skipFee`.
+Astrology: **partial astrology**. Disabled parameters: `astrology.fullMoon.surge`, `astrology.newMoon.activityBonus`, `astrology.newMoon.skipFee`.
 
 The full effective rules, unresolved assumptions, policy params and unrounded aggregates are in `summary.json`. Strategy comparisons require paired seeds and comparable configs; diagnostic flags indicate observations, not proven balance defects.
 
@@ -34,11 +34,11 @@ Win weeks include winners only. Resource-loop attribution uses the metrics closi
 
 ## Risk and recovery
 
-| Policy | Sign | Wipeouts/run | Causes F/M/both/Coin | Retreats/run | Convalescence weeks | Empty treasury runs | Medical shortfall | Failed departures/run |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| fixture-pilgrim | aries | 0.80 | 4/0/0/0 | 0.00 | 0.8 | 100.0% | 100.0% | 0.00 |
+| Policy | Sign | Wipeouts/run | Causes F/M/both/Coin | Retreats/run | Home collapses/run | Convalescence weeks | Medical / physician fees paid per run | Empty treasury runs | Medical / physician shortfall | Skips/run | Failed departures/run |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| fixture-pilgrim | aries | 0.80 | 4/0/0/0 | 0.00 | 0.00 | 0.8 | 0.4 / 0.0 | 100.0% | 100.0% / — | 0.00 | 0.00 |
 
-Empty treasury includes runs with carried Coin remaining; medical shortfall is a fraction of wipeouts. Failed departures are only counted when the caller supplies rejected attempts to metrics; the standard runner records accepted actions.
+Empty treasury includes runs with carried Coin remaining; medical shortfall is a fraction of wipeouts, physician shortfall a fraction of home collapses. Skips are New Moon bribes and are never counted as encounter rolls. Failed departures are only counted when the caller supplies rejected attempts to metrics; the standard runner records accepted actions.
 
 ## Stats and economy
 
