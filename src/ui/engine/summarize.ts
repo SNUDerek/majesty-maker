@@ -1,8 +1,8 @@
 /**
  * Turns the events of one `applyAction` call into a result panel
- * (docs/ui-technical-plan.md §5.4). Pure; no React.
+ * (docs/archive/ui-technical-plan.md §5.4). Pure; no React.
  */
-import type { Estate, GameAction, GameEvent, WeekReason } from '../../core/index.js';
+import type { CampaignState, Estate, GameAction, GameEvent, WeekReason } from '../../core/index.js';
 import {
   ACTIVITY_LABEL, signed, BURDEN_SOURCE_LABEL, COIN_SOURCE_LABEL, ESTATE_LABEL, STAT_SOURCE_LABEL, WEEK_REASON_LABEL,
 } from '../text/labels.js';
@@ -158,7 +158,7 @@ function headline(action: GameAction, events: readonly GameEvent[]): Headline {
 }
 
 /** Builds the result panel for one action. Returns null when there is nothing worth a panel. */
-export function summarize(action: GameAction, events: readonly GameEvent[]): ResultSummary | null {
+export function summarize(action: GameAction, events: readonly GameEvent[], after?: CampaignState): ResultSummary | null {
   if (events.length === 0 || isSilent(action, events)) return null;
   const reasons = events.flatMap((e) => (e.type === 'week_spent' ? [e.reason] : []));
   const notes: string[] = [];
@@ -175,12 +175,7 @@ export function summarize(action: GameAction, events: readonly GameEvent[]): Res
     title = `${title} — collapse!`;
     tone = 'bad';
   }
-  const failed = lastOf(events, 'encounter_resolved');
-  const charged = events.some((e) => e.type === 'wipeout'
-    || (e.type === 'burden_changed' && e.source === 'encounter_penalty')
-    || (e.type === 'coin_changed' && e.source === 'laboratores_penalty'));
-  if (action.type === 'CHOOSE_APPROACH' && failed !== undefined && !failed.success && !charged
-    && !events.some((e) => e.type === 'waystation_reached' || e.type === 'victory')) {
+  if (action.type === 'CHOOSE_APPROACH' && after?.pilgrimage?.stage === 'reroll_or_accept') {
     // Metheglin in the slot: the failure is pending until rerolled or accepted.
     notes.push('The failure is not yet charged: drink Metheglin to reroll, or accept it.');
   }

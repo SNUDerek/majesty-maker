@@ -64,13 +64,13 @@ export function SaveLoadOverlay() {
       setConfirm(null);
     };
     return (
-      <Modal title="Are you sure?" actions={<><Button onClick={() => setConfirm(null)}>Cancel</Button><Button primary onClick={go}>Yes</Button></>}>
+      <Modal key="confirmation" title="Are you sure?" actions={<><Button onClick={() => setConfirm(null)}>Cancel</Button><Button primary onClick={go}>Yes</Button></>}>
         <p>{text}</p>
       </Modal>
     );
   }
   return (
-    <Modal className="saveload" title={inGame ? 'Save / Load' : 'Load'} actions={<>
+    <Modal key="slots" className="saveload" title={inGame ? 'Save / Load' : 'Load'} actions={<>
       {inGame && <Button onClick={() => store.quitToTitle()}>Quit to title</Button>}
       <Button primary onClick={() => store.closeOverlay()}>Close</Button>
     </>}>
@@ -97,7 +97,7 @@ export function CreditsOverlay() {
         <li>Interface: Kenney RPG UI pack (CC0), kenney.nl</li>
         <li>Fonts: IM Fell English (Igino Marini, OFL), Canterbury and Carrick Caps (1001fonts licences)</li>
         <li>Paintings, woodcuts and portraits: public-domain works; per-image sources to follow</li>
-        <li>Credits screen content is a placeholder until provenance is recorded (docs/ui-technical-plan.md §11).</li>
+        <li>Credits screen content is a placeholder until provenance is recorded (docs/archive/ui-technical-plan.md §11).</li>
       </ul>
     </Modal>
   );
@@ -116,7 +116,7 @@ export function DevPanel({ configId, onConfig }: { configId: ConfigId; onConfig:
       <div className="dev__row"><strong>Dev panel</strong><button type="button" onClick={() => setOpen(false)}>×</button></div>
       <label className="dev__row">Seed for New Game
         <input type="number" value={snap.ui.devSeed ?? ''} placeholder="random"
-          onChange={(e) => store.setUi({ ...(e.target.value === '' ? {} : { devSeed: Number(e.target.value) }) })} />
+          onChange={(e) => store.setUi({ devSeed: e.target.value === '' ? undefined : Number(e.target.value) })} />
       </label>
       <label className="dev__row">Rules
         <select value={configId} onChange={(e) => onConfig(e.target.value as ConfigId)}>

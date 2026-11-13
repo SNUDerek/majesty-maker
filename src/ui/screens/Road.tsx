@@ -214,6 +214,8 @@ function ChooseApproach({ state, config, onAct }: { state: CampaignState; config
   const canSkip = getAvailableActions(state, config).some((a) => a.type === 'SKIP_ENCOUNTER');
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.altKey || e.ctrlKey || e.metaKey
+        || (e.target instanceof HTMLElement && e.target.closest('input, textarea, select, [contenteditable]'))) return;
       const estate = ESTATES[Number(e.key) - 1];
       if (estate !== undefined && !e.repeat) onAct({ type: 'CHOOSE_APPROACH', estate });
     };

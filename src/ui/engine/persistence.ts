@@ -1,8 +1,8 @@
 /**
- * localStorage saves (docs/ui-technical-plan.md §7). Storage is injected so
+ * localStorage saves (docs/archive/ui-technical-plan.md §7). Storage is injected so
  * this runs under Node tests with an in-memory map.
  */
-import { getAvailableActions, getCalendar, getDerivedStats, hashConfig, type CampaignState, type RulesConfig } from '../../core/index.js';
+import { getAvailableActions, getCalendar, getDerivedStats, hashConfig, previewApproaches, type CampaignState, type RulesConfig } from '../../core/index.js';
 
 export type SlotId = 'auto' | 'slot1' | 'slot2' | 'slot3';
 export const SLOTS: readonly SlotId[] = ['auto', 'slot1', 'slot2', 'slot3'];
@@ -74,7 +74,17 @@ export function readSlot(storage: SaveStorage, slot: SlotId, config: RulesConfig
     if (!isSaveFile(parsed)) return { slot, status: 'corrupt' };
     const { state } = parsed;
     if (!hasPlayableState(state)) return { slot, status: 'corrupt' };
-    if (state.phase === 'pilgrimage' && state.pilgrimage === undefined) return { slot, status: 'corrupt' };
+    if (state.phase === 'pilgrimage') {
+      const road = state.pilgrimage;
+      if (road === undefined || road === null
+        || !['choose_approach', 'reroll_or_accept', 'continue_or_retreat', 'waystation_decision'].includes(road.stage)
+        || ![road.segmentIndex, road.encounterIndex, road.segmentEntryWeek, road.carriedCoin,
+          road.departureCarriedCoin, road.earnedCoin].every((n) => Number.isSafeInteger(n) && n >= 0)
+        || ![road.isFinal, road.skipUsed, road.consumableUsed].every((v) => typeof v === 'boolean')) {
+        return { slot, status: 'corrupt' };
+      }
+      if (road.stage === 'choose_approach' || road.stage === 'reroll_or_accept') previewApproaches(state, config);
+    }
     // Each throws on states the engine can't read (bad week, sign, phase).
     getCalendar(state, config);
     getDerivedStats(state, config);

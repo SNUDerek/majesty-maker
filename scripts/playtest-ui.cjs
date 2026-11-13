@@ -31,6 +31,7 @@ const homeOnly = args.includes('--home-only');
     await page.screenshot({ path: `${out}/playtest-${w}-${name}.png` });
   };
   let stuck = false;
+  let completed = false;
   for (let step = 0; step < 3000; step++) {
     await page.waitForTimeout(30);
     const modal = page.locator('.result');
@@ -40,7 +41,7 @@ const homeOnly = args.includes('--home-only');
       await page.keyboard.press('Enter'); continue;
     }
     if (await page.locator('text=The Scion is crowned').count() || await page.locator('text=The Conjunction has come').count()) {
-      await shot('outcome'); break;
+      await shot('outcome'); completed = true; break;
     }
     if (await page.locator('.approach').count()) {
       await shot('encounter');
@@ -89,5 +90,5 @@ const homeOnly = args.includes('--home-only');
   const outcome = (await page.locator('.centre-panel h2').first().innerText().catch(() => '?'));
   console.log(`${w}x${h} seed ${seed}: ${outcome}; results ${titles.length}; wins ${titles.filter((t) => t.startsWith('Encounter won')).length}; wipeouts ${titles.filter((t) => t === 'Wipeout').length}; errors ${JSON.stringify(errors)}`);
   await browser.close();
-  if (stuck || errors.length > 0) process.exitCode = 1;
+  if (!completed || stuck || errors.length > 0) process.exitCode = 1;
 })().catch((error) => { console.error(error); process.exitCode = 1; });

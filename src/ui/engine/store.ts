@@ -1,5 +1,5 @@
 /**
- * GameStore (docs/ui-technical-plan.md §5.3): the single owner of the
+ * GameStore (docs/archive/ui-technical-plan.md §5.3): the single owner of the
  * campaign state, consumed by React through `useSyncExternalStore`.
  * Plain TS so it can be driven in Node tests.
  */
@@ -120,8 +120,12 @@ export class GameStore {
 
   deleteSlot(slot: SlotId): void {
     if (this.storage === null) return;
-    deleteSave(this.storage, slot);
-    this.set({});
+    try {
+      deleteSave(this.storage, slot);
+      this.set({});
+    } catch {
+      this.set({ error: 'Deleting failed (storage blocked).' });
+    }
   }
 
   closeOverlay(): void {
@@ -139,7 +143,7 @@ export class GameStore {
   dispatch(action: GameAction): void {
     const { state, ui } = this.snapshot;
     if (state === null) return;
-    if (ui.pendingResult !== undefined) return; // the player hasn't seen the last result yet
+    if (ui.pendingResult !== undefined || ui.overlay !== undefined) return; // the player hasn't seen the last result yet
     if (!isAvailable(state, action, this.config)) {
       this.set({ error: 'That action is not available now.' });
       return;
@@ -154,7 +158,7 @@ export class GameStore {
       }
       throw error;
     }
-    const summary = summarize(action, result.events);
+    const summary = summarize(action, result.events, result.state);
     const isHomeActivity = action.type === 'TRAIN' || action.type === 'WORK' || action.type === 'REST'
       || action.type === 'BEGIN_PILGRIMAGE';
     const nextUi: UiState = { ...ui, ...(isHomeActivity ? { homeView: 'hub' as const } : {}) };

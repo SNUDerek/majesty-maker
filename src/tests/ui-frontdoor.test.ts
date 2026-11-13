@@ -2,7 +2,7 @@ import { readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { applyAction, createCampaign, type CreateCampaignOptions } from '../core/index.js';
 import { deriveScreen } from '../ui/engine/screen.js';
-import { writeSave, type SaveStorage } from '../ui/engine/persistence.js';
+import { readSlot, slotKey, writeSave, type SaveStorage } from '../ui/engine/persistence.js';
 import { slotSummary } from '../ui/engine/slots.js';
 import { GameStore } from '../ui/engine/store.js';
 import { INTRO } from '../ui/text/intro.js';
@@ -34,6 +34,20 @@ describe('intro script', () => {
 });
 
 describe('slot summaries', () => {
+  it.each([
+    { stage: 'unknown' }, { currentThreat: undefined }, { segmentEntryWeek: undefined },
+    { carriedCoin: null }, { stage: 'reroll_or_accept', currentApproach: undefined },
+  ])('rejects road saves that cannot render or resume: %j', (patch) => {
+    const storage = memoryStorage();
+    const home = createCampaign(OPTIONS, config);
+    const road = applyAction(home, { type: 'BEGIN_PILGRIMAGE', carry: 10 }, config).state;
+    const save = writeSave(storage, 'slot1', road, config, new Date(0));
+    expect(readSlot(storage, 'slot1', config).status).toBe('ok');
+    storage.setItem(slotKey('slot1'), JSON.stringify({ ...save,
+      state: { ...road, pilgrimage: { ...road.pilgrimage, ...patch } } }));
+    expect(readSlot(storage, 'slot1', config).status).toBe('corrupt');
+  });
+
   it('describes home, road, waystation and finished saves', () => {
     const home = createCampaign(OPTIONS, config);
     const save = (state: typeof home) => writeSave(memoryStorage(), 'slot1', state, config, new Date(0));
@@ -46,6 +60,27 @@ describe('slot summaries', () => {
 });
 
 describe('GameStore menus', () => {
+  it('does not dispatch actions behind an open menu', () => {
+    const store = new GameStore(config, memoryStorage());
+    store.newGame(OPTIONS);
+    store.setUi({ overlay: 'saveload' });
+    const before = store.getSnapshot().state;
+    store.dispatch({ type: 'WORK', job: 'stables' });
+    expect(store.getSnapshot().state).toBe(before);
+    store.closeOverlay();
+    store.dispatch({ type: 'WORK', job: 'stables' });
+    expect(store.getSnapshot().state!.elapsedWeeks).toBe(1);
+  });
+
+  it('reports deletion errors without throwing or removing the save', () => {
+    const storage = memoryStorage();
+    const store = new GameStore(config, { ...storage, removeItem: () => { throw new Error('blocked'); } });
+    store.newGame(OPTIONS);
+    expect(() => store.deleteSlot('auto')).not.toThrow();
+    expect(store.getSnapshot().error).toMatch(/Deleting failed/);
+    expect(store.slots()[0]!.status).toBe('ok');
+  });
+
   it('lists, saves, deletes slots and closes overlays', () => {
     const store = new GameStore(config, memoryStorage());
     expect(store.slots().map((s) => s.status)).toEqual(['empty', 'empty', 'empty', 'empty']);

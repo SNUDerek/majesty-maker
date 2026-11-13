@@ -1,5 +1,5 @@
 /**
- * Display text for engine ids (docs/ui-technical-plan.md §5.1). Pure: no
+ * Display text for engine ids (docs/archive/ui-technical-plan.md §5.1). Pure: no
  * React, no assets, so it can be unit-tested and used by `summarize`.
  */
 import type {

@@ -1,5 +1,5 @@
 /**
- * Screen routing (docs/ui-technical-plan.md §5.2): the screen is a pure
+ * Screen routing (docs/archive/ui-technical-plan.md §5.2): the screen is a pure
  * function of the engine state plus a little unsaved UI state.
  */
 import type { CampaignState } from '../../core/index.js';

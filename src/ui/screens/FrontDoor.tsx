@@ -20,7 +20,7 @@ export function TitleScreen() {
   const auto = store.slots().find((s) => s.slot === 'auto');
   const canContinue = auto?.status === 'ok' && auto.compatible;
   const incompatible = auto?.status === 'ok' && !auto.compatible;
-  const anySave = store.slots().some((s) => s.status === 'ok');
+  const anySave = store.slots().some((s) => s.status !== 'empty');
   return (
     <Scene image={BACKGROUND.title}>
       <div className="title-menu">

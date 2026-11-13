@@ -1,5 +1,5 @@
 /**
- * Asset registry (docs/ui-technical-plan.md §3.3). Every file the UI uses is
+ * Asset registry (docs/archive/ui-technical-plan.md §3.3). Every file the UI uses is
  * imported here so a missing file fails the build. Keyed by content id.
  */
 import type { ActivityId, Estate, LunarPhase } from '../core/index.js';

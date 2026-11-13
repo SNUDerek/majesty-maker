@@ -103,9 +103,14 @@ describe('summarize (road)', () => {
     expect(sourcesLine(win.rows[0]!)).toBe('reward');
     expect(win.notes[0]).toMatch(/Waystation 2 is secured/);
 
-    const pending = summarize({ type: 'CHOOSE_APPROACH', estate: 'bellatores' }, [resolved(false)])!;
+    const pending = summarize({ type: 'CHOOSE_APPROACH', estate: 'bellatores' }, [resolved(false)],
+      { ...onRoad(), pilgrimage: { ...onRoad().pilgrimage!, stage: 'reroll_or_accept' } })!;
     expect(pending.title).toBe('Encounter lost');
     expect(pending.notes[0]).toMatch(/Metheglin/);
+
+    const freeFailure = summarize({ type: 'CHOOSE_APPROACH', estate: 'bellatores' }, [resolved(false)],
+      { ...onRoad(), pilgrimage: { ...onRoad().pilgrimage!, stage: 'continue_or_retreat' } })!;
+    expect(freeFailure.notes).toEqual([]);
 
     const charged = summarize({ type: 'CHOOSE_APPROACH', estate: 'bellatores' }, [resolved(false),
       { week: w, type: 'burden_changed', burden: 'fatigue', amount: 15, source: 'encounter_penalty' }])!;

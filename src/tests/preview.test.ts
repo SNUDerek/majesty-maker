@@ -1,4 +1,4 @@
-/** U1: draw-free UI previews (docs/ui-technical-plan.md §4.2) agree with what applyAction actually does. */
+/** U1: draw-free UI previews (docs/archive/ui-technical-plan.md §4.2) agree with what applyAction actually does. */
 import { describe, expect, it } from 'vitest';
 import { withOverrides, type RulesConfig } from '../core/config.js';
 import {
