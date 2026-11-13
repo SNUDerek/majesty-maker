@@ -1,6 +1,6 @@
 # Balance testing plan: rewarding a rounded scion
 
-**Status:** plan only. Nothing here is implemented. It selects candidate changes from [proposal A](balance-proposal-a.md) and [proposal B](balance-proposal-b.md), guided by [the design opinions](balance-opinions.md), in response to finding 1 of the [baseline report](balance-report-baseline.md) (specialist dominance). Revised after [the critique](balance-testing-critique.md).
+**Status:** B1–B3 implemented and stages 0–1 run; see the [interim report](balance-report-stage1.md). **At the gate:** no config-only change meets §6, and the designer chooses R1, R2 or both. R1–R3 and E1 are not implemented. It selects candidate changes from [proposal A](balance-proposal-a.md) and [proposal B](balance-proposal-b.md), guided by [the design opinions](balance-opinions.md), in response to finding 1 of the [baseline report](balance-report-baseline.md) (specialist dominance). Revised after [the critique](balance-testing-critique.md).
 
 **Goal:** one strong Estate, one useful secondary and a modest third should be a competitive way to play, with real tradeoffs against a one-stat build. A strict even split need not be optimal, and a specialist need not be made to lose.
 
@@ -253,9 +253,9 @@ Each task is its own branch, worktree and PR, with tests, per `AGENTS.md`. B1–
 
 | Task | Branch | Contents | Tests |
 |---|---|---|---|
-| B1 | `feature/balance-bots` | build policy (§4), presets, `endingFloor`, budget logic, expected-Coin jobs, skip use | unit tests per decision: finale blocked until targets and floor are met, over-target fallback, carry fallback when capped; published bots give identical `runs.csv` on a fixed seed |
-| B2 | `feature/balance-metrics` | metrics and paired-difference analysis (§4) | metrics tests from hand-built event logs |
-| B3 | `feature/balance-stage0-1` | S3/S4 overlays, stage scripts, budget-matched script, stages 0–1, interim report | script smoke test at small N |
+| B1 (done) | `feature/balance-testing` | build policy (§4), presets, `endingFloor`, budget logic, expected-Coin jobs, skip use | unit tests per decision: finale blocked until targets and floor are met, over-target fallback, carry fallback when capped; published bots give identical `runs.csv` on a fixed seed |
+| B2 (done) | `feature/balance-testing` | metrics and paired-difference analysis (§4) | metrics tests from hand-built event logs |
+| B3 (done) | `feature/balance-testing` | S3/S4 overlays, stage scripts, budget-matched script, stages 0–1, interim report | script smoke test at small N |
 | — | **gate** | review the interim report; choose which of R1/R2 to build | — |
 | R1 | `feature/training-bands` | S5 engine, schema, overlays, stage 2 | band boundaries (39 / 40 / 69 / 70), gap basis, each field optional, job cap before astrology, `null` equals legacy |
 | R2 | `feature/road-successes` | S6 engine, schema, survival estimate, invariants, overlays, stage 3 | failure does not advance, skip does, `maxCards` forces retreat, finale needs N successes, legacy equality |

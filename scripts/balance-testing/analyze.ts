@@ -133,6 +133,17 @@ say('### Deliberate price',
         `${n1(a.summary.winWeekMedian)} → ${n1(b.summary.winWeekMedian)}`, medianGap(a, b)];
     }))));
 
+say('### Shapes under an enforced ending floor',
+  'Each shape played with the same `endingFloor`, paired against the specialist at that floor. Positive Δ week = slower than the specialist.',
+  table(['lead', 'floor', 'spec median', 'duo median', 'hybrid median', 'duo − spec Δ week', 'hybrid − spec Δ week', 'hybrid − spec Δ win'],
+    LEADS.flatMap((k) => ENDING_FLOORS.map((f) => {
+      const at = (shape: string) => get(B, `${shape}-${k}@floor${f}`);
+      const spec = at('spec'), duo = at('duo'), hybrid = at('hybrid');
+      if (!spec || !duo || !hybrid) return [k, String(f), '–', '–', '–', '–', '–', '–'];
+      return [k, String(f), n1(spec.summary.winWeekMedian), n1(duo.summary.winWeekMedian), n1(hybrid.summary.winWeekMedian),
+        weekDiff(spec, duo), weekDiff(spec, hybrid), diff(spec, hybrid)];
+    }))));
+
 if (get(B, 'wealthy-l')) {
   const a = must(B, 'spec-l'), b = must(B, 'wealthy-l');
   say('## Stage 0: Coin loophole (`wealthy-l` vs `spec-l`)',
