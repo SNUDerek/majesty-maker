@@ -1,9 +1,48 @@
 /** Browser regression checks. Requires Playwright + Chromium and a running dev server.
  * Run: node scripts/check-ui.cjs [URL]. NODE_PATH may point to an existing Playwright installation.
- * Covers New Game → intro → setup → home activities, modal focus and stage scaling.
+ * Covers New Game → intro → setup → home activities, modal focus, parchment insets, gauges and stage scaling.
  */
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
+
+/**
+ * Every visible text leaf, button, bar, image or input inside a parchment panel stays inside the
+ * paper's drawn edge. The texture is stretched over the padding box, and its torn edge sits about
+ * 4% in from the left, 2.5% right, 3% top and 5% bottom (measured on parchment_1600x1080.webp).
+ */
+async function assertInsideParchment(page, where) {
+  const problems = await page.evaluate(() => {
+    const scale = document.querySelector('.stage').getBoundingClientRect().width / 1280;
+    const out = [];
+    for (const panel of document.querySelectorAll('.panel--parchment')) {
+      const r = panel.getBoundingClientRect();
+      if (r.width === 0) continue;
+      const cs = getComputedStyle(panel);
+      const bw = (v) => parseFloat(v) * scale;
+      const pad = {
+        left: r.left + bw(cs.borderLeftWidth), right: r.right - bw(cs.borderRightWidth),
+        top: r.top + bw(cs.borderTopWidth), bottom: r.bottom - bw(cs.borderBottomWidth),
+      };
+      const w = pad.right - pad.left;
+      const h = pad.bottom - pad.top;
+      const box = {
+        left: pad.left + 0.04 * w, right: pad.right - 0.025 * w,
+        top: pad.top + 0.03 * h, bottom: pad.bottom - 0.05 * h,
+      };
+      for (const el of panel.querySelectorAll('*')) {
+        const leaf = (el.children.length === 0 && el.textContent.trim() !== '') || el.matches('button, .bar, img, input, select');
+        if (!leaf || el.closest('.bar') !== null && !el.matches('.bar')) continue;
+        const e = el.getBoundingClientRect();
+        if (e.width === 0 || e.height === 0) continue;
+        if (e.left < box.left || e.right > box.right || e.top < box.top || e.bottom > box.bottom) {
+          out.push(`${panel.className.split(' ').slice(1).join('.')} > ${el.tagName.toLowerCase()} "${el.textContent.trim().slice(0, 30)}"`);
+        }
+      }
+    }
+    return out;
+  });
+  assert.deepEqual(problems, [], `content outside the parchment insets on ${where}`);
+}
 
 (async () => {
   const browser = await chromium.launch({ headless: true });
@@ -25,7 +64,13 @@ const { chromium } = require('playwright');
       });
       await page.reload();
       await page.getByRole('button', { name: 'Continue', exact: true }).click();
+      await page.getByRole('button', { name: 'Tutoring', exact: true }).waitFor();
+      await assertInsideParchment(page, 'home');
+      // Kenney gauge fill follows the value (0–100 scale).
+      const fill = await page.locator('.home-side .gauge--fatigue .bar__fill:not(.bar__fill--ghost)').getAttribute('style');
+      assert.match(fill, /71%/);
       await page.getByRole('button', { name: 'Tutoring', exact: true }).click();
+      await assertInsideParchment(page, 'tutoring preview');
       const gauge = page.locator('.preview .gauge').first();
       assert.match(await gauge.innerText(), /71 → 76 \/ 78/);
       assert.doesNotMatch(await gauge.innerText(), /Collapse!/);
@@ -33,6 +78,7 @@ const { chromium } = require('playwright');
       const dialog = page.getByRole('dialog');
       await dialog.waitFor();
       assert.equal(await dialog.getAttribute('aria-labelledby') !== null, true);
+      await assertInsideParchment(page, 'result');
       for (const key of ['Tab', 'Tab', 'Shift+Tab', 'Shift+Tab']) {
         await page.keyboard.press(key);
         assert.equal(await page.evaluate(() => document.activeElement.closest('[role="dialog"]') !== null), true);
@@ -48,6 +94,9 @@ const { chromium } = require('playwright');
         await page.getByRole('button', { name: 'Commit week' }).click();
         await page.getByRole('dialog').getByRole('button', { name: 'Continue' }).click();
       }
+      await page.getByRole('button', { name: 'Pilgrimage', exact: true }).click();
+      await assertInsideParchment(page, 'pilgrimage prep');
+      await page.keyboard.press('Escape');
       const stage = await page.locator('.stage').boundingBox();
       assert.equal(Math.round(stage.width), viewport.width);
       assert.equal(Math.round(stage.height), viewport.height);
