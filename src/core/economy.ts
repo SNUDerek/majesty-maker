@@ -205,15 +205,27 @@ export function resolveJob(
     automatic: chance === null,
   });
 
+  let dieValue = 0;
+  if (success && definition.success.coinDie > 0) {
+    const die = drawFrom(streams, 'jobs', (s) => rollInt(s, 1, definition.success.coinDie));
+    streams = die.streams;
+    dieValue = die.value;
+  }
+  settleJob(ledger, definition, success, dieValue, modifiers);
+  return { deltas: ledger.deltas(), events: ledger.events, rng: streams };
+}
+
+/** Applies a job branch once the d100 and (on success) the coin die are known. */
+function settleJob(
+  ledger: Ledger,
+  definition: RulesConfig['jobs']['definitions'][JobId],
+  success: boolean,
+  dieValue: number,
+  modifiers: ModifierSet,
+): void {
   if (success) {
     const outcome = definition.success;
-    let coin = outcome.coin;
-    if (outcome.coinDie > 0) {
-      const die = drawFrom(streams, 'jobs', (s) => rollInt(s, 1, outcome.coinDie));
-      streams = die.streams;
-      coin += die.value;
-    }
-    ledger.coin(applyModifier(coin, modifiers, 'payoutPct'), 'job_payout');
+    ledger.coin(applyModifier(outcome.coin + dieValue, modifiers, 'payoutPct'), 'job_payout');
     ledger.stat(outcome.gainStat, applyModifier(outcome.gain, modifiers, 'statGainPct'), 'job');
     ledger.burden('fatigue', applyModifier(outcome.fatigue, modifiers, 'fatiguePct'), 'job');
     ledger.burden('melancholy', applyModifier(outcome.melancholy, modifiers, 'melancholyPct'), 'job');
@@ -223,7 +235,23 @@ export function resolveJob(
     ledger.burden('fatigue', applyModifier(outcome.fatigue, modifiers, 'fatiguePct'), 'job');
     ledger.burden('melancholy', applyModifier(outcome.melancholy, modifiers, 'melancholyPct'), 'job');
   }
-  return { deltas: ledger.deltas(), events: ledger.events, rng: streams };
+}
+
+/**
+ * Deltas of one job branch without drawing (UI previews). `dieValue` is the
+ * success coin die result (ignored on failure; pass 0 for jobs without a die).
+ */
+export function jobOutcomeDeltas(
+  state: EconomyState,
+  job: JobId,
+  success: boolean,
+  dieValue: number,
+  modifiers: ModifierSet,
+  config: RulesConfig,
+): ActivityDeltas {
+  const ledger = new Ledger(state, config);
+  settleJob(ledger, lookup(config.jobs.definitions, job, 'job'), success, success ? dieValue : 0, modifiers);
+  return ledger.deltas();
 }
 
 export function resolveRest(
