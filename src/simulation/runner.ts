@@ -5,9 +5,6 @@ import {
   type AvailableAction, type CalendarInfo, type CampaignState, type DerivedStats,
   type GameAction, type GameEvent, type RulesConfig, type ZodiacSign,
 } from '../core/index.js';
-import { collectModifiers } from '../core/astrology.js';
-import { jobSuccessChance } from '../core/economy.js';
-import { encounterOdds } from '../core/encounter.js';
 import { assertInvariants } from '../tests/invariants.js';
 
 export interface Policy {
@@ -62,27 +59,15 @@ export function deriveBatchSeed(baseSeed: number, sign: ZodiacSign, runIndex: nu
   return createHash('sha256').update(JSON.stringify([baseSeed, sign, runIndex])).digest().readUInt32BE(0);
 }
 
-/** Compute diagnostics before applyAction, without consuming any RNG. */
-function preRollProbability(state: CampaignState, action: GameAction, config: RulesConfig): number | null {
-  if (action.type === 'WORK') {
-    const derived = getDerivedStats(state, config);
-    const modifiers = collectModifiers({
-      activityId: action.job, kind: 'job', solar: derived.solarAspect, lunar: derived.lunarPhase,
-      previousActivityId: state.lastWeeklyActivityId, waxingStreak: state.waxingStreak,
-    }, config);
-    return jobSuccessChance(state, action.job, modifiers, config) ?? 100;
-  }
-  const road = state.pilgrimage;
-  const isReroll = action.type === 'USE_CONSUMABLE' && road?.stage === 'reroll_or_accept';
-  if (road && (action.type === 'CHOOSE_APPROACH' || isReroll)) {
-    const approach = action.type === 'CHOOSE_APPROACH' ? action.estate : road.currentApproach;
-    if (approach !== undefined && road.currentThreat !== undefined) {
-      return encounterOdds({
-        stat: state.stats[approach], approach, threat: road.currentThreat,
-        lunar: getCalendar({ ...state, elapsedWeeks: road.segmentEntryWeek }, config).lunarPhase,
-        segmentIndex: road.segmentIndex, isFinal: road.isFinal, equipmentId: road.equipmentId,
-      }, config).probability;
-    }
+/**
+ * The pre-roll success percent of the check this action resolved, read from
+ * the engine's own `job_resolved` / `encounter_resolved` event (a Metheglin
+ * reroll emits its own `encounter_resolved`). Null when no check occurs.
+ * Reading it back avoids re-implementing the odds outside the rules engine.
+ */
+function checkProbability(events: readonly GameEvent[]): number | null {
+  for (const event of events) {
+    if (event.type === 'job_resolved' || event.type === 'encounter_resolved') return event.probability;
   }
   return null;
 }
@@ -114,8 +99,8 @@ export function runCampaign(options: RunCampaignOptions): CampaignResult {
       const action = structuredClone(policy.decide(
         structuredClone(state), available, getDerivedStats(state, config), getCalendar(state, config),
       ));
-      const probability = preRollProbability(state, action, config);
       const result = applyAction(state, action, config);
+      const probability = checkProbability(result.events);
       if (strict) assertInvariants(result.state, config, state);
       const decision: Decision = {
         step: decisions.length, week: state.elapsedWeeks, action, probability,
