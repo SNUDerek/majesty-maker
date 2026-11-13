@@ -1,0 +1,917 @@
+{
+  "schemaVersion": 1,
+  "configId": "25b1bbe9c1df22f6",
+  "config": {
+    "id": "default",
+    "calendar": {
+      "totalWeeks": 12,
+      "weeksPerMonth": 4,
+      "monthsPerYear": 12,
+      "startYear": 1450,
+      "startAge": 14,
+      "deadlineAge": 16
+    },
+    "startingState": {
+      "baseStat": 35,
+      "zodiacBonus": 5,
+      "zodiacEstate": {
+        "aries": "bellatores",
+        "taurus": "oratores",
+        "gemini": "laboratores",
+        "cancer": "bellatores",
+        "leo": "oratores",
+        "virgo": "laboratores",
+        "libra": "bellatores",
+        "scorpio": "oratores",
+        "sagittarius": "laboratores",
+        "capricorn": "bellatores",
+        "aquarius": "oratores",
+        "pisces": "laboratores"
+      },
+      "treasury": 30,
+      "fatigue": 0,
+      "melancholy": 0,
+      "statMin": 0,
+      "statMax": 100,
+      "treasuryMax": 9999,
+      "startingInventory": {
+        "saints_relic": 1,
+        "metheglin": 1
+      }
+    },
+    "classes": {
+      "tutors": {
+        "hedge_knight": {
+          "target": "bellatores",
+          "gain": 5,
+          "opposing": "laboratores",
+          "opposingLoss": 1,
+          "cost": 20
+        },
+        "hermit": {
+          "target": "oratores",
+          "gain": 5,
+          "opposing": "bellatores",
+          "opposingLoss": 1,
+          "cost": 20
+        },
+        "smuggler": {
+          "target": "laboratores",
+          "gain": 5,
+          "opposing": "oratores",
+          "opposingLoss": 1,
+          "cost": 20
+        }
+      },
+      "tutorBurden": {
+        "hedge_knight": {
+          "fatigue": 5,
+          "melancholy": 0
+        },
+        "hermit": {
+          "fatigue": 0,
+          "melancholy": 5
+        },
+        "smuggler": {
+          "fatigue": 5,
+          "melancholy": 5
+        }
+      }
+    },
+    "jobs": {
+      "baseSuccessBonus": 35,
+      "successMin": 5,
+      "successMax": 95,
+      "definitions": {
+        "stables": {
+          "checkStat": null,
+          "success": {
+            "coin": 6,
+            "coinDie": 0,
+            "gainStat": "laboratores",
+            "gain": 1,
+            "fatigue": 2,
+            "melancholy": 2
+          },
+          "failure": {
+            "coin": 0,
+            "fatigue": 0,
+            "melancholy": 0
+          }
+        },
+        "alehouse": {
+          "checkStat": "laboratores",
+          "success": {
+            "coin": 10,
+            "coinDie": 10,
+            "gainStat": "laboratores",
+            "gain": 2,
+            "fatigue": 5,
+            "melancholy": 0
+          },
+          "failure": {
+            "coin": 0,
+            "fatigue": 5,
+            "melancholy": 5
+          }
+        },
+        "village_watch": {
+          "checkStat": "bellatores",
+          "success": {
+            "coin": 15,
+            "coinDie": 0,
+            "gainStat": "bellatores",
+            "gain": 2,
+            "fatigue": 5,
+            "melancholy": 0
+          },
+          "failure": {
+            "coin": 0,
+            "fatigue": 10,
+            "melancholy": 0
+          }
+        },
+        "scriptorium": {
+          "checkStat": "oratores",
+          "success": {
+            "coin": 15,
+            "coinDie": 0,
+            "gainStat": "oratores",
+            "gain": 2,
+            "fatigue": 0,
+            "melancholy": 5
+          },
+          "failure": {
+            "coin": 0,
+            "fatigue": 0,
+            "melancholy": 10
+          }
+        }
+      }
+    },
+    "rest": {
+      "rest_home": {
+        "cost": 0,
+        "fatigue": 15,
+        "melancholy": 15
+      },
+      "bathhouse": {
+        "cost": 15,
+        "fatigue": 40,
+        "melancholy": 10
+      },
+      "shrine": {
+        "cost": 15,
+        "fatigue": 10,
+        "melancholy": 40
+      },
+      "banquet": {
+        "cost": 30,
+        "fatigue": 35,
+        "melancholy": 35
+      }
+    },
+    "astrology": {
+      "lunarPhaseByWeek": [
+        "new",
+        "waxing",
+        "full",
+        "waning"
+      ],
+      "solar": {
+        "distances": {
+          "return": [
+            0
+          ],
+          "opposition": [
+            6
+          ],
+          "trine": [
+            4,
+            8
+          ],
+          "square": [
+            3,
+            9
+          ]
+        },
+        "returnTutorGainPct": 120,
+        "returnBanquetCostPct": 50,
+        "oppositionJobBurdenPct": 150,
+        "trineJobSuccessPts": 15,
+        "squareTutorGainPct": 130,
+        "squareTutorMelancholyPct": 200
+      },
+      "newMoon": {
+        "activities": [
+          "smuggler",
+          "alehouse"
+        ],
+        "activityBonus": 0,
+        "skipFee": null
+      },
+      "waxing": {
+        "mode": "single",
+        "bonusPct": 110
+      },
+      "fullMoon": {
+        "surgeEstates": [
+          "bellatores",
+          "oratores"
+        ],
+        "surge": 0,
+        "advantageMultiplierPct": 200,
+        "pilgrimageBurdenPenaltyPct": 200
+      },
+      "waning": {
+        "paidRestRecoveryPct": 150,
+        "appliesToRestAtHome": false
+      }
+    },
+    "encounters": {
+      "distribution": {
+        "bellatores": 1,
+        "oratores": 1,
+        "laboratores": 1
+      },
+      "beats": {
+        "bellatores": "laboratores",
+        "laboratores": "oratores",
+        "oratores": "bellatores"
+      },
+      "matchupPct": {
+        "advantage": 150,
+        "neutral": 100,
+        "disadvantage": 75
+      },
+      "successMin": 5,
+      "successMax": 95,
+      "rewardCoinDie": 4,
+      "failurePenalty": 15
+    },
+    "route": {
+      "regularSegments": 1,
+      "encountersPerSegment": 3,
+      "finalEncounters": 8,
+      "roadBonus": [
+        20
+      ],
+      "finalRoadBonus": -20,
+      "departureFee": 10
+    },
+    "failure": {
+      "retreatLootRetentionPct": 50,
+      "retreatToll": 5,
+      "wipeoutMedicalFeeMax": 50,
+      "wipeoutConvalescenceWeeks": 1,
+      "wipeoutBurdenReset": "zero",
+      "homeCollapse": {
+        "forcedWeek": true,
+        "recovery": 15
+      },
+      "purseProtection": {
+        "appliesToLabFailures": false
+      }
+    },
+    "items": {
+      "acquisition": "disabled",
+      "maxEquipment": 1,
+      "maxConsumables": 1,
+      "testRewardTable": {
+        "theriac": 1,
+        "st_johns_wort": 1,
+        "metheglin": 1,
+        "gambeson": 1,
+        "saints_relic": 1,
+        "weighted_coin": 1
+      },
+      "catalog": {
+        "theriac": {
+          "name": "Theriac",
+          "kind": "consumable",
+          "effect": "reduce_fatigue",
+          "amount": 30,
+          "estate": null
+        },
+        "st_johns_wort": {
+          "name": "St. John's Wort",
+          "kind": "consumable",
+          "effect": "reduce_melancholy",
+          "amount": 30,
+          "estate": null
+        },
+        "metheglin": {
+          "name": "Metheglin",
+          "kind": "consumable",
+          "effect": "reroll_failed_check",
+          "amount": 0,
+          "estate": null
+        },
+        "gambeson": {
+          "name": "Gambeson",
+          "kind": "equipment",
+          "effect": "reduce_failure_fatigue",
+          "amount": 5,
+          "estate": "bellatores"
+        },
+        "saints_relic": {
+          "name": "Saint's Relic",
+          "kind": "equipment",
+          "effect": "success_bonus_vs_threat",
+          "amount": 10,
+          "estate": "oratores"
+        },
+        "weighted_coin": {
+          "name": "Weighted Coin",
+          "kind": "equipment",
+          "effect": "coin_penalty_pct",
+          "amount": 50,
+          "estate": "laboratores"
+        }
+      }
+    },
+    "provenance": {
+      "route.regularSegments": {
+        "status": "experimental",
+        "note": "Suggested initial balance value (tech §7); a test parameter, not canon."
+      },
+      "route.encountersPerSegment": {
+        "status": "experimental",
+        "note": "Suggested initial balance value (tech §7); a test parameter, not canon."
+      },
+      "route.finalEncounters": {
+        "status": "experimental",
+        "note": "Suggested initial balance value (tech §7); a test parameter, not canon."
+      },
+      "route.finalRoadBonus": {
+        "status": "experimental",
+        "note": "Suggested initial test value (tech §7), not canon."
+      },
+      "classes.tutorBurden": {
+        "status": "tbd",
+        "note": "Candidate baseline only: Hedge Knight +5F, Hermit +5M, Smuggler +5F/+5M (tech §5, Q1)."
+      },
+      "astrology.newMoon.activityBonus": {
+        "status": "tbd",
+        "note": "Magnitude unspecified (tech §6, Q12); 0 = off, reports are 'partial astrology'."
+      },
+      "astrology.fullMoon.surge": {
+        "status": "tbd",
+        "note": "Magnitude unspecified (tech §6, Q12); 0 = off, reports are 'partial astrology'."
+      },
+      "astrology.newMoon.skipFee": {
+        "status": "tbd",
+        "note": "Fee unspecified (tech §6, Q3/Q9); null = encounter skipping disabled."
+      },
+      "astrology.waxing.mode": {
+        "status": "tbd",
+        "note": "Thematic doc says compounding, tech doc says once (Q4); 'single' applies once."
+      },
+      "astrology.waning.appliesToRestAtHome": {
+        "status": "tbd",
+        "note": "Source names only the three paid rests (tech §5); interpretation to confirm."
+      },
+      "failure.retreatLootRetentionPct": {
+        "status": "experimental",
+        "note": "Simulation-only baseline (tech §7); only earned loot is reduced, floor rounding."
+      },
+      "failure.retreatToll": {
+        "status": "experimental",
+        "note": "Simulation-only baseline (tech §7); payer is open (Q7)."
+      },
+      "failure.wipeoutBurdenReset": {
+        "status": "tbd",
+        "note": "Post-wipeout recovery unspecified (tech §7, Q13); provisional reset to 0."
+      },
+      "failure.homeCollapse": {
+        "status": "tbd",
+        "note": "Provisional: forced convalescence week, -15 Fatigue/-15 Melancholy (tech §4, Q13)."
+      },
+      "failure.purseProtection.appliesToLabFailures": {
+        "status": "tbd",
+        "note": "Thematic doc applies it to failed Laboratores encounters; tech doc to wipeout only (Q2)."
+      },
+      "items.testRewardTable": {
+        "status": "experimental",
+        "note": "B2 test fixture: one uniformly sampled item per explicit reward call; no production drop rate implied. Used only in test_table mode."
+      },
+      "items.acquisition": {
+        "status": "tbd",
+        "note": "Drop rates undecided (tech §7); items disabled for baseline runs."
+      }
+    }
+  },
+  "unresolved": [
+    {
+      "path": "astrology.fullMoon.surge",
+      "status": "tbd",
+      "note": "Magnitude unspecified (tech §6, Q12); 0 = off, reports are 'partial astrology'.",
+      "value": 0
+    },
+    {
+      "path": "astrology.newMoon.activityBonus",
+      "status": "tbd",
+      "note": "Magnitude unspecified (tech §6, Q12); 0 = off, reports are 'partial astrology'.",
+      "value": 0
+    },
+    {
+      "path": "astrology.newMoon.skipFee",
+      "status": "tbd",
+      "note": "Fee unspecified (tech §6, Q3/Q9); null = encounter skipping disabled.",
+      "value": null
+    },
+    {
+      "path": "astrology.waning.appliesToRestAtHome",
+      "status": "tbd",
+      "note": "Source names only the three paid rests (tech §5); interpretation to confirm.",
+      "value": false
+    },
+    {
+      "path": "astrology.waxing.mode",
+      "status": "tbd",
+      "note": "Thematic doc says compounding, tech doc says once (Q4); 'single' applies once.",
+      "value": "single"
+    },
+    {
+      "path": "classes.tutorBurden",
+      "status": "tbd",
+      "note": "Candidate baseline only: Hedge Knight +5F, Hermit +5M, Smuggler +5F/+5M (tech §5, Q1).",
+      "value": {
+        "hedge_knight": {
+          "fatigue": 5,
+          "melancholy": 0
+        },
+        "hermit": {
+          "fatigue": 0,
+          "melancholy": 5
+        },
+        "smuggler": {
+          "fatigue": 5,
+          "melancholy": 5
+        }
+      }
+    },
+    {
+      "path": "failure.homeCollapse",
+      "status": "tbd",
+      "note": "Provisional: forced convalescence week, -15 Fatigue/-15 Melancholy (tech §4, Q13).",
+      "value": {
+        "forcedWeek": true,
+        "recovery": 15
+      }
+    },
+    {
+      "path": "failure.purseProtection.appliesToLabFailures",
+      "status": "tbd",
+      "note": "Thematic doc applies it to failed Laboratores encounters; tech doc to wipeout only (Q2).",
+      "value": false
+    },
+    {
+      "path": "failure.retreatLootRetentionPct",
+      "status": "experimental",
+      "note": "Simulation-only baseline (tech §7); only earned loot is reduced, floor rounding.",
+      "value": 50
+    },
+    {
+      "path": "failure.retreatToll",
+      "status": "experimental",
+      "note": "Simulation-only baseline (tech §7); payer is open (Q7).",
+      "value": 5
+    },
+    {
+      "path": "failure.wipeoutBurdenReset",
+      "status": "tbd",
+      "note": "Post-wipeout recovery unspecified (tech §7, Q13); provisional reset to 0.",
+      "value": "zero"
+    },
+    {
+      "path": "items.acquisition",
+      "status": "tbd",
+      "note": "Drop rates undecided (tech §7); items disabled for baseline runs.",
+      "value": "disabled"
+    },
+    {
+      "path": "items.testRewardTable",
+      "status": "experimental",
+      "note": "B2 test fixture: one uniformly sampled item per explicit reward call; no production drop rate implied. Used only in test_table mode.",
+      "value": {
+        "theriac": 1,
+        "st_johns_wort": 1,
+        "metheglin": 1,
+        "gambeson": 1,
+        "saints_relic": 1,
+        "weighted_coin": 1
+      }
+    },
+    {
+      "path": "route.encountersPerSegment",
+      "status": "experimental",
+      "note": "Suggested initial balance value (tech §7); a test parameter, not canon.",
+      "value": 3
+    },
+    {
+      "path": "route.finalEncounters",
+      "status": "experimental",
+      "note": "Suggested initial balance value (tech §7); a test parameter, not canon.",
+      "value": 8
+    },
+    {
+      "path": "route.finalRoadBonus",
+      "status": "experimental",
+      "note": "Suggested initial test value (tech §7), not canon.",
+      "value": -20
+    },
+    {
+      "path": "route.regularSegments",
+      "status": "experimental",
+      "note": "Suggested initial balance value (tech §7); a test parameter, not canon.",
+      "value": 1
+    }
+  ],
+  "gitCommit": "1111111111111111111111111111111111111111",
+  "args": [
+    "--policy",
+    "fixture-pilgrim",
+    "--birth-sign",
+    "aries",
+    "--runs",
+    "5",
+    "--seed",
+    "123",
+    "--strict",
+    "--out",
+    "reports/golden"
+  ],
+  "policies": [
+    {
+      "id": "fixture-pilgrim",
+      "params": {
+        "carry": "maximum"
+      }
+    }
+  ],
+  "runCount": 5,
+  "astrology": {
+    "label": "partial astrology",
+    "disabledTbdParameters": [
+      "astrology.fullMoon.surge",
+      "astrology.newMoon.activityBonus",
+      "astrology.newMoon.skipFee"
+    ]
+  },
+  "aggregates": [
+    {
+      "policy": "fixture-pilgrim",
+      "birthSign": "aries",
+      "runs": 5,
+      "victories": 4,
+      "victoryRate": {
+        "estimate": 0.8,
+        "low": 0.37553462976252533,
+        "high": 0.9637758913675698
+      },
+      "victoryWeek": {
+        "n": 4,
+        "mean": 3,
+        "min": 2,
+        "p10": 2,
+        "median": 2,
+        "p90": 4.800000000000001,
+        "max": 6
+      },
+      "outcomes": {
+        "victory": 4,
+        "deadline": 1,
+        "unfinished": 0
+      },
+      "checkpoints": {
+        "1": 5
+      },
+      "firstReach": {
+        "1": {
+          "reached": 5,
+          "week": {
+            "n": 5,
+            "mean": 1,
+            "min": 1,
+            "p10": 1,
+            "median": 1,
+            "p90": 1,
+            "max": 1
+          }
+        }
+      },
+      "finalEncountersCompleted": {
+        "n": 5,
+        "mean": 7.8,
+        "min": 7,
+        "p10": 7.4,
+        "median": 8,
+        "p90": 8,
+        "max": 8
+      },
+      "zeroPurseRunRate": 0.4,
+      "zeroTreasuryRunRate": 1,
+      "zeroTreasuryWeeks": {
+        "n": 5,
+        "mean": 2.6,
+        "min": 1,
+        "p10": 1,
+        "median": 1,
+        "p90": 5.4,
+        "max": 7
+      },
+      "zeroPurseWeeks": {
+        "n": 5,
+        "mean": 0.8,
+        "min": 0,
+        "p10": 0,
+        "median": 0,
+        "p90": 2.2,
+        "max": 3
+      },
+      "failedDepartureAttempts": {
+        "n": 5,
+        "mean": 0,
+        "min": 0,
+        "p10": 0,
+        "median": 0,
+        "p90": 0,
+        "max": 0
+      },
+      "medicalFeeShortfallRate": 1,
+      "wipeoutCauses": {
+        "fatigue": 4,
+        "melancholy": 0,
+        "both": 0,
+        "coin": 0
+      },
+      "wipeoutsPerRun": {
+        "n": 5,
+        "mean": 0.8,
+        "min": 0,
+        "p10": 0,
+        "median": 0,
+        "p90": 2.2,
+        "max": 3
+      },
+      "retreatsPerRun": {
+        "n": 5,
+        "mean": 0,
+        "min": 0,
+        "p10": 0,
+        "median": 0,
+        "p90": 0,
+        "max": 0
+      },
+      "segmentStartsPerRun": {
+        "n": 5,
+        "mean": 2.6,
+        "min": 2,
+        "p10": 2,
+        "median": 2,
+        "p90": 3.6,
+        "max": 4
+      },
+      "homeCollapsesPerRun": {
+        "n": 5,
+        "mean": 0,
+        "min": 0,
+        "p10": 0,
+        "median": 0,
+        "p90": 0,
+        "max": 0
+      },
+      "convalescenceWeeks": {
+        "n": 5,
+        "mean": 0.8,
+        "min": 0,
+        "p10": 0,
+        "median": 0,
+        "p90": 2.2,
+        "max": 3
+      },
+      "conditionByWeek": {
+        "fatigue": [
+          0,
+          24,
+          24,
+          24.8,
+          25.6,
+          40.6,
+          39.8,
+          40.2,
+          40.6,
+          40.6,
+          39.8,
+          40.2
+        ],
+        "melancholy": [
+          0,
+          0,
+          0,
+          0.8,
+          1.6,
+          1.6,
+          0.8,
+          1.2,
+          1.6,
+          1.6,
+          0.8,
+          1.2
+        ],
+        "treasury": [
+          0,
+          5.6,
+          5.6,
+          8,
+          10.4,
+          7.2,
+          7.2,
+          8.4,
+          9.6,
+          7.2,
+          7.2,
+          8.4
+        ]
+      },
+      "finalStats": {
+        "bellatores": {
+          "n": 5,
+          "mean": 40,
+          "min": 40,
+          "p10": 40,
+          "median": 40,
+          "p90": 40,
+          "max": 40
+        },
+        "oratores": {
+          "n": 5,
+          "mean": 35,
+          "min": 35,
+          "p10": 35,
+          "median": 35,
+          "p90": 35,
+          "max": 35
+        },
+        "laboratores": {
+          "n": 5,
+          "mean": 36.4,
+          "min": 35,
+          "p10": 35,
+          "median": 35,
+          "p90": 38.8,
+          "max": 40
+        }
+      },
+      "calendarUtilization": {
+        "tutor": 0,
+        "job": 0.11666666666666667,
+        "rest": 0,
+        "segment_entry": 0.21666666666666667,
+        "convalescence": 0.06666666666666667,
+        "unused": 0.6
+      },
+      "jobs": {
+        "stables": {
+          "attempts": 7,
+          "successes": 7,
+          "rate": 1
+        }
+      },
+      "encounters": {
+        "oratores:laboratores": {
+          "attempts": 12,
+          "successes": 9,
+          "probabilitySum": 704,
+          "rate": 0.75,
+          "meanProbability": 58.666666666666664
+        },
+        "laboratores:laboratores": {
+          "attempts": 5,
+          "successes": 2,
+          "probabilitySum": 195,
+          "rate": 0.4,
+          "meanProbability": 39
+        },
+        "oratores:bellatores": {
+          "attempts": 18,
+          "successes": 5,
+          "probabilitySum": 400,
+          "rate": 0.2777777777777778,
+          "meanProbability": 22.22222222222222
+        },
+        "laboratores:bellatores": {
+          "attempts": 15,
+          "successes": 5,
+          "probabilitySum": 600,
+          "rate": 0.3333333333333333,
+          "meanProbability": 40
+        },
+        "bellatores:bellatores": {
+          "attempts": 19,
+          "successes": 5,
+          "probabilitySum": 380,
+          "rate": 0.2631578947368421,
+          "meanProbability": 20
+        },
+        "bellatores:laboratores": {
+          "attempts": 7,
+          "successes": 4,
+          "probabilitySum": 282,
+          "rate": 0.5714285714285714,
+          "meanProbability": 40.285714285714285
+        }
+      },
+      "encountersByMatchup": {
+        "advantage": {
+          "attempts": 27,
+          "successes": 14,
+          "probabilitySum": 1304,
+          "rate": 0.5185185185185185,
+          "meanProbability": 48.2962962962963
+        },
+        "neutral": {
+          "attempts": 24,
+          "successes": 7,
+          "probabilitySum": 575,
+          "rate": 0.2916666666666667,
+          "meanProbability": 23.958333333333332
+        },
+        "disadvantage": {
+          "attempts": 25,
+          "successes": 9,
+          "probabilitySum": 682,
+          "rate": 0.36,
+          "meanProbability": 27.28
+        }
+      },
+      "matchupShare": {
+        "advantage": 0.35526315789473684,
+        "neutral": 0.3157894736842105,
+        "disadvantage": 0.32894736842105265
+      },
+      "coinBySource": {
+        "departure_fee": -16,
+        "carry_out": 0,
+        "encounter_reward": 17.6,
+        "laboratores_penalty": -27,
+        "bank_carried": 0,
+        "wipeout_lost": -4.2,
+        "job_payout": 8.4,
+        "wipeout_retained": 0,
+        "medical_fee": -0.4
+      },
+      "coinPerRun": {
+        "earned": 26,
+        "spent": 16.4,
+        "lost": 31.2
+      },
+      "items": {
+        "saints_relic": {
+          "acquired": 0,
+          "sentOut": 8,
+          "returned": 8,
+          "used": 0,
+          "lost": 0
+        },
+        "metheglin": {
+          "acquired": 0,
+          "sentOut": 5,
+          "returned": 0,
+          "used": 5,
+          "lost": 0
+        }
+      },
+      "failureAttribution": {
+        "none": 4,
+        "deadline": 0,
+        "resource_loop": 1
+      }
+    }
+  ],
+  "flags": [
+    {
+      "policy": "fixture-pilgrim",
+      "birthSign": "aries",
+      "code": "zero_treasury",
+      "runs": 5,
+      "description": "At least one spent week ended with empty treasury; carried Coin may remain."
+    },
+    {
+      "policy": "fixture-pilgrim",
+      "birthSign": "aries",
+      "code": "medical_fee_shortfall",
+      "runs": 2,
+      "description": "At least one wipeout medical fee could not be paid in full."
+    },
+    {
+      "policy": "fixture-pilgrim",
+      "birthSign": "aries",
+      "code": "resource_loop",
+      "runs": 1,
+      "description": "Deadline attributed to a closing resource loop (metrics heuristic, default 24-week window)."
+    }
+  ],
+  "traces": []
+}
