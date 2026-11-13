@@ -73,7 +73,9 @@ const homeOnly = args.includes('--home-only');
       const treasury = parseInt(await page.locator('.topbar .coin').first().innerText());
       const pilgrim = page.locator('.home-menu button:has-text("Pilgrimage")');
       if (!homeOnly && ratio < 0.35 && week > 40 && week % 3 === 0 && await pilgrim.isEnabled()) {
-        await pilgrim.click(); await shot('prep'); await page.click('.presets button:has-text("½")'); await page.click('button:has-text("Depart")'); continue;
+        await pilgrim.click();
+        if (await page.locator('.tutorial').count()) { await shot('tutorial'); await page.keyboard.press('Escape'); }
+        await shot('prep'); await page.click('.presets button:has-text("½")'); await page.click('button:has-text("Depart")'); continue;
       }
       const kind = sideWarn || ratio > 0.55 ? 'Rest' : treasury < 45 ? 'Work' : 'Tutoring';
       await page.click(`.home-menu button:has-text("${kind}")`);

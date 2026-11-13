@@ -337,7 +337,8 @@
 .summary-line { font-size: var(--text-sm); font-style: italic; margin-top: var(--space-2); }
 
 .hud .btn { min-height: 34px; min-width: 104px; font-size: var(--text-sm); padding-top: 0; padding-bottom: 2px; }
-.hud__buttons { display: grid; gap: 4px; }
+.hud__buttons { display: grid; grid-auto-flow: column; grid-template-rows: auto auto; gap: 4px; }
+.hud__buttons .btn--help { grid-row: span 2; align-self: stretch; }
 
 /* ---------- Front door ---------- */
 /* Unframed parchment (intro, tutorial): content padded inside the torn edge. */
@@ -418,3 +419,15 @@
 .chronicle__detail, .chronicle__notes { font-size: var(--text-sm); color: var(--ink-muted); }
 .chronicle__rows { font-size: var(--text-sm); }
 .chronicle__rows > span + span::before { content: ' · '; color: var(--ink-muted); }
+
+/* Pilgrimage tutorial: a fixed-size sheet so pages don't jump. */
+.btn--help { min-width: 44px; padding-left: 0; padding-right: 0; font-weight: bold; }
+.hud .btn--help { min-width: 44px; font-size: var(--text-md); }
+.modal.tutorial { width: 800px; height: 560px; max-height: none; overflow: visible; display: flex; flex-direction: column; }
+.tutorial__head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: var(--space-3); }
+.tutorial__body { flex: 1; font-size: var(--text-md); line-height: 1.45; }
+.tutorial__body p + p { margin-top: var(--space-2); }
+.tutorial__beats { list-style: none; padding: 0; margin: 0 0 var(--space-3); display: grid; gap: 4px; }
+.tutorial__beats li { display: flex; align-items: center; gap: 6px; }
+.tutorial .modal__actions { margin-top: 0; }
+.tutorial__close { margin-right: auto; }

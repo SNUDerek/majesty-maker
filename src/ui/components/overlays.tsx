@@ -2,11 +2,16 @@ import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { sourcesLine, weeksLine, type ResultSummary } from '../engine/summarize.js';
 import { signed } from '../text/labels.js';
 import { Button, Panel } from './basic.js';
+import { ParchmentSheet } from './ParchmentSheet.js';
 import { quantityClass } from './stats.js';
 
 export function Modal({
-  title, children, actions, className = '',
-}: { title: ReactNode; children?: ReactNode; actions: ReactNode; className?: string }) {
+  title, children, actions, className = '', sheet = false,
+}: {
+  title: ReactNode; children?: ReactNode; actions: ReactNode; className?: string;
+  /** Draw on the unframed parchment sheet instead of a framed panel. */
+  sheet?: boolean;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
   useEffect(() => {
@@ -43,11 +48,19 @@ export function Modal({
   return (
     <div ref={ref} className="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby={titleId}>
       <div>
-        <Panel variant="parchment" className={`modal ${className}`}>
-          <div id={titleId} className="modal__title">{typeof title === 'string' ? <h2>{title}</h2> : title}</div>
-          {children}
-          <div className="modal__actions">{actions}</div>
-        </Panel>
+        {sheet ? (
+          <ParchmentSheet className={`modal ${className}`}>
+            <div id={titleId} className="modal__title">{typeof title === 'string' ? <h2>{title}</h2> : title}</div>
+            {children}
+            <div className="modal__actions">{actions}</div>
+          </ParchmentSheet>
+        ) : (
+          <Panel variant="parchment" className={`modal ${className}`}>
+            <div id={titleId} className="modal__title">{typeof title === 'string' ? <h2>{title}</h2> : title}</div>
+            {children}
+            <div className="modal__actions">{actions}</div>
+          </Panel>
+        )}
       </div>
     </div>
   );

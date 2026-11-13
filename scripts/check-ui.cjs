@@ -1,6 +1,6 @@
 /** Browser regression checks. Requires Playwright + Chromium and a running dev server.
  * Run: node scripts/check-ui.cjs [URL]. NODE_PATH may point to an existing Playwright installation.
- * Covers New Game → intro (letter reveal, reduced motion) → setup → home activities, modal focus, the Chronicle, parchment insets, gauges and stage scaling.
+ * Covers New Game → intro (letter reveal, reduced motion) → setup → home activities, modal focus, the Chronicle, the pilgrimage guide, parchment insets, gauges and stage scaling.
  */
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
@@ -134,8 +134,25 @@ async function assertInsideParchment(page, where) {
       assert.match(await page.locator('.chronicle__title').first().innerText(), /^Rest at Home|^Convalescence/);
       await assertInsideParchment(page, 'chronicle');
       await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
+      // The first Prep visit opens the pilgrimage guide; every page stays inside the sheet.
       await page.getByRole('button', { name: 'Pilgrimage', exact: true }).click();
+      const guide = page.getByRole('dialog');
+      for (const title of ['The road', 'The three orders', 'Failure', 'Moon and retreat']) {
+        assert.equal(await guide.locator('h2').innerText(), title);
+        await assertInsideParchment(page, `tutorial: ${title}`);
+        await guide.getByRole('button', { name: title === 'Moon and retreat' ? 'Done' : 'Next' }).click();
+      }
+      assert.equal(await page.getByRole('dialog').count(), 0);
       await assertInsideParchment(page, 'pilgrimage prep');
+      await page.keyboard.press('Escape');
+      // The second visit doesn't; "?" reopens it, and Escape closes it without leaving Prep.
+      await page.getByRole('button', { name: 'Pilgrimage', exact: true }).click();
+      assert.equal(await page.getByRole('dialog').count(), 0);
+      await page.getByRole('button', { name: 'How the pilgrimage works' }).click();
+      assert.equal(await page.getByRole('dialog').locator('h2').innerText(), 'The road');
+      await page.keyboard.press('Escape');
+      assert.equal(await page.getByRole('dialog').count(), 0);
+      assert.equal(await page.getByRole('button', { name: 'Depart' }).count(), 1);
       await page.keyboard.press('Escape');
       const stage = await page.locator('.stage').boundingBox();
       assert.equal(Math.round(stage.width), viewport.width);
