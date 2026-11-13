@@ -1,0 +1,12 @@
+{
+  "id": "final-n8",
+  "route": {
+    "finalEncounters": 8
+  },
+  "provenance": {
+    "route.finalEncounters": {
+      "status": "experimental",
+      "note": "E6 sensitivity: 8 final-gauntlet encounters."
+    }
+  }
+}

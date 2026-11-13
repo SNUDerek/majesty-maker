@@ -1,0 +1,26 @@
+{
+  "id": "astrology-full",
+  "astrology": {
+    "newMoon": {
+      "activityBonus": 10,
+      "skipFee": 10
+    },
+    "fullMoon": {
+      "surge": 10
+    }
+  },
+  "provenance": {
+    "astrology.newMoon.activityBonus": {
+      "status": "experimental",
+      "note": "E6 candidate: +10 points (x1.1, matching Waxing) to Smuggler/Alehouse gains and payouts."
+    },
+    "astrology.newMoon.skipFee": {
+      "status": "experimental",
+      "note": "E6 candidate: 10 Coin from carried purse, matching the departure fee."
+    },
+    "astrology.fullMoon.surge": {
+      "status": "experimental",
+      "note": "E6 candidate: +10 points (x1.1) to Bellatores/Oratores home activities."
+    }
+  }
+}

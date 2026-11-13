@@ -1,0 +1,18 @@
+{
+  "id": "road-steep",
+  "route": {
+    "roadBonus": [
+      60,
+      40,
+      20,
+      0,
+      -20
+    ]
+  },
+  "provenance": {
+    "route.roadBonus": {
+      "status": "experimental",
+      "note": "E6 sensitivity: double the default slope, same mean (+20). Five-segment routes only."
+    }
+  }
+}

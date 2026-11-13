@@ -1,0 +1,12 @@
+{
+  "id": "weeks-48",
+  "calendar": {
+    "totalWeeks": 48
+  },
+  "provenance": {
+    "calendar.totalWeeks": {
+      "status": "experimental",
+      "note": "E6 sensitivity only (tech §11): 48-week campaign; 96 is canonical. Deadline age unchanged."
+    }
+  }
+}
