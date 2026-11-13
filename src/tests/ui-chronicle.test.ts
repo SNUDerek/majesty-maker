@@ -76,10 +76,10 @@ describe('chronicleEntry', () => {
     expect(entry.detail).toMatch(/threat\.$/);
   });
 
-  it('groups by week, newest week first, keeping order within a week', () => {
+  it('groups by week, newest first throughout', () => {
     const e = (week: number, title: string) => ({ week, action: { type: 'RETREAT' } as GameAction, title, rows: [], notes: [] });
     expect(chronicleByWeek([e(0, 'a'), e(1, 'b'), e(1, 'c'), e(3, 'd')]).map((w) => [w.week, w.entries.map((x) => x.title)]))
-      .toEqual([[3, ['d']], [1, ['b', 'c']], [0, ['a']]]);
+      .toEqual([[3, ['d']], [1, ['c', 'b']], [0, ['a']]]);
   });
 });
 

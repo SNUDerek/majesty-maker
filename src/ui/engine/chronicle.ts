@@ -71,9 +71,9 @@ export function chronicleEntry(
   };
 }
 
-/** Entries grouped by elapsed week, newest week first, entries in order within a week. */
+/** Entries grouped by elapsed week, newest first throughout (latest week, and latest entry within it). */
 export function chronicleByWeek(log: readonly ChronicleEntry[]): { week: number; entries: ChronicleEntry[] }[] {
   const weeks = new Map<number, ChronicleEntry[]>();
-  for (const entry of log) weeks.set(entry.week, [...(weeks.get(entry.week) ?? []), entry]);
+  for (const entry of log) weeks.set(entry.week, [entry, ...(weeks.get(entry.week) ?? [])]);
   return [...weeks].sort(([a], [b]) => b - a).map(([week, entries]) => ({ week, entries }));
 }

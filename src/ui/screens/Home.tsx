@@ -50,7 +50,8 @@ export function HomeHub({ convalescence }: { convalescence: boolean }) {
   const restHome = activityOptions(state, 'rest', store.config).find((o) => o.preview.activityId === 'rest_home')!;
   return (
     <Scene image={BACKGROUND.home}>
-      <TopBar state={state} config={store.config} onMenu={() => store.setUi({ overlay: 'saveload' })} />
+      <TopBar state={state} config={store.config} onMenu={() => store.setUi({ overlay: 'saveload' })}
+        onChronicle={() => store.setUi({ overlay: 'chronicle' })} />
       <img className="home-princess" src={IMAGES.princessFull} alt={state.scionName} />
       <div className="home-centre">
         <Panel variant="parchment" title="How shall she spend this week?">

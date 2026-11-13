@@ -37,7 +37,9 @@ export function DateBlock({ state, config }: { state: CampaignState; config: Rul
   );
 }
 
-export function TopBar({ state, config, onMenu }: { state: CampaignState; config: RulesConfig; onMenu: () => void }) {
+export function TopBar({ state, config, onMenu, onChronicle }: {
+  state: CampaignState; config: RulesConfig; onMenu: () => void; onChronicle?: () => void;
+}) {
   const derived = getDerivedStats(state, config);
   return (
     <header className="topbar">
@@ -46,6 +48,7 @@ export function TopBar({ state, config, onMenu }: { state: CampaignState; config
       {derived.solarAspect !== 'none' && <span className="badge">{SOLAR_LABEL[derived.solarAspect]}</span>}
       <span className="topbar__spacer" />
       <span title="Treasury"><CoinAmount amount={state.treasury} /></span>
+      {onChronicle !== undefined && <Button onClick={onChronicle}>Chronicle</Button>}
       <Button onClick={onMenu}>Menu</Button>
     </header>
   );

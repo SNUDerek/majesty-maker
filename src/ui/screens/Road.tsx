@@ -56,7 +56,9 @@ function ConsumableButton({ action, config, onUse }: { action: UseConsumable; co
 // HUD
 // ---------------------------------------------------------------------------
 
-export function PilgrimageHud({ state, config, onMenu }: { state: CampaignState; config: RulesConfig; onMenu: () => void }) {
+export function PilgrimageHud({ state, config, onMenu, onChronicle }: {
+  state: CampaignState; config: RulesConfig; onMenu: () => void; onChronicle: () => void;
+}) {
   const road = state.pilgrimage!;
   const info = segmentInfo(road.segmentIndex, config);
   const derived = getDerivedStats(state, config);
@@ -83,7 +85,10 @@ export function PilgrimageHud({ state, config, onMenu }: { state: CampaignState;
         <ConditionGauge kind="fatigue" value={state.fatigue} ceiling={derived.fatigueCeiling} />
         <ConditionGauge kind="melancholy" value={state.melancholy} ceiling={derived.melancholyCeiling} />
       </div>
-      <Button onClick={onMenu}>Menu</Button>
+      <div className="hud__buttons">
+        <Button onClick={onChronicle}>Chronicle</Button>
+        <Button onClick={onMenu}>Menu</Button>
+      </div>
     </header>
   );
 }
@@ -112,7 +117,8 @@ export function PrepScreen() {
     : departureAction(option, carry, equipmentId || undefined, consumableId || undefined);
   return (
     <Scene image={BACKGROUND.pilgrimage}>
-      <TopBar state={state} config={config} onMenu={() => store.setUi({ overlay: 'saveload' })} />
+      <TopBar state={state} config={config} onMenu={() => store.setUi({ overlay: 'saveload' })}
+        onChronicle={() => store.setUi({ overlay: 'chronicle' })} />
       <div className="prep">
         <Panel variant="parchment" className="panel--wide" title="The pilgrimage">
           <RouteStrip furthest={state.furthestWaystation} total={config.route.regularSegments} />
@@ -317,7 +323,8 @@ export function EncounterScreen() {
   const [confirming, setConfirming] = useState(false);
   return (
     <Scene image={road.isFinal ? BACKGROUND.capital : BACKGROUND.pilgrimage}>
-      <PilgrimageHud state={state} config={store.config} onMenu={() => store.setUi({ overlay: 'saveload' })} />
+      <PilgrimageHud state={state} config={store.config} onMenu={() => store.setUi({ overlay: 'saveload' })}
+        onChronicle={() => store.setUi({ overlay: 'chronicle' })} />
       <div className="road">
         <ThreatCard state={state} />
         {!blocked && road.stage === 'choose_approach' && <ChooseApproach state={state} config={store.config} onAct={act} />}
@@ -350,7 +357,8 @@ export function WaystationScreen() {
   const derived = getDerivedStats(state, config);
   return (
     <Scene image={BACKGROUND.waystation}>
-      <PilgrimageHud state={state} config={config} onMenu={() => store.setUi({ overlay: 'saveload' })} />
+      <PilgrimageHud state={state} config={config} onMenu={() => store.setUi({ overlay: 'saveload' })}
+        onChronicle={() => store.setUi({ overlay: 'chronicle' })} />
       <Panel variant="parchment" className="centre-panel" title={`Waystation ${road.segmentIndex + 1} secured`}>
         <RouteStrip furthest={state.furthestWaystation} total={config.route.regularSegments} />
         <p style={{ marginTop: 10 }}>Carried <CoinAmount amount={road.carriedCoin} /> · earned this run <CoinAmount amount={road.earnedCoin} /></p>

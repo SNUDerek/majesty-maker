@@ -35,7 +35,7 @@ export interface ResultSummary {
 
 const ROW_ORDER: readonly Quantity[] = ['bellatores', 'oratores', 'laboratores', 'fatigue', 'melancholy', 'treasury', 'carried'];
 
-const QUANTITY_LABEL: Record<Quantity, string> = {
+export const QUANTITY_LABEL: Record<Quantity, string> = {
   ...ESTATE_LABEL,
   fatigue: 'Fatigue',
   melancholy: 'Melancholy',
