@@ -2,6 +2,7 @@ import { readdirSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { hashConfig, type RulesConfig } from '../core/config.js';
 import type { AvailableAction, GameAction } from '../core/index.js';
+import { loadCliConfig, parseCliArgs, UsageError } from '../simulation/cli.js';
 import { runCampaign, type Policy } from '../simulation/runner.js';
 import { loadContentConfig, readContentJson } from './support/config.js';
 
@@ -69,6 +70,39 @@ describe('E6 configuration variants', () => {
     const config = load(name);
     const { finalState } = runCampaign({ seed: 42, sign: 'aries', policy: rotating(), config, strict: true });
     expect(['victory', 'defeat']).toContain(finalState.phase);
+  });
+
+  it.each(names)('%s loads by name through the CLI over the experimental baseline', (name) => {
+    const config = loadCliConfig(parseCliArgs(['--all-policies', '--all-signs',
+      '--config', 'content/rules.experimental.json', '--variant', name]));
+    expect(hashConfig(config)).toBe(hashConfig(loadContentConfig('rules.experimental.json', `variants/${name}.json`)));
+  });
+
+  it.each(['road-flat', 'road-steep'])('%s stacks with route variants in CLI argument order', (curve) => {
+    for (const length of [4, 6]) {
+      const args = ['--all-policies', '--all-signs'];
+      expect(() => loadCliConfig(parseCliArgs([...args, '--variant', `route-${length}`, '--variant', curve])))
+        .toThrow(UsageError);
+      expect(() => loadCliConfig(parseCliArgs([...args, '--variant', `route-${length}`, '--variant', curve])))
+        .toThrow(/roadBonus: has 5 entries/);
+      const reversed = loadCliConfig(parseCliArgs([...args, '--variant', curve, '--variant', `route-${length}`]));
+      expect(reversed.route).toEqual(load(`route-${length}`).route);
+    }
+    expect(loadContentConfig('variants/route-5.json', `variants/${curve}.json`).route.roadBonus)
+      .toEqual(load(curve).route.roadBonus);
+  });
+
+  it('combines independent sensitivity settings through the CLI', () => {
+    const variants = ['route-6', 'final-n10', 'final-road-30', 'items-test-table', 'astrology-full', 'weeks-48'];
+    const config = loadCliConfig(parseCliArgs(['--all-policies', '--all-signs',
+      ...variants.flatMap((name) => ['--variant', name])]));
+    expect(config.route).toMatchObject({ regularSegments: 6, finalEncounters: 10, finalRoadBonus: -30 });
+    expect(config.items.acquisition).toBe('test_table');
+    expect(config.astrology.newMoon).toMatchObject({ activityBonus: 10, skipFee: 10 });
+    expect(config.astrology.fullMoon.surge).toBe(10);
+    expect(config.calendar.totalWeeks).toBe(48);
+    const result = runCampaign({ seed: 42, sign: 'aries', policy: rotating(), config, strict: true });
+    expect(['victory', 'defeat']).toContain(result.finalState.phase);
   });
 
   it('route lengths keep the linear +40 → +0 road bonus', () => {

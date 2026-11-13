@@ -12,7 +12,7 @@
   "provenance": {
     "astrology.newMoon.activityBonus": {
       "status": "experimental",
-      "note": "E6 candidate: +10 points (x1.1, matching Waxing) to Smuggler/Alehouse gains and payouts."
+      "note": "E6 candidate: +10% (x1.1, matching Waxing) to Smuggler/Alehouse gains and payouts."
     },
     "astrology.newMoon.skipFee": {
       "status": "experimental",
@@ -20,7 +20,7 @@
     },
     "astrology.fullMoon.surge": {
       "status": "experimental",
-      "note": "E6 candidate: +10 points (x1.1) to Bellatores/Oratores home activities."
+      "note": "E6 candidate: +10% (x1.1) to Bellatores/Oratores home activities."
     }
   }
 }
