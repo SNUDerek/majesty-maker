@@ -1,0 +1,14 @@
+{
+  "id": "oq-q4-waxing",
+  "astrology": {
+    "waxing": {
+      "bonusPct": 120
+    }
+  },
+  "provenance": {
+    "astrology.waxing.bonusPct": {
+      "status": "experimental",
+      "note": "T6 single change: Q4 Waxing x1.20."
+    }
+  }
+}

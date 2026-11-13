@@ -1,0 +1,14 @@
+{
+  "id": "oq-q2-protection",
+  "failure": {
+    "purseProtection": {
+      "appliesToLabFailures": true
+    }
+  },
+  "provenance": {
+    "failure.purseProtection.appliesToLabFailures": {
+      "status": "experimental",
+      "note": "T6 single change: Q2 protection on failed Laboratores encounters."
+    }
+  }
+}

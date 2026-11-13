@@ -1,0 +1,14 @@
+{
+  "id": "oq-q13-wipeout",
+  "failure": {
+    "wipeoutBurdenReset": {
+      "recovery": 35
+    }
+  },
+  "provenance": {
+    "failure.wipeoutBurdenReset": {
+      "status": "experimental",
+      "note": "T6 single change: Q13 wipeout recovery 35."
+    }
+  }
+}

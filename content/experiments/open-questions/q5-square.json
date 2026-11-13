@@ -1,0 +1,14 @@
+{
+  "id": "oq-q5-square",
+  "astrology": {
+    "solar": {
+      "squareTutorFatiguePct": 200
+    }
+  },
+  "provenance": {
+    "astrology.solar.squareTutorFatiguePct": {
+      "status": "experimental",
+      "note": "T6 single change: Q5 Square doubles tutor Fatigue too."
+    }
+  }
+}

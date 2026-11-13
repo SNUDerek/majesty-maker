@@ -1,0 +1,14 @@
+{
+  "id": "oq-q13-home-fee",
+  "failure": {
+    "homeCollapse": {
+      "fee": 20
+    }
+  },
+  "provenance": {
+    "failure.homeCollapse": {
+      "status": "experimental",
+      "note": "T6 single change: Q13 physician fee 20."
+    }
+  }
+}
