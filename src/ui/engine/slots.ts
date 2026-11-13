@@ -1,6 +1,6 @@
 /** One-line descriptions of save slots for the Save / Load overlay. Pure. */
 import { getCalendar, type RulesConfig, type ZodiacSign } from '../../core/index.js';
-import { MONTHS } from '../text/labels.js';
+import { MONTHS, fullName } from '../text/labels.js';
 import type { SaveFile, SlotId } from './persistence.js';
 import { segmentInfo } from './road.js';
 
@@ -33,7 +33,7 @@ export function slotSummary(save: SaveFile, config: RulesConfig): SlotSummary {
       : `On the road: ${info.name}, ${Math.min(state.pilgrimage.encounterIndex + 1, info.length)}/${info.length}`;
   }
   return {
-    name: state.scionName,
+    name: fullName(state),
     birthSign: state.birthSign,
     date: `Week ${cal.weekOfMonth + 1} of ${MONTHS[cal.currentMonth]}, ${cal.displayYear}`,
     where,

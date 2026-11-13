@@ -203,6 +203,7 @@
   overflow: hidden;
 }
 .home-side h3 { margin-top: var(--space-2); }
+.side-heading { font-family: var(--font-head); font-style: normal; font-size: var(--text-lg); }
 .home-side .stat { margin-bottom: 6px; }
 .home-centre {
   position: absolute; top: 68px; left: 360px; right: 364px; bottom: 12px;

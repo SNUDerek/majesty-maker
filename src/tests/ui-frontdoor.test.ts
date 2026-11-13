@@ -51,7 +51,7 @@ describe('slot summaries', () => {
   it('describes home, road, waystation and finished saves', () => {
     const home = createCampaign(OPTIONS, config);
     const save = (state: typeof home) => writeSave(memoryStorage(), 'slot1', state, config, new Date(0));
-    expect(slotSummary(save(home), config)).toEqual({ name: 'Elaine', birthSign: 'pisces', date: 'Week 1 of February, 1450', where: 'At home' });
+    expect(slotSummary(save(home), config)).toEqual({ name: 'Elaine B', birthSign: 'pisces', date: 'Week 1 of February, 1450', where: 'At home' });
     const road = applyAction(home, { type: 'BEGIN_PILGRIMAGE', carry: 10 }, config).state;
     expect(slotSummary(save(road), config).where).toBe(`On the road: Road to Waystation 1, 1/${config.route.encountersPerSegment}`);
     expect(slotSummary(save({ ...road, pilgrimage: { ...road.pilgrimage!, stage: 'waystation_decision' } }), config).where).toBe('At Waystation 1');

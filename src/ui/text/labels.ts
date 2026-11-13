@@ -146,6 +146,11 @@ export const WEEK_REASON_LABEL: Record<WeekReason, string> = {
   convalescence: 'convalescence',
 };
 
+/** The daughter's full name: her name and your house, e.g. "Elaine Wyke". */
+export function fullName(state: { scionName: string; playerName: { last: string } }): string {
+  return [state.scionName, state.playerName.last].map((part) => part.trim()).filter(Boolean).join(' ');
+}
+
 /** `120` → `×1.2`. */
 export function times(pct: number): string {
   return `×${(pct / 100).toString()}`;
