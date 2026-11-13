@@ -424,6 +424,18 @@ Each task ends with tests passing, `npm run typecheck` + `typecheck:ui` clean, a
 
 U1 and U2 can run in parallel; U3/U4 after U2; U5 after U3+U4; U6 after U5; U7 any time after U3.
 
+### Branches and PRs
+
+The work ships as three PRs, each on its own branch and worktree, committing task by task:
+
+| PR | Branch | Tasks | Ends with |
+|---|---|---|---|
+| 1 | `feature/core-preview` | U1 (+ this breakdown) | `previewHomeActivity` / `previewApproaches` exported from `src/core` with tests. The only PR that touches the rules engine. |
+| 2 | `feature/ui-home` | U2–U5 | Vite/React app running; Home, Tutor, Work and Rest playable through to the deadline. |
+| 3 | `feature/ui-pilgrimage` | U6–U8 | Pilgrimage, final gauntlet, title/intro/setup, save/load, dev panel; full campaign playable. |
+
+PR 2 starts from `main` after PR 1 merges (it consumes the preview API).
+
 **Acceptance:** from `npm run dev`, a player can start a game, choose name/sign, play all 96 weeks using every tutor/job/rest, depart and resolve pilgrimage segments, see retreat, wipeout and collapse results, reach waystations, attempt the final gauntlet, win or hit the deadline, and save/load at any point — with every number on screen coming from `src/core`.
 
 ---
