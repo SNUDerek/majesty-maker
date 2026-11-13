@@ -146,6 +146,8 @@ All 14 named overlays are available under `content/variants/`, with distinct has
 
 ## 4. Workstream F/G: Balance and wrap-up (M4)
 
+Status: the first pass of F1–F3 is done for the open-question decisions (tasks T6/T7). See [balance-report-baseline.md](balance-report-baseline.md). Specialist dominance and the bot gaps it lists (no skipping, no home collapses) remain open. G1 is not yet ticked.
+
 ### F1 Baseline batches
 - **Depends on:** E3b, E5, E6, D3.
 - **Work:** 1,000 runs × each policy (7 including B/O/L specialists) × 12 signs on `rules.experimental.json`, then the variant sweeps. Rerun at 5,000 only where comparisons are close. This is about 84k campaigns per config, so check the runtime and consider `worker_threads` in the runner if one config takes over ~2 min.

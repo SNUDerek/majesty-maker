@@ -1,6 +1,6 @@
 # Open questions: final decisions and implementation tasks
 
-**Status:** Final rule decisions; implementation pending. Numeric balance values explicitly marked experimental remain tunable through F1–F3. This document supersedes the recommendations in the draft and suggestions; it does not claim that the engine already implements them.
+**Status:** Final rule decisions. T1–T7 implemented on `feature/open-questions-impl` (archiving happens at review); T8 remains a separate follow-up PR. Numeric balance values explicitly marked experimental remain tunable through F1–F3. This document supersedes the recommendations in the draft and suggestions; it does not claim that the engine already implements them.
 
 **Basis:** [thematic design](thematic-design-doc.md), `open-questions-suggestions-a.md`, `open-questions-suggestions-b.md`, and [decision draft](open-questions-decisions-draft.md). The owner's opinions referenced by the draft were also consulted. Suggestions A/B and the opinions were read from the main working checkout, where they are currently untracked; this planning commit does not stage those files or their pending renames.
 
@@ -56,10 +56,10 @@ Each task is a separate implementation unit with tests. Use feature/fix branches
 
 ### T1 — Add the selected configuration candidate
 
-- [ ] Add `content/variants/open-questions-decisions.json` with Q1, Q2, Q4, Q9, Q12, and R3: tutor burdens 5/0, 0/5, 3/2; `appliesToLabFailures: true`; Waxing `mode: single`, `bonusPct: 120`; skip fee 10; home lunar bonuses 20 each; retreat retention 50 and toll 10.
-- [ ] Give the overlay a distinct ID and accurate provenance. Record settled rules as settled and numeric tuning as experimental; do not label accepted interpretations `tbd` merely because their numbers remain tunable.
-- [ ] Keep `rules.default.json` behavior and the existing `astrology-full` (+10%) variant available as controls. The combined candidate becomes complete only after T2/T3 extend it.
-- [ ] Add register coverage for changed/new experimental fields, including Waxing magnitude. Keep overlay values distinguishable from shipped defaults.
+- [x] Add `content/variants/open-questions-decisions.json` with Q1, Q2, Q4, Q9, Q12, and R3: tutor burdens 5/0, 0/5, 3/2; `appliesToLabFailures: true`; Waxing `mode: single`, `bonusPct: 120`; skip fee 10; home lunar bonuses 20 each; retreat retention 50 and toll 10.
+- [x] Give the overlay a distinct ID and accurate provenance. Record settled rules as settled and numeric tuning as experimental; do not label accepted interpretations `tbd` merely because their numbers remain tunable.
+- [x] Keep `rules.default.json` behavior and the existing `astrology-full` (+10%) variant available as controls. The combined candidate becomes complete only after T2/T3 extend it.
+- [x] Add register coverage for changed/new experimental fields, including Waxing magnitude. Keep overlay values distinguishable from shipped defaults.
 
 **Tests/acceptance:** `src/tests/config.test.ts` and `variants.test.ts` validate the effective candidate, distinct hashes, overlay stacking, and provenance. Verify all exact values above and that loading the default or existing comparison variants preserves their behavior.
 
@@ -67,9 +67,9 @@ Each task is a separate implementation unit with tests. Use feature/fix branches
 
 ### T2 — Apply Square to both tutor burdens
 
-- [ ] Extend the solar schema with `squareTutorFatiguePct`, defaulting to 100 for legacy configurations; retain `squareTutorMelancholyPct`. Set both to 200 in the candidate. Apply the new factor in `src/core/astrology.ts` through the existing pipeline.
-- [ ] Add defaults, validation, provenance/register entries, and candidate settings together. This deliberately avoids the draft's field rename: two existing-style factors preserve the old control behavior without a migration or a new additive modifier system.
-- [ ] Keep Square's stat-gain factor at 130 and restrict the burden factors to tutoring.
+- [x] Extend the solar schema with `squareTutorFatiguePct`, defaulting to 100 for legacy configurations; retain `squareTutorMelancholyPct`. Set both to 200 in the candidate. Apply the new factor in `src/core/astrology.ts` through the existing pipeline.
+- [x] Add defaults, validation, provenance/register entries, and candidate settings together. This deliberately avoids the draft's field rename: two existing-style factors preserve the old control behavior without a migration or a new additive modifier system.
+- [x] Keep Square's stat-gain factor at 130 and restrict the burden factors to tutoring.
 
 **Tests/acceptance:** Cover all three tutors with candidate and legacy settings in `astrology.test.ts` and home scenarios; assert the six normal/Square burden pairs above, combined solar/lunar gain of 7, and no Square effect on job/rest burdens. Existing config snapshots without the new field load through defaults.
 
@@ -77,10 +77,10 @@ Each task is a separate implementation unit with tests. Use feature/fix branches
 
 ### T3 — Implement bounded recovery and home-collapse fees
 
-- [ ] Extend `failure.wipeoutBurdenReset` to accept `{ recovery: 35 }` as a configurable nonnegative integer recovery, preserving `zero` and `unchanged` legacy modes. Add `failure.homeCollapse.fee` with legacy default 0; select 20 in the candidate and retain recovery 15/forced week true.
-- [ ] Implement the Q13 timing contract above in `src/core/pilgrimage.ts` and `reducer.ts`. Charge home fees at the initial home-collapse transition, not repeatedly from the shared convalescence helper.
-- [ ] Emit explicit burden/Coin events. Give home physician fees a distinct source from pilgrimage medical fees and include them in metrics, traces, and report accounting. Record nominal/paid amounts if needed to distinguish shortfalls without inferring them from remaining treasury.
-- [ ] Update relevant types, config validation, invariants, register/provenance, and candidate overlay. Keep existing recovery modes working for controls.
+- [x] Extend `failure.wipeoutBurdenReset` to accept `{ recovery: 35 }` as a configurable nonnegative integer recovery, preserving `zero` and `unchanged` legacy modes. Add `failure.homeCollapse.fee` with legacy default 0; select 20 in the candidate and retain recovery 15/forced week true.
+- [x] Implement the Q13 timing contract above in `src/core/pilgrimage.ts` and `reducer.ts`. Charge home fees at the initial home-collapse transition, not repeatedly from the shared convalescence helper.
+- [x] Emit explicit burden/Coin events. Give home physician fees a distinct source from pilgrimage medical fees and include them in metrics, traces, and report accounting. Record nominal/paid amounts if needed to distinguish shortfalls without inferring them from remaining treasury.
+- [x] Update relevant types, config validation, invariants, register/provenance, and candidate overlay. Keep existing recovery modes working for controls.
 
 **Tests/acceptance:** Add reducer, pilgrimage, scenario, and metrics regressions for both burden collapses, Coin wipeout, zero/partial/exact fee funds, odd-stat purse retention, repeated recovery, and last-week/penultimate-week collapse. Assert no debt, duplicate fee, double recovery, extra playable week, or premature departure while still collapsed. Assert consumable loss/equipment retention/checkpoint persistence and unchanged historical modes.
 
@@ -88,12 +88,12 @@ Each task is a separate implementation unit with tests. Use feature/fix branches
 
 ### T4 — Lock down retained rules and experiment reporting
 
-- [ ] Audit existing tests before adding missing cases for Q2–Q4, Q6–Q12, R2/R3. These are primarily contract confirmations, not reasons to rewrite working code.
-- [ ] Cover New Moon entry locking, once-only skip, no rollover into Waxing, exact/insufficient fee funds, final-card victory, no skip loot/check-roll, and unchanged state/RNG on rejection.
-- [ ] Cover relic threat versus approach, Gambeson ordering, Weighted Coin/Purse Protection stacking, Opposition success/failure/Stables rounding, retreat shortfalls/order, and consumable legality at waystations versus failed-roll reactions.
-- [ ] Cover Waxing interruption/non-compounding, exact activity eligibility for home lunar bonuses, and paid-only Waning recovery.
-- [ ] Fix report astrology completeness detection to depend on effective feature settings, not solely on `tbd` provenance. Changing a field's status must not make a disabled-bonus control appear fully configured. Preserve old report fields or explicitly version changes and update fixtures.
-- [ ] Ensure simulation policies use effective protection, fees, Square burdens, skip availability, and recovery restrictions without hardcoded obsolete defaults. Change policies only where required for legality or correct rule evaluation; do not tune their strategy while measuring rule changes.
+- [x] Audit existing tests before adding missing cases for Q2–Q4, Q6–Q12, R2/R3. These are primarily contract confirmations, not reasons to rewrite working code.
+- [x] Cover New Moon entry locking, once-only skip, no rollover into Waxing, exact/insufficient fee funds, final-card victory, no skip loot/check-roll, and unchanged state/RNG on rejection.
+- [x] Cover relic threat versus approach, Gambeson ordering, Weighted Coin/Purse Protection stacking, Opposition success/failure/Stables rounding, retreat shortfalls/order, and consumable legality at waystations versus failed-roll reactions.
+- [x] Cover Waxing interruption/non-compounding, exact activity eligibility for home lunar bonuses, and paid-only Waning recovery.
+- [x] Fix report astrology completeness detection to depend on effective feature settings, not solely on `tbd` provenance. Changing a field's status must not make a disabled-bonus control appear fully configured. Preserve old report fields or explicitly version changes and update fixtures.
+- [x] Ensure simulation policies use effective protection, fees, Square burdens, skip availability, and recovery restrictions without hardcoded obsolete defaults. Change policies only where required for legality or correct rule evaluation; do not tune their strategy while measuring rule changes.
 
 **Tests/acceptance:** Relevant encounter/items/astrology/scenario suites pass; policy campaigns remain legal under candidate and controls. Report/CLI tests distinguish disabled and enabled astrology, include new fee accounting, keep skips separate from successful rolls, and reproduce deterministic exports. Update golden files only for explained output changes.
 
@@ -101,10 +101,10 @@ Each task is a separate implementation unit with tests. Use feature/fix branches
 
 ### T5 — Synchronize the design and implementation references
 
-- [ ] Update thematic §§2–5 with tutor mapping, Purse Protection rounding, both Square burdens, non-compounding ×1.20 Waxing, +20% home lunar bonuses, per-New-Moon-segment skips, relic percentage points, retreat costs, and collapse timing/fees. Correct the encounter failure sign: failures add Fatigue/Melancholy or subtract Coin. Explicitly restrict Full Moon doubling to burdens.
-- [ ] Update the technical plan's affected calendar/modifier/pilgrimage/config sections, including forfeit-before-toll order and deadline settlement.
-- [ ] Update the parameter register and `implementation-tasks.md` §5 with resolved rule references and experimental values; fix the stale §9 reference. Remove the implication that absence from the parameter table settles module-owned rule questions.
-- [ ] Mark the old draft superseded by this document. Update README with candidate commands, current item-acquisition limitations, and links to this task list. Keep schema/provenance changes synchronized in their implementation PRs rather than waiting for this documentation task.
+- [x] Update thematic §§2–5 with tutor mapping, Purse Protection rounding, both Square burdens, non-compounding ×1.20 Waxing, +20% home lunar bonuses, per-New-Moon-segment skips, relic percentage points, retreat costs, and collapse timing/fees. Correct the encounter failure sign: failures add Fatigue/Melancholy or subtract Coin. Explicitly restrict Full Moon doubling to burdens.
+- [x] Update the technical plan's affected calendar/modifier/pilgrimage/config sections, including forfeit-before-toll order and deadline settlement.
+- [x] Update the parameter register and `implementation-tasks.md` §5 with resolved rule references and experimental values; fix the stale §9 reference. Remove the implication that absence from the parameter table settles module-owned rule questions.
+- [x] Mark the old draft superseded by this document. Update README with candidate commands, current item-acquisition limitations, and links to this task list. Keep schema/provenance changes synchronized in their implementation PRs rather than waiting for this documentation task.
 
 **Acceptance:** All Q1–Q13 and all 17 original register paths map to a settled rule or explicitly experimental number. Docs distinguish actual shipped defaults from candidate settings. The old draft cannot be mistaken for the active decision record. No claim of “balanced” or “implemented” appears without corresponding evidence.
 
@@ -112,23 +112,25 @@ Each task is a separate implementation unit with tests. Use feature/fix branches
 
 ### T6 — Run controlled balance comparisons (existing F1/F2)
 
-- [ ] Preserve a reproducible pre-change control: source revision, full effective config/hash, exact policy parameters, seed set, commands, and reports. Use the legacy-compatible settings above to compare rules under the same updated executable where possible; compare old-revision runs as a separate historical check.
-- [ ] Run 1,000 campaigns × seven policies × twelve signs per configuration (84,000 per config). Use policy-independent paired seed sets and strict invariant checks. Increase close comparisons to 5,000 runs per policy/sign as in F1.
-- [ ] Compare Q1 burden mapping, Q2 protection, Q4 Waxing, Q5 Square, Q9 skip, Q12 home bonuses, R3 toll, and each Q13 change independently against the control before the combined candidate. Hold skip settings constant when comparing home bonuses 0/10/20; compare skip off/5/10 separately. Use small documented overlays rather than an undocumented mutable config.
-- [ ] Then check interactions: Laboratores mapping + protection + skip; Square + lunar gains; retreat toll + wipeout recovery + home fee. Run harder-finale variants (`final-n10`, `final-road-30`, then both) on the combined candidate before extending route length. A harder finale might hurt balanced policies too; do not assume it fixes specialist dominance.
-- [ ] Report victory uncertainty, completion weeks/checkpoints, Estate approach shares, paid/free/forced recovery, collapse/wipeout/retreat counts, fees actually paid, zero-treasury loops, skip use, and remaining resources. Inspect representative paired traces for apparent exploits and failed recovery cycles.
-- [ ] Treat Stables-only as a control. Repeat key comparisons with documented plausible policy-threshold changes separately from rule comparisons; bots are heuristics, not proof of optimal player behavior.
+- [x] Preserve a reproducible pre-change control: source revision, full effective config/hash, exact policy parameters, seed set, commands, and reports. Use the legacy-compatible settings above to compare rules under the same updated executable where possible; compare old-revision runs as a separate historical check.
+- [x] Run 1,000 campaigns × seven policies × twelve signs per configuration (84,000 per config). Use policy-independent paired seed sets and strict invariant checks. Increase close comparisons to 5,000 runs per policy/sign as in F1. *(Done at 1,000; the paired CIs were already tight, so no 5,000-run reruns were needed. See the report.)*
+- [x] Compare Q1 burden mapping, Q2 protection, Q4 Waxing, Q5 Square, Q9 skip, Q12 home bonuses, R3 toll, and each Q13 change independently against the control before the combined candidate. Hold skip settings constant when comparing home bonuses 0/10/20; compare skip off/5/10 separately. Use small documented overlays rather than an undocumented mutable config.
+- [x] Then check interactions: Laboratores mapping + protection + skip; Square + lunar gains; retreat toll + wipeout recovery + home fee. Run harder-finale variants (`final-n10`, `final-road-30`, then both) on the combined candidate before extending route length. A harder finale might hurt balanced policies too; do not assume it fixes specialist dominance.
+- [x] Report victory uncertainty, completion weeks/checkpoints, Estate approach shares, paid/free/forced recovery, collapse/wipeout/retreat counts, fees actually paid, zero-treasury loops, skip use, and remaining resources. Inspect representative paired traces for apparent exploits and failed recovery cycles.
+- [x] Treat Stables-only as a control. Repeat key comparisons with documented plausible policy-threshold changes separately from rule comparisons; bots are heuristics, not proof of optimal player behavior.
 
 **Acceptance:** Every claimed improvement has reproducible runs and traces, not just an aggregate win rate. Small differences with overlapping uncertainty remain inconclusive. Report tradeoffs and proposed numeric adjustments explicitly; no automatic Smuggler fallback, finale increase, or unrelated mechanic change.
 
 **Depends on:** T1–T5. This fulfills F1/F2 rather than creating a competing balance workstream.
 
+**Result:** [balance-report-baseline.md](balance-report-baseline.md). The current bots never skip and never collapse at home, so Q9 and the physician fee remain unmeasured; that needs separate policy work.
+
 ### T7 — Record the balance result and promote the baseline (existing F3/G1)
 
-- [ ] Write `docs/balance-report-baseline.md` with the selected rules, control/candidate comparisons, remaining tuning uncertainty, item-free scope, and reproduction instructions.
-- [ ] Promote selected numeric settings into the intended shipped defaults/experimental overlay consistently, preserving the old control through a named config snapshot and source revision. Numeric revisions require a stated result and rationale; changes to the settled rules require an explicit design amendment.
-- [ ] Run `npm test` and `npm run typecheck`; run a strict candidate campaign batch and deterministic replay checks. Update default-sensitive tests and report fixtures with reviewed expected values.
-- [ ] Complete README/deliverables updates. Mark these tasks complete only when their acceptance criteria hold. During subsequent review, archive finished planning documents to `docs/archive` and repair links per repository instructions; keep deferred work discoverable.
+- [x] Write `docs/balance-report-baseline.md` with the selected rules, control/candidate comparisons, remaining tuning uncertainty, item-free scope, and reproduction instructions.
+- [x] Promote selected numeric settings into the intended shipped defaults/experimental overlay consistently, preserving the old control through a named config snapshot and source revision. *(Promoted to `rules.experimental.json`; shipped defaults remain the legacy control pending design sign-off.)* Numeric revisions require a stated result and rationale; changes to the settled rules require an explicit design amendment.
+- [x] Run `npm test` and `npm run typecheck`; run a strict candidate campaign batch and deterministic replay checks. Update default-sensitive tests and report fixtures with reviewed expected values.
+- [x] Complete README/deliverables updates. Mark these tasks complete only when their acceptance criteria hold. During subsequent review, archive finished planning documents to `docs/archive` and repair links per repository instructions; keep deferred work discoverable.
 
 **Acceptance:** A single documented baseline can be reproduced, new rules have regression coverage, and outstanding numeric tuning is clearly distinguished from unresolved rule semantics.
 

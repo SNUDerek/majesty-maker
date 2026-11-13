@@ -98,6 +98,14 @@ describe('default config', () => {
     expect(experimental.id).toBe('experimental');
     expect(hashConfig(experimental)).not.toBe(hashConfig(config));
   });
+
+  it('promotes exactly the open-questions-decisions values into the experimental baseline (T7)', () => {
+    const { id: _a, provenance: pa, ...experimental } = loadContentConfig('rules.experimental.json');
+    const { id: _b, provenance: pb, ...candidate } = loadContentConfig('variants/open-questions-decisions.json');
+    expect(experimental).toEqual(candidate);
+    expect(Object.fromEntries(Object.entries(pa).map(([k, v]) => [k, v.status])))
+      .toEqual(Object.fromEntries(Object.entries(pb).map(([k, v]) => [k, v.status])));
+  });
 });
 
 describe('unresolved-parameter register', () => {
