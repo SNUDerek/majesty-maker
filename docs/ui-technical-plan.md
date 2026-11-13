@@ -442,7 +442,6 @@ Nothing blocks the playtest build; every gap below has a placeholder plan. Items
 | Job / rest card art | Icons and reused portraits (§3.1). | Optional. |
 | Princess headshot | `portrait_princess_right` (copy of damsel). | Overwrite when ready. |
 | Estate icons are 32×32 pixel art; they'll look crude at 96 px on the threat card. | `image-rendering: pixelated`. | **(want)** larger or vector sword/book/hammer emblems (~128 px, transparent). |
-| Intro script lives only in an uncommitted edit of `docs/ui-handoff.md` on main. | Copied into `src/ui/text/intro.ts` during U7. | Commit that edit when convenient. |
 | Rights tracking | — | The handoff asks for per-image provenance; backgrounds, portraits, title and intro panels have no source notes yet. Not needed for playtesting; needed before any public pitch. |
 
 Rules-level questions surfaced while planning (not UI decisions; recorded for the rules owner):
