@@ -140,11 +140,9 @@ Implemented in `src/simulation/metrics.ts`, with synthetic event-stream and engi
 
 Implemented in `src/simulation/cli.ts`, with regression coverage in `src/tests/cli.test.ts`. The task specification and review notes are archived in [archive/implementation-tasks-phase0-cli.md](archive/implementation-tasks-phase0-cli.md). The production commands still require E3 to populate the policy registry; end-to-end acceptance with real policies remains pending that integration. E5 adds the formal report formats.
 
-### E5 Report exports
-- **Depends on:** E2, E4. **Parallel with:** E3b.
-- **File:** `src/simulation/report.ts`.
-- **Work:** write `runs.csv`, `summary.json` (with config hash, full config snapshot, unresolved-parameter list, git commit if available, and CLI args), `summary.md` (tables per policy × sign, flagged anomalies, and a "partial astrology" label when TBD astrology values are off), and `events.ndjson` for `--trace-seed` runs.
-- **Acceptance:** a golden-file test on a 5-run batch with a fixed seed.
+### E5 Report exports — completed
+
+Implemented in `src/simulation/report.ts` and integrated with CLI `--out`: `runs.csv`, `summary.json`, `summary.md`, plus tagged `events.ndjson` for `--trace-seed`. Reports include the effective config snapshot/hash, unresolved assumptions, source Git revision, CLI args, policy params, diagnostic flags and partial-astrology status. Tests include fixed five-run golden files and CLI output/replay coverage. See [archive/implementation-tasks-phase0-reports.md](archive/implementation-tasks-phase0-reports.md) for the completed spec and README for format details.
 
 ### E6 Configuration variants
 - **Depends on:** T0.3. **Parallel with:** nearly everything.
