@@ -1,6 +1,6 @@
 # Open Questions: Suggested Resolutions
 
-**Scope:** proposed answers to Q1–Q13 in [implementation-tasks.md §5](implementation-tasks.md#5-open-questions-found-while-planning).
+**Scope:** proposed answers to Q1–Q13 in [implementation-tasks.md §5](implementation-tasks.md#5-open-questions-found-while-planning), plus the entries in [unresolved-parameters.md](unresolved-parameters.md) that have no Q number (see [Other register entries](#other-register-entries-r1r5)).
 **Status:** proposal only. Nothing here is approved, and no config or code has been changed. Any accepted answer should be applied as a config change, or as an explicitly approved rule change, before F3 draws conclusions.
 **Basis:** [thematic-design-doc.md](thematic-design-doc.md), [technical-planning-doc.md](technical-planning-doc.md), the current engine (`src/core/`), `content/rules.default.json`, and the post-E3 bot batch (100 runs × 12 signs on default rules).
 
@@ -21,8 +21,13 @@
 | Q11 | Opposition on job failure burdens | Yes | Keep | none |
 | Q12 | New Moon / Full Moon home values | 0 (off) | **+20% each** (gain and payout) | config |
 | Q13 | Post-wipeout recovery; home collapse | Reset to 0; forced week −15/−15 | **Wipeout recovers −35/−35**; keep home collapse | config (needs new value) |
+| R1 | Route length and finale (`route.*`) | 5 segments × 5; finale 8 at −20 | Keep for F1; test a **harder finale** first | none yet |
+| R2 | Waning on Rest at Home | Off | Keep off | none |
+| R3 | Retreat loot retention and toll | 50%, 5 Coin | Keep 50%; **toll 10** | config |
+| R4 | Item acquisition | Disabled | Keep disabled for baseline; **wire the reward hook**, then test rare first-arrival drops | engine + config |
+| R5 | Test reward table | Equal weights | Keep as a test fixture only | none |
 
-Seven questions keep their current default. The changes cluster around three themes:
+Seven of the Q-numbered questions keep their current default. The changes cluster around three themes:
 
 1. Integer flooring silently cancels small multipliers.
 2. Two Estates have defensive value that the Laboratores stat lacks.
@@ -196,11 +201,96 @@ Both apply to stat gain and Coin payout, as the engine already does.
 
 ---
 
+## Other register entries (R1–R5)
+
+`docs/unresolved-parameters.md` lists several unconfirmed values that have no Q number. They are labelled R1–R5 here. Each register entry with a Q number is covered above:
+
+| Register path | Covered by |
+|---|---|
+| `classes.tutorBurden` | Q1, Q5 |
+| `astrology.newMoon.activityBonus`, `astrology.fullMoon.surge` | Q12 |
+| `astrology.newMoon.skipFee` | Q3, Q9 |
+| `astrology.waxing.mode` | Q4 (`waxing.bonusPct` is not in the register, but Q4 proposes changing it) |
+| `failure.retreatToll` (who pays) | Q7 (the amount is R3) |
+| `failure.wipeoutBurdenReset`, `failure.homeCollapse` | Q13 |
+| `failure.purseProtection.appliesToLabFailures` | Q2 |
+
+**Register updates if the proposals are accepted:**
+- Q5 and Q13 add new fields (for example `solar.squareTutorExtraMelancholy` and a numeric wipeout recovery). These need register rows and `provenance` entries, or `config.test.ts` will fail.
+- Q4 changes `waxing.bonusPct`, so add it to the register while it is unconfirmed.
+
+### R1: Route length and finale
+
+Paths: `route.regularSegments`, `encountersPerSegment`, `finalEncounters`, `finalRoadBonus`.
+
+**Proposal:**
+- Keep the current values (5 segments × 5 encounters; an 8-card finale at −20) as the F1 baseline.
+- Do not settle these before F1. They are the main difficulty levers, and E6 already provides variants for them.
+
+**Reasoning and what to test first:**
+- Specialist bots currently win every run by about week 45–50 of 96. Pragmatic wins 52% of the time, at a median of week 90.
+- The gap suggests the finale is beatable by a single maxed stat.
+- Raising the finale's difficulty targets specialists more than balanced play. A longer route mainly costs calendar time, which hurts every policy.
+- So test `final-n10` and `final-road-30` before the route-length variants (`route-4/5/6`).
+- Re-check this after Q1/Q2, since both strengthen Laboratores.
+
+### R2: Waning on Rest at Home
+
+Path: `astrology.waning.appliesToRestAtHome`.
+
+**Proposal:** keep `false`.
+
+**Reasoning:**
+- The source names only the three paid rests.
+- Rest at Home is the free fallback when the treasury is empty. ×1.5 would raise it from 15 to 22 at no cost, which weakens the Coin pressure that gives the paid rests their value.
+
+### R3: Retreat loot retention and toll
+
+Paths: `failure.retreatLootRetentionPct`, `failure.retreatToll`.
+
+**Proposal:**
+- Keep retention at 50%.
+- Raise the toll from 5 to **10**, equal to the departure fee.
+
+**Reasoning:**
+- Earned loot is only 1d4 per won encounter, so retention barely matters: at most about 10 Coin is at stake per segment.
+- The toll carries the real cost of retreating. At 5 Coin, retreating is close to free: Reckless averages about 28 retreats per run.
+- At 10 Coin, retreating and setting out again costs 20 Coin, more than one failed Laboratores encounter (15). Retreat stays the safe choice but is no longer a free reset.
+- Test this as a variant alongside Q13, since both target the Reckless retreat-and-wipeout loop.
+
+### R4: Item acquisition
+
+Path: `items.acquisition`.
+
+**Proposal:**
+- Keep `"disabled"` for the F1 baseline.
+- For the first items experiment, give one draw from the reward table the **first time** each regular waystation is reached, with a 25% chance. That is about 1.25 items over a full route.
+
+**Reasoning:**
+- The thematic doc calls items "rare, endgame items".
+- Tying drops to first arrivals means they can't be farmed by replaying a segment, and they don't consume RNG on every encounter.
+
+**Engine gap:** `drawItemReward` (`src/core/items.ts`) is not called anywhere in `src/core`. So even `acquisition: "test_table"` grants no items in real campaigns; items only appear through scenario overrides. Wiring the reward call into the pilgrimage flow is an engine task, needed before any items variant means anything.
+
+### R5: Test reward table
+
+Path: `items.testRewardTable`.
+
+**Proposal:**
+- Keep equal weights, as a test fixture only.
+- If R4 is adopted, add a separate production table rather than reusing this one. A suggested starting weight is 2 for consumables and 1 for equipment, so the passive equipment stays rarer than one-shot items.
+
+---
+
 ## Suggested next steps
 
 1. Approve or reject each row of the summary table.
-2. Apply the config-only items (Q1, Q2, Q3, Q4, Q12) as a named variant first, such as `content/variants/open-questions-proposal.json`. Then compare it against the baseline in F1 before changing `rules.default.json`.
-3. Schedule the two small rule changes, Square's flat Melancholy (Q5) and numeric wipeout recovery (Q13), as a separate `fix/` task with tests.
-4. Separately, note that `docs/unresolved-parameters.md` says the open questions are numbered "as in implementation-tasks.md §9"; they are in §5.
+2. Apply the config-only items (Q1, Q2, Q3, Q4, Q12, and R3) as a named variant first, such as `content/variants/open-questions-proposal.json`. Then compare it against the baseline in F1 before changing `rules.default.json`.
+3. Schedule the small rule and engine changes as a separate `fix/` task with tests:
+   - Square's flat Melancholy (Q5).
+   - Numeric wipeout recovery (Q13).
+   - Wiring item rewards into the pilgrimage (R4).
+4. In F1/F2, test the harder-finale variants (R1) against the specialist-dominance finding.
+5. Separately, note that `docs/unresolved-parameters.md` says the open questions are numbered "as in implementation-tasks.md §9"; they are in §5.
 
 *Proposed by Claude Opus 5.5.*
