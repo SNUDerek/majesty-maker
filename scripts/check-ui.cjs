@@ -1,6 +1,6 @@
 /** Browser regression checks. Requires Playwright + Chromium and a running dev server.
  * Run: node scripts/check-ui.cjs [URL]. NODE_PATH may point to an existing Playwright installation.
- * Covers New Game → intro → setup → home activities, modal focus, the Chronicle, parchment insets, gauges and stage scaling.
+ * Covers New Game → intro (letter reveal, reduced motion) → setup → home activities, modal focus, the Chronicle, parchment insets, gauges and stage scaling.
  */
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
@@ -16,7 +16,7 @@ async function assertInsideParchment(page, where) {
   const problems = await page.evaluate(() => {
     const scale = document.querySelector('.stage').getBoundingClientRect().width / 1280;
     const out = [];
-    for (const panel of document.querySelectorAll('.panel--parchment')) {
+    for (const panel of document.querySelectorAll('.panel--parchment, .parchment-sheet')) {
       const r = panel.getBoundingClientRect();
       if (r.width === 0) continue;
       const cs = getComputedStyle(panel);
@@ -51,12 +51,32 @@ async function assertInsideParchment(page, where) {
 (async () => {
   const browser = await chromium.launch({ headless: true });
   try {
+    {
+      // Reduced motion: whole lines, no reveal.
+      const context = await browser.newContext({ reducedMotion: 'reduce', viewport: { width: 1280, height: 720 } });
+      const page = await context.newPage();
+      await page.goto(process.argv[2] ?? 'http://127.0.0.1:5173');
+      await page.getByRole('button', { name: 'New Game', exact: true }).click();
+      const line = page.locator('.intro__line');
+      assert.equal(await line.evaluate((p) => p.firstChild?.textContent), await line.evaluate((p) => p.textContent));
+      await context.close();
+    }
     for (const viewport of [{ width: 1280, height: 720 }, { width: 1920, height: 1080 }]) {
       const page = await browser.newPage({ viewport });
       const errors = [];
       page.on('pageerror', (error) => errors.push(error.message));
       await page.goto(process.argv[2] ?? 'http://127.0.0.1:5173');
       await page.getByRole('button', { name: 'New Game', exact: true }).click();
+      // Intro: letters appear over time; Enter first completes the line, then advances.
+      const visibleLine = () => page.evaluate(() => document.querySelector('.intro__line').firstChild?.textContent ?? '');
+      const fullLine = await page.locator('.intro__line').evaluate((p) => p.textContent);
+      await page.waitForTimeout(200);
+      assert.ok((await visibleLine()).length < fullLine.length, 'intro text reveals letter by letter');
+      await assertInsideParchment(page, 'intro');
+      await page.keyboard.press('Enter');
+      assert.equal(await visibleLine(), fullLine);
+      await page.keyboard.press('Enter');
+      await page.getByText('2 / 10').waitFor();
       await page.getByRole('button', { name: 'Skip', exact: true }).click();
       await page.getByRole('button', { name: 'Begin', exact: true }).click();
       await page.getByRole('button', { name: 'Tutoring', exact: true }).waitFor();
