@@ -1,6 +1,6 @@
 /**
  * The Chronicle: one entry per action, kept with the save so the player can
- * look back over past weeks (docs/ui-playtest-plan.md §4). Pure; the UI layer
+ * look back over past weeks (docs/archive/ui-playtest-plan.md §4). Pure; the UI layer
  * owns it, the engine keeps no history.
  */
 import type { CampaignState, Estate, GameAction, GameEvent, RulesConfig } from '../../core/index.js';

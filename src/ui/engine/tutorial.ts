@@ -1,5 +1,5 @@
 /**
- * The pilgrimage tutorial (docs/ui-playtest-plan.md §6). Pure: every number
+ * The pilgrimage tutorial (docs/archive/ui-playtest-plan.md §6). Pure: every number
  * comes from the rules config, and the "seen" flag goes through a storage
  * handle so it can be tested without a browser.
  */
