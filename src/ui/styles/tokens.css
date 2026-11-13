@@ -1,0 +1,16 @@
+:root {
+  --ink: #2b1d0e;           --ink-muted: #5a4630;
+  --parchment: #efe2c4;     --parchment-dark: #d9c59a;
+  --surround: #15110c;
+  --bellatores: #a3271f;    --oratores: #24508f;    --laboratores: #2f6b2c;
+  --fatigue: #c99a1a;       --melancholy: #6b4a8c;
+  --good: #2f6b2c;          --bad: #a3271f;
+  --focus: #f2c14e;
+  --scrim: rgba(18, 12, 6, 0.72);
+  --font-body: 'IM Fell English', Georgia, serif;
+  --font-head: 'Canterbury', 'IM Fell English', serif;
+  --font-title: 'Carrick Caps', 'Canterbury', serif;
+  --text-sm: 15px; --text-md: 18px; --text-lg: 22px; --text-xl: 32px;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px;
+  color-scheme: light;
+}
