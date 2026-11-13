@@ -37,7 +37,7 @@ export function StatBlock({ estate, value, delta }: { estate: Estate; value: num
   return (
     <div className="stat">
       <span className="stat__icon"><EstateIcon estate={estate} /></span>
-      <span className="stat__name">{ESTATE_LABEL[estate]}</span>
+      <span className={`stat__name st st--${estate}`}>{ESTATE_LABEL[estate]}</span>
       <span className="stat__value num">
         {value}
         {delta !== undefined && delta !== 0 && (

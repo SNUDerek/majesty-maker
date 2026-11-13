@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { type CampaignState, type RulesConfig } from '../../core/index.js';
+import type { ActivityOutcome, CampaignState, RulesConfig } from '../../core/index.js';
 import { ACTIVITY_PORTRAIT, BACKGROUND } from '../assets.js';
-import { Button, CoinAmount, EstateIcon, Panel } from '../components/basic.js';
+import { Button, EstateIcon, Panel } from '../components/basic.js';
+import { StatLine, StatText } from '../components/stats.js';
 import { TopBar } from '../components/chrome.js';
 import { ConditionGauge } from '../components/meters.js';
 import { Scene } from '../components/Stage.js';
-import { activityOptions, outcomeLines, projectedConditions, type ActivityKind, type ActivityOption } from '../engine/activities.js';
+import { activityOptions, outcomeParts, partText, projectedConditions, type ActivityKind, type ActivityOption } from '../engine/activities.js';
 import { ACTIVITY_BLURB, ACTIVITY_LABEL, modifierLabel } from '../text/labels.js';
 import { useGame } from '../useStore.js';
 
@@ -29,6 +30,7 @@ function Card({ option, selected, onSelect, config }: {
   const { preview } = option;
   const art = ACTIVITY_PORTRAIT[preview.activityId];
   const estate = activityEstate(option, config);
+  const parts = outcomeParts(preview.success);
   return (
     <button
       type="button"
@@ -41,14 +43,21 @@ function Card({ option, selected, onSelect, config }: {
         <span className="card__name">{ACTIVITY_LABEL[preview.activityId]}</span>
         {estate !== undefined && <EstateIcon estate={estate} />}
       </span>
+      <StatLine parts={parts.filter((p) => p.kind === 'estate')} />
+      <StatLine parts={parts.filter((p) => p.kind === 'condition')} />
       <span className="card__row">
-        <span>{preview.chance === null ? (preview.kind === 'job' ? 'Automatic' : '') : `${preview.chance}% success`}</span>
-        {preview.cost > 0 && <CoinAmount amount={-preview.cost} sign />}
+        <StatLine parts={parts.filter((p) => p.kind === 'coin')} />
+        {preview.kind === 'job' && <span>{preview.chance === null ? 'Automatic' : `${preview.chance}% success`}</span>}
       </span>
-      <span className="muted">{outcomeLines(preview.success).join(' · ')}</span>
       {option.reason !== undefined && <span className="card__reason">{option.reason}</span>}
     </button>
   );
+}
+
+function OutcomeList({ outcome }: { outcome: ActivityOutcome }) {
+  const parts = outcomeParts(outcome);
+  if (parts.length === 0) return <ul><li>No change</li></ul>;
+  return <ul>{parts.map((p) => <li key={partText(p)}><StatText part={p} /></li>)}</ul>;
 }
 
 function PreviewPanel({ option, state, config, onCommit, onBack }: {
@@ -61,9 +70,7 @@ function PreviewPanel({ option, state, config, onCommit, onBack }: {
     <Panel variant="parchment" className="preview panel--tall">
       <h2>{ACTIVITY_LABEL[preview.activityId]}</h2>
       <p className="muted">{ACTIVITY_BLURB[preview.activityId]}</p>
-      {preview.cost > 0 && (
-        <p>Fee <CoinAmount amount={preview.cost} />{!preview.affordable && <span className="warn"> — treasury only {state.treasury}</span>}</p>
-      )}
+      {!preview.affordable && <p className="warn">Costs {preview.cost}; the treasury holds only {state.treasury}.</p>}
       {preview.kind === 'job' && (
         <p><span className="preview__chance num">{preview.chance === null ? 'Automatic' : `${preview.chance}%`}</span>
           {preview.chance !== null && <span className="muted"> chance of success</span>}</p>
@@ -71,12 +78,12 @@ function PreviewPanel({ option, state, config, onCommit, onBack }: {
       <div className="preview__cols">
         <div>
           <h3>{preview.failure === undefined ? 'Outcome' : 'On success'}</h3>
-          <ul>{outcomeLines(preview.success).map((l) => <li key={l}>{l}</li>)}</ul>
+          <OutcomeList outcome={preview.success} />
         </div>
         {preview.failure !== undefined && (
           <div>
             <h3>On failure</h3>
-            <ul>{outcomeLines(preview.failure).map((l) => <li key={l}>{l}</li>)}</ul>
+            <OutcomeList outcome={preview.failure} />
           </div>
         )}
       </div>

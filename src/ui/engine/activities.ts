@@ -10,6 +10,7 @@ import {
   type ActivityOutcome,
   type AvailableAction,
   type CampaignState,
+  type Estate,
   type GameAction,
   type HomePreview,
   type RulesConfig,
@@ -53,13 +54,36 @@ export function activityOptions(state: CampaignState, kind: ActivityKind, config
   });
 }
 
+/** One fact of a previewed outcome, for colour-coded display. */
+export type OutcomePart =
+  | { kind: 'estate'; estate: Estate; amount: number }
+  | { kind: 'condition'; condition: 'fatigue' | 'melancholy'; amount: number }
+  | { kind: 'coin'; min: number; max: number };
+
+/** Non-zero facts in display order: Estates, then conditions, then Coin. */
+export function outcomeParts(outcome: ActivityOutcome): OutcomePart[] {
+  const parts: OutcomePart[] = ESTATES.filter((e) => outcome.stats[e] !== 0)
+    .map((estate) => ({ kind: 'estate', estate, amount: outcome.stats[estate] }));
+  for (const condition of ['fatigue', 'melancholy'] as const) {
+    if (outcome[condition] !== 0) parts.push({ kind: 'condition', condition, amount: outcome[condition] });
+  }
+  const { min, max } = outcome.coin;
+  if (min !== 0 || max !== 0) parts.push({ kind: 'coin', min, max });
+  return parts;
+}
+
+/** Plain text for one part: 'Bellatores +5', 'Fatigue +5', 'Coin +11 to +20'. */
+export function partText(part: OutcomePart): string {
+  switch (part.kind) {
+    case 'estate': return `${ESTATE_LABEL[part.estate]} ${signed(part.amount)}`;
+    case 'condition': return `${part.condition === 'fatigue' ? 'Fatigue' : 'Melancholy'} ${signed(part.amount)}`;
+    case 'coin': return `Coin ${part.min === part.max ? signed(part.min) : `${signed(part.min)} to ${signed(part.max)}`}`;
+  }
+}
+
 /** The non-zero lines of a previewed outcome, e.g. ['Bellatores +5', 'Fatigue +5', 'Coin −20']. */
 export function outcomeLines(outcome: ActivityOutcome): string[] {
-  const lines = ESTATES.filter((e) => outcome.stats[e] !== 0).map((e) => `${ESTATE_LABEL[e]} ${signed(outcome.stats[e])}`);
-  if (outcome.fatigue !== 0) lines.push(`Fatigue ${signed(outcome.fatigue)}`);
-  if (outcome.melancholy !== 0) lines.push(`Melancholy ${signed(outcome.melancholy)}`);
-  const { min, max } = outcome.coin;
-  if (min !== 0 || max !== 0) lines.push(`Coin ${min === max ? signed(min) : `${signed(min)} to ${signed(max)}`}`);
+  const lines = outcomeParts(outcome).map(partText);
   return lines.length > 0 ? lines : ['No change'];
 }
 

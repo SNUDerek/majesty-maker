@@ -3,7 +3,7 @@ import {
   applyAction, createCampaign, getAvailableActions, hashConfig,
   type CampaignState, type CreateCampaignOptions, type GameEvent,
 } from '../core/index.js';
-import { activityOptions, outcomeLines, projectedConditions } from '../ui/engine/activities.js';
+import { activityOptions, outcomeLines, outcomeParts, partText, projectedConditions } from '../ui/engine/activities.js';
 import { readSlot, slotKey, writeSave, deleteSave, type SaveStorage } from '../ui/engine/persistence.js';
 import { deriveScreen, type UiState } from '../ui/engine/screen.js';
 import { GameStore } from '../ui/engine/store.js';
@@ -119,6 +119,12 @@ describe('activityOptions', () => {
     expect(alehouse!.preview.activityId).toBe('alehouse');
     expect(outcomeLines(alehouse!.preview.success)).toEqual(['Laboratores +2', 'Fatigue +5', 'Coin +13 to +24']); // New Moon week: pay ×1.2
     expect(outcomeLines(alehouse!.preview.failure!)).toEqual(['Fatigue +5', 'Melancholy +5']);
+    expect(outcomeParts(alehouse!.preview.success)).toEqual([
+      { kind: 'estate', estate: 'laboratores', amount: 2 },
+      { kind: 'condition', condition: 'fatigue', amount: 5 },
+      { kind: 'coin', min: 13, max: 24 },
+    ]);
+    expect(outcomeParts(alehouse!.preview.success).map(partText)).toEqual(outcomeLines(alehouse!.preview.success));
     expect(outcomeLines({ stats: { bellatores: 0, oratores: 0, laboratores: 0 }, fatigue: 0, melancholy: 0,
       coin: { min: 0, max: 0 }, collapse: null })).toEqual(['No change']);
   });

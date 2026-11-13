@@ -382,3 +382,10 @@
 .field select { width: 100%; }
 .prep-gauges { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-top: var(--space-2); }
 .prep > .panel { max-height: 100%; overflow: auto; }
+
+/* ---------- Colour-coded stat text ---------- */
+.st--bellatores { color: var(--bellatores); }
+.st--oratores { color: var(--oratores); }
+.st--laboratores { color: var(--laboratores); }
+.st--cost { color: var(--muted-cost); }
+.stat-line { display: block; }
