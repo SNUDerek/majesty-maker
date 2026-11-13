@@ -11,8 +11,9 @@
  *  2. Apply the already-clamped deltas.
  *  3. Check collapse against the ceilings of the new stats.
  *  4. Spend the week once (`week_spent`), and record the activity for Waxing.
- *  5. On collapse, the next week is a forced convalescence (`homeCollapse`),
- *     auto-applied in the same action, if a week remains.
+ *  5. On collapse, the physician fee `min(homeCollapse.fee, treasury)` is
+ *     charged once, then the next week is a forced convalescence
+ *     (`homeCollapse`), auto-applied in the same action, if a week remains.
  *  6. Check the deadline: home at the last week becomes `defeat`/`deadline`.
  *
  * Decisions (C1):
@@ -269,9 +270,17 @@ function applyHomeAction(state: CampaignState, action: HomeAction, config: Rules
   state.waxingStreak = state.lastWeeklyActivityId === activityId ? state.waxingStreak + 1 : 0;
   state.lastWeeklyActivityId = activityId;
 
-  // Step 5: a home collapse forces the next week's convalescence.
+  // Step 5: a home collapse forces the next week's convalescence. The physician
+  // fee belongs to the collapse event (Q13), so it is charged here once, even in
+  // the last week, and never by the shared convalescence helper.
   if (cause !== null) {
-    events.push({ type: 'collapse', week, cause });
+    const nominal = config.failure.homeCollapse.fee;
+    const paid = Math.min(nominal, state.treasury);
+    events.push({ type: 'collapse', week, cause, ...(nominal > 0 ? { fee: { nominal, paid } } : {}) });
+    if (paid > 0) {
+      state.treasury -= paid;
+      events.push({ type: 'coin_changed', week, account: 'treasury', amount: -paid, source: 'physician_fee' });
+    }
     convalesce(state, 'home_collapse', events, config);
   }
   return { state: finishHomeWeek(state, events, config), events };

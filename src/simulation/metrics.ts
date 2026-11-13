@@ -55,6 +55,7 @@ export const COIN_CATEGORY: Readonly<Record<CoinSource, CoinCategory>> = {
   skip_fee: 'spent',
   retreat_toll: 'spent',
   medical_fee: 'spent',
+  physician_fee: 'spent',
   laboratores_penalty: 'lost',
   retreat_loot_forfeit: 'lost',
   wipeout_lost: 'lost',
@@ -174,6 +175,8 @@ export interface RunRecord {
   homeCollapses: number;
   /** Wipeouts whose medical fee could not be paid in full. */
   medicalFeeShortfalls: number;
+  /** Home collapses whose physician fee (Q13) could not be paid in full, from the collapse event's nominal/paid. */
+  physicianFeeShortfalls: number;
   failedDepartureAttempts: number;
 
   jobs: Partial<Record<JobId, Tally>>;
@@ -262,6 +265,7 @@ export function runRecord(
   let wipeouts = 0;
   let homeCollapses = 0;
   let medicalFeeShortfalls = 0;
+  let physicianFeeShortfalls = 0;
   let encounterRolls = 0;
   let encountersSkipped = 0;
   let rerolls = 0;
@@ -372,6 +376,7 @@ export function runRecord(
       }
       case 'collapse':
         homeCollapses += 1;
+        if (event.fee !== undefined && event.fee.paid < event.fee.nominal) physicianFeeShortfalls += 1;
         distressWeeks.push(event.week);
         break;
       case 'pilgrimage_started':
@@ -500,6 +505,7 @@ export function runRecord(
     wipeoutCauses,
     homeCollapses,
     medicalFeeShortfalls,
+    physicianFeeShortfalls,
     failedDepartureAttempts: meta.failedDepartureAttempts ?? 0,
     jobs,
     encounters,
@@ -604,6 +610,10 @@ export interface Aggregate {
   failedDepartureAttempts: Distribution;
   /** Fraction of wipeouts whose medical fee was not paid in full. */
   medicalFeeShortfallRate: number | null;
+  /** Fraction of home collapses whose physician fee was not paid in full. */
+  physicianFeeShortfallRate: number | null;
+  /** New Moon skips per run; skips are not encounter rolls. */
+  encountersSkippedPerRun: Distribution;
   wipeoutCauses: Record<WipeoutCause, number>;
   wipeoutsPerRun: Distribution;
   retreatsPerRun: Distribution;
@@ -678,6 +688,8 @@ export function aggregateGroup(records: readonly RunRecord[], policy: string, bi
   const items: Record<string, ItemTally> = {};
   let wipeouts = 0;
   let shortfalls = 0;
+  let collapses = 0;
+  let physicianShortfalls = 0;
   let calendarWeeks = 0;
 
   for (const r of records) {
@@ -708,6 +720,8 @@ export function aggregateGroup(records: readonly RunRecord[], policy: string, bi
     }
     wipeouts += r.wipeouts;
     shortfalls += r.medicalFeeShortfalls;
+    collapses += r.homeCollapses;
+    physicianShortfalls += r.physicianFeeShortfalls;
   }
 
   const encounterTotal = byMatchup.advantage.attempts + byMatchup.neutral.attempts + byMatchup.disadvantage.attempts;
@@ -733,6 +747,8 @@ export function aggregateGroup(records: readonly RunRecord[], policy: string, bi
     zeroPurseWeeks: distribution(records.map((r) => r.zeroPurseWeeks)),
     failedDepartureAttempts: distribution(records.map((r) => r.failedDepartureAttempts)),
     medicalFeeShortfallRate: wipeouts === 0 ? null : shortfalls / wipeouts,
+    physicianFeeShortfallRate: collapses === 0 ? null : physicianShortfalls / collapses,
+    encountersSkippedPerRun: distribution(records.map((r) => r.encountersSkipped)),
     wipeoutCauses,
     wipeoutsPerRun: distribution(records.map((r) => r.wipeouts)),
     retreatsPerRun: distribution(records.map((r) => r.retreats)),

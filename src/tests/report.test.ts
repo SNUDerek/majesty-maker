@@ -129,26 +129,37 @@ describe('E5 format and metadata boundaries', () => {
     expect(parseCsv(renderRunsCsv([]))[0]).toEqual(parseCsv(renderRunsCsv(records))[0]);
   });
 
-  it('labels disabled TBD astrology and lists all unresolved assumptions', () => {
+  it('labels astrology from the effective settings, not provenance status (T4)', () => {
+    const disabled = ['astrology.fullMoon.surge', 'astrology.newMoon.activityBonus', 'astrology.newMoon.skipFee'];
     const summary = buildSummary(input);
     expect(summary.astrology.label).toBe('partial astrology');
-    expect(summary.astrology.disabledTbdParameters).toEqual([
-      'astrology.fullMoon.surge', 'astrology.newMoon.activityBonus', 'astrology.newMoon.skipFee',
-    ]);
+    expect(summary.astrology.disabledParameters).toEqual(disabled);
+    // Legacy field: the defaults no longer mark these controls tbd.
+    expect(summary.astrology.disabledTbdParameters).toEqual([]);
     expect(renderSummaryMarkdown(summary)).toContain('**partial astrology**');
+    const tbd = withOverrides(rules, { provenance: Object.fromEntries(disabled.map((p) => [p, { status: 'tbd', note: 'x' }])) });
+    expect(buildSummary({ ...input, records: [], config: tbd }).astrology.disabledTbdParameters).toEqual(disabled);
     const enabled = withOverrides(rules, { astrology: { fullMoon: { surge: 5 }, newMoon: { activityBonus: 5, skipFee: 5 } } });
-    expect(buildSummary({ ...input, records: [], config: enabled }).astrology.label).toBe('configured astrology');
+    expect(buildSummary({ ...input, records: [], config: enabled }).astrology).toMatchObject({
+      label: 'configured astrology', disabledParameters: [], disabledTbdParameters: [],
+    });
+    // Confirming a disabled control's status must not make it look configured.
     const confirmed = withOverrides(rules, { provenance: {
       'astrology.fullMoon.surge': { status: 'confirmed' },
       'astrology.newMoon.activityBonus': { status: 'confirmed' },
       'astrology.newMoon.skipFee': { status: 'confirmed' },
     } });
-    expect(buildSummary({ ...input, records: [], config: confirmed }).astrology.label).toBe('configured astrology');
+    expect(buildSummary({ ...input, records: [], config: confirmed }).astrology).toMatchObject({
+      label: 'partial astrology', disabledParameters: disabled,
+    });
+    const onlySkip = withOverrides(rules, { astrology: { fullMoon: { surge: 5 }, newMoon: { activityBonus: 5 } } });
+    expect(buildSummary({ ...input, records: [], config: onlySkip }).astrology.disabledParameters)
+      .toEqual(['astrology.newMoon.skipFee']);
   });
 
   it('flags affected runs per policy × sign, without double-counting pooled rows', () => {
     const anomalous = { ...records[0]!, outcome: 'unfinished' as const, zeroTreasuryWeeks: 1, homeCollapses: 2,
-      medicalFeeShortfalls: 1, wipeouts: 2, failedDepartureAttempts: 3, failureAttribution: 'resource_loop' as const };
+      medicalFeeShortfalls: 1, physicianFeeShortfalls: 1, wipeouts: 2, failedDepartureAttempts: 3, failureAttribution: 'resource_loop' as const };
     const summary = buildSummary({ ...input, records: [anomalous, { ...anomalous, birthSign: 'gemini' },
       { ...records[1]!, policy: 'other' }] });
     expect(summary.aggregates.map((r) => `${r.policy}:${r.birthSign}`))
@@ -156,7 +167,7 @@ describe('E5 format and metadata boundaries', () => {
     expect(summary.flags.filter((f) => f.code === 'home_collapse')).toEqual([
       expect.objectContaining({ birthSign: 'aries', runs: 1 }), expect.objectContaining({ birthSign: 'gemini', runs: 1 }),
     ]);
-    for (const code of ['unfinished', 'zero_treasury', 'medical_fee_shortfall', 'resource_loop', 'failed_departure']) {
+    for (const code of ['unfinished', 'zero_treasury', 'medical_fee_shortfall', 'physician_fee_shortfall', 'resource_loop', 'failed_departure']) {
       expect(summary.flags.some((flag) => flag.code === code)).toBe(true);
     }
     expect(summary.flags.every((flag) => flag.birthSign !== ('all' as string))).toBe(true);

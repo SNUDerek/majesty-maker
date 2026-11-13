@@ -606,7 +606,8 @@ function continueSegment(input: CampaignState, action: PilgrimageAction, config:
  * Wipeout (tech §7): Purse Protection keeps a share of the pre-lethal carried
  * Coin, the rest and the unused consumable are lost, equipment comes home,
  * the medical fee is min(max, treasury), burdens reset per config, and one
- * convalescence week is spent if any remains.
+ * convalescence week is spent if any remains. With `{ recovery }` each
+ * convalescence week lowers both burdens by that amount instead of a reset.
  */
 function wipeout(t: Transition, cause: 'fatigue' | 'melancholy' | 'both' | 'coin'): void {
   const { config } = t;
@@ -626,7 +627,8 @@ function wipeout(t: Transition, cause: 'fatigue' | 'melancholy' | 'both' | 'coin
 
   goHome(t, true);
 
-  if (config.failure.wipeoutBurdenReset === 'zero') {
+  const reset = config.failure.wipeoutBurdenReset;
+  if (reset === 'zero') {
     for (const burden of ['fatigue', 'melancholy'] as const) {
       if (state[burden] !== 0) {
         t.events.push({ type: 'burden_changed', week: t.week, burden, amount: -state[burden], source: 'wipeout_reset' });
@@ -638,10 +640,22 @@ function wipeout(t: Transition, cause: 'fatigue' | 'melancholy' | 'both' | 'coin
   for (let i = 0; i < config.failure.wipeoutConvalescenceWeeks; i++) {
     if (state.elapsedWeeks >= config.calendar.totalWeeks) break; // bounded by the deadline
     t.events.push({ type: 'convalescence', week: t.week, cause: 'wipeout' });
+    // Q13: bounded recovery belongs to an actual convalescence week, so none is
+    // granted when no week remains. No Waning bonus applies.
+    if (typeof reset === 'object') {
+      for (const burden of ['fatigue', 'melancholy'] as const) {
+        const next = Math.max(0, state[burden] - reset.recovery);
+        if (next !== state[burden]) {
+          t.events.push({ type: 'burden_changed', week: t.week, burden, amount: next - state[burden], source: 'convalescence' });
+          state[burden] = next;
+        }
+      }
+    }
     t.spendWeek('convalescence');
   }
-  // With wipeoutBurdenReset 'unchanged' a burden can still be at its ceiling:
-  // the C1 reducer then allows only REST at home until it recovers.
+  // With 'unchanged' or a bounded recovery a burden can still be at its ceiling:
+  // the C1 reducer then allows only REST at home (homeCollapse.recovery per week,
+  // no physician fee) until it recovers.
   if (collapseCause(state) !== null) state.pendingConvalescence = 'wipeout';
   checkDeadline(t);
 }

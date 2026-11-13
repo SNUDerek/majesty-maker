@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "configId": "25b1bbe9c1df22f6",
+  "configId": "96200e1e7e3ea9fd",
   "config": {
     "id": "default",
     "calendar": {
@@ -200,6 +200,7 @@
         "oppositionJobBurdenPct": 150,
         "trineJobSuccessPts": 15,
         "squareTutorGainPct": 130,
+        "squareTutorFatiguePct": 100,
         "squareTutorMelancholyPct": 200
       },
       "newMoon": {
@@ -267,7 +268,8 @@
       "wipeoutBurdenReset": "zero",
       "homeCollapse": {
         "forcedWeek": true,
-        "recovery": 15
+        "recovery": 15,
+        "fee": 0
       },
       "purseProtection": {
         "appliesToLabFailures": false
@@ -333,109 +335,117 @@
     "provenance": {
       "route.regularSegments": {
         "status": "experimental",
-        "note": "Suggested initial balance value (tech §7); a test parameter, not canon."
+        "note": "Suggested initial balance value (tech §7; R1 keeps it); a test parameter, not canon."
       },
       "route.encountersPerSegment": {
         "status": "experimental",
-        "note": "Suggested initial balance value (tech §7); a test parameter, not canon."
+        "note": "Suggested initial balance value (tech §7; R1 keeps it); a test parameter, not canon."
       },
       "route.finalEncounters": {
         "status": "experimental",
-        "note": "Suggested initial balance value (tech §7); a test parameter, not canon."
+        "note": "Suggested initial balance value (tech §7; R1 keeps it); a test parameter, not canon."
       },
       "route.finalRoadBonus": {
         "status": "experimental",
-        "note": "Suggested initial test value (tech §7), not canon."
+        "note": "Suggested initial test value (tech §7; R1 keeps it), not canon."
       },
       "classes.tutorBurden": {
-        "status": "tbd",
-        "note": "Candidate baseline only: Hedge Knight +5F, Hermit +5M, Smuggler +5F/+5M (tech §5, Q1)."
+        "status": "experimental",
+        "note": "Legacy control: Smuggler +5F/+5M. Q1 settles the mapping; open-questions-decisions selects 3/2."
+      },
+      "astrology.solar.squareTutorFatiguePct": {
+        "status": "experimental",
+        "note": "Legacy control 100 (Square doubles Melancholy only). Q5 settles doubling both burdens (200) in open-questions-decisions."
       },
       "astrology.newMoon.activityBonus": {
-        "status": "tbd",
-        "note": "Magnitude unspecified (tech §6, Q12); 0 = off, reports are 'partial astrology'."
+        "status": "experimental",
+        "note": "Legacy control 0 = off ('partial astrology'). Q12 settles the rule; open-questions-decisions selects +20%."
       },
       "astrology.fullMoon.surge": {
-        "status": "tbd",
-        "note": "Magnitude unspecified (tech §6, Q12); 0 = off, reports are 'partial astrology'."
+        "status": "experimental",
+        "note": "Legacy control 0 = off ('partial astrology'). Q12 settles the rule; open-questions-decisions selects +20%."
       },
       "astrology.newMoon.skipFee": {
-        "status": "tbd",
-        "note": "Fee unspecified (tech §6, Q3/Q9); null = encounter skipping disabled."
+        "status": "experimental",
+        "note": "Legacy control null = skipping disabled. Q3/Q9 settle the rule; open-questions-decisions selects 10 Coin."
       },
       "astrology.waxing.mode": {
-        "status": "tbd",
-        "note": "Thematic doc says compounding, tech doc says once (Q4); 'single' applies once."
+        "status": "confirmed",
+        "note": "Q4 settled: 'single' applies one non-compounding bonus."
+      },
+      "astrology.waxing.bonusPct": {
+        "status": "experimental",
+        "note": "Legacy control x1.10 (tech §6). Q4 open-questions-decisions selects x1.20."
       },
       "astrology.waning.appliesToRestAtHome": {
-        "status": "tbd",
-        "note": "Source names only the three paid rests (tech §5); interpretation to confirm."
+        "status": "confirmed",
+        "note": "R2 settled: Waning recovery applies only to paid rests."
       },
       "failure.retreatLootRetentionPct": {
         "status": "experimental",
-        "note": "Simulation-only baseline (tech §7); only earned loot is reduced, floor rounding."
+        "note": "Simulation baseline (tech §7, R3); only remaining earned loot is reduced, floor rounding."
       },
       "failure.retreatToll": {
         "status": "experimental",
-        "note": "Simulation-only baseline (tech §7); payer is open (Q7)."
+        "note": "Legacy control 5. Q7 settles payer order; R3 open-questions-decisions selects 10."
       },
       "failure.wipeoutBurdenReset": {
-        "status": "tbd",
-        "note": "Post-wipeout recovery unspecified (tech §7, Q13); provisional reset to 0."
+        "status": "experimental",
+        "note": "Legacy control 'zero', kept for historical comparison. Q13 open-questions-decisions selects { recovery: 35 }."
       },
       "failure.homeCollapse": {
-        "status": "tbd",
-        "note": "Provisional: forced convalescence week, -15 Fatigue/-15 Melancholy (tech §4, Q13)."
+        "status": "experimental",
+        "note": "Legacy control: no physician fee. Q13 settles fee timing; open-questions-decisions selects fee 20, recovery 15."
       },
       "failure.purseProtection.appliesToLabFailures": {
-        "status": "tbd",
-        "note": "Thematic doc applies it to failed Laboratores encounters; tech doc to wipeout only (Q2)."
+        "status": "experimental",
+        "note": "Legacy control false (wipeout only). Q2 settles true in open-questions-decisions."
       },
       "items.testRewardTable": {
         "status": "experimental",
-        "note": "B2 test fixture: one uniformly sampled item per explicit reward call; no production drop rate implied. Used only in test_table mode."
+        "note": "B2/R5 test fixture: one uniformly sampled item per explicit reward call; no production drop rate implied. Used only in test_table mode."
       },
       "items.acquisition": {
-        "status": "tbd",
-        "note": "Drop rates undecided (tech §7); items disabled for baseline runs."
+        "status": "confirmed",
+        "note": "R4 settled: disabled for the item-free baseline; T8 item experiment is a separate follow-up."
       }
     }
   },
   "unresolved": [
     {
       "path": "astrology.fullMoon.surge",
-      "status": "tbd",
-      "note": "Magnitude unspecified (tech §6, Q12); 0 = off, reports are 'partial astrology'.",
+      "status": "experimental",
+      "note": "Legacy control 0 = off ('partial astrology'). Q12 settles the rule; open-questions-decisions selects +20%.",
       "value": 0
     },
     {
       "path": "astrology.newMoon.activityBonus",
-      "status": "tbd",
-      "note": "Magnitude unspecified (tech §6, Q12); 0 = off, reports are 'partial astrology'.",
+      "status": "experimental",
+      "note": "Legacy control 0 = off ('partial astrology'). Q12 settles the rule; open-questions-decisions selects +20%.",
       "value": 0
     },
     {
       "path": "astrology.newMoon.skipFee",
-      "status": "tbd",
-      "note": "Fee unspecified (tech §6, Q3/Q9); null = encounter skipping disabled.",
+      "status": "experimental",
+      "note": "Legacy control null = skipping disabled. Q3/Q9 settle the rule; open-questions-decisions selects 10 Coin.",
       "value": null
     },
     {
-      "path": "astrology.waning.appliesToRestAtHome",
-      "status": "tbd",
-      "note": "Source names only the three paid rests (tech §5); interpretation to confirm.",
-      "value": false
+      "path": "astrology.solar.squareTutorFatiguePct",
+      "status": "experimental",
+      "note": "Legacy control 100 (Square doubles Melancholy only). Q5 settles doubling both burdens (200) in open-questions-decisions.",
+      "value": 100
     },
     {
-      "path": "astrology.waxing.mode",
-      "status": "tbd",
-      "note": "Thematic doc says compounding, tech doc says once (Q4); 'single' applies once.",
-      "value": "single"
+      "path": "astrology.waxing.bonusPct",
+      "status": "experimental",
+      "note": "Legacy control x1.10 (tech §6). Q4 open-questions-decisions selects x1.20.",
+      "value": 110
     },
     {
       "path": "classes.tutorBurden",
-      "status": "tbd",
-      "note": "Candidate baseline only: Hedge Knight +5F, Hermit +5M, Smuggler +5F/+5M (tech §5, Q1).",
+      "status": "experimental",
+      "note": "Legacy control: Smuggler +5F/+5M. Q1 settles the mapping; open-questions-decisions selects 3/2.",
       "value": {
         "hedge_knight": {
           "fatigue": 5,
@@ -453,47 +463,42 @@
     },
     {
       "path": "failure.homeCollapse",
-      "status": "tbd",
-      "note": "Provisional: forced convalescence week, -15 Fatigue/-15 Melancholy (tech §4, Q13).",
+      "status": "experimental",
+      "note": "Legacy control: no physician fee. Q13 settles fee timing; open-questions-decisions selects fee 20, recovery 15.",
       "value": {
         "forcedWeek": true,
-        "recovery": 15
+        "recovery": 15,
+        "fee": 0
       }
     },
     {
       "path": "failure.purseProtection.appliesToLabFailures",
-      "status": "tbd",
-      "note": "Thematic doc applies it to failed Laboratores encounters; tech doc to wipeout only (Q2).",
+      "status": "experimental",
+      "note": "Legacy control false (wipeout only). Q2 settles true in open-questions-decisions.",
       "value": false
     },
     {
       "path": "failure.retreatLootRetentionPct",
       "status": "experimental",
-      "note": "Simulation-only baseline (tech §7); only earned loot is reduced, floor rounding.",
+      "note": "Simulation baseline (tech §7, R3); only remaining earned loot is reduced, floor rounding.",
       "value": 50
     },
     {
       "path": "failure.retreatToll",
       "status": "experimental",
-      "note": "Simulation-only baseline (tech §7); payer is open (Q7).",
+      "note": "Legacy control 5. Q7 settles payer order; R3 open-questions-decisions selects 10.",
       "value": 5
     },
     {
       "path": "failure.wipeoutBurdenReset",
-      "status": "tbd",
-      "note": "Post-wipeout recovery unspecified (tech §7, Q13); provisional reset to 0.",
+      "status": "experimental",
+      "note": "Legacy control 'zero', kept for historical comparison. Q13 open-questions-decisions selects { recovery: 35 }.",
       "value": "zero"
-    },
-    {
-      "path": "items.acquisition",
-      "status": "tbd",
-      "note": "Drop rates undecided (tech §7); items disabled for baseline runs.",
-      "value": "disabled"
     },
     {
       "path": "items.testRewardTable",
       "status": "experimental",
-      "note": "B2 test fixture: one uniformly sampled item per explicit reward call; no production drop rate implied. Used only in test_table mode.",
+      "note": "B2/R5 test fixture: one uniformly sampled item per explicit reward call; no production drop rate implied. Used only in test_table mode.",
       "value": {
         "theriac": 1,
         "st_johns_wort": 1,
@@ -506,25 +511,25 @@
     {
       "path": "route.encountersPerSegment",
       "status": "experimental",
-      "note": "Suggested initial balance value (tech §7); a test parameter, not canon.",
+      "note": "Suggested initial balance value (tech §7; R1 keeps it); a test parameter, not canon.",
       "value": 3
     },
     {
       "path": "route.finalEncounters",
       "status": "experimental",
-      "note": "Suggested initial balance value (tech §7); a test parameter, not canon.",
+      "note": "Suggested initial balance value (tech §7; R1 keeps it); a test parameter, not canon.",
       "value": 8
     },
     {
       "path": "route.finalRoadBonus",
       "status": "experimental",
-      "note": "Suggested initial test value (tech §7), not canon.",
+      "note": "Suggested initial test value (tech §7; R1 keeps it), not canon.",
       "value": -20
     },
     {
       "path": "route.regularSegments",
       "status": "experimental",
-      "note": "Suggested initial balance value (tech §7); a test parameter, not canon.",
+      "note": "Suggested initial balance value (tech §7; R1 keeps it); a test parameter, not canon.",
       "value": 1
     }
   ],
@@ -553,11 +558,12 @@
   "runCount": 5,
   "astrology": {
     "label": "partial astrology",
-    "disabledTbdParameters": [
+    "disabledParameters": [
       "astrology.fullMoon.surge",
       "astrology.newMoon.activityBonus",
       "astrology.newMoon.skipFee"
-    ]
+    ],
+    "disabledTbdParameters": []
   },
   "aggregates": [
     {
@@ -640,6 +646,16 @@
         "max": 0
       },
       "medicalFeeShortfallRate": 1,
+      "physicianFeeShortfallRate": null,
+      "encountersSkippedPerRun": {
+        "n": 5,
+        "mean": 0,
+        "min": 0,
+        "p10": 0,
+        "median": 0,
+        "p90": 0,
+        "max": 0
+      },
       "wipeoutCauses": {
         "fatigue": 4,
         "melancholy": 0,

@@ -221,7 +221,9 @@ function describeEvents(events: readonly GameEvent[]): string {
         break;
       case 'pilgrimage_started': parts.push(`${e.isFinal ? 'final gauntlet' : `segment ${e.segmentIndex + 1}`} begins`); break;
       case 'waystation_reached': parts.push(`waystation ${e.waystation}`); break;
-      case 'collapse': parts.push(`COLLAPSE (${e.cause})`); break;
+      case 'collapse':
+        parts.push(`COLLAPSE (${e.cause})${e.fee ? ` physician fee ${e.fee.paid}/${e.fee.nominal}` : ''}`);
+        break;
       case 'convalescence': parts.push(`convalescence (${e.cause})`); break;
       case 'retreat': parts.push('retreat'); break;
       case 'wipeout': parts.push(`WIPEOUT (${e.cause})`); break;
