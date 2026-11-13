@@ -74,10 +74,10 @@ export function HomeHub({ convalescence }: { convalescence: boolean }) {
               <Button disabled={blocker !== null} title={blocker ?? undefined} onClick={() => store.setUi({ homeView: 'prep' })}>
                 Pilgrimage
               </Button>
+              <Button disabled title="Social visits come later">Social (later)</Button>
             </div>
           )}
           {!convalescence && blocker !== null && <p className="home-note" style={{ marginTop: 8 }}>Pilgrimage: {blocker}.</p>}
-          <p className="home-note" style={{ marginTop: 8 }}>Social visits come later.</p>
         </Panel>
         <Panel title="The road to the capital">
           <RouteStrip furthest={state.furthestWaystation} total={store.config.route.regularSegments} />
