@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import type { CampaignState } from '../../core/index.js';
+import { getCalendar, type CampaignState } from '../../core/index.js';
+import { quantityClass } from '../components/stats.js';
+import { chronicleByWeek } from '../engine/chronicle.js';
+import { QUANTITY_LABEL } from '../engine/summarize.js';
+import { MONTHS, signed } from '../text/labels.js';
 import { Button } from '../components/basic.js';
 import { ZodiacGlyph } from '../components/chrome.js';
 import { Modal } from '../components/overlays.js';
@@ -132,5 +136,43 @@ export function DevPanel({ configId, onConfig }: { configId: ConfigId; onConfig:
       {state !== null && <p className="dev__note">seed {state.seed} · week {state.elapsedWeeks} · {state.phase}{state.pilgrimage ? ` / ${state.pilgrimage.stage}` : ''}</p>}
       {dump !== null && <textarea className="dev__dump" readOnly value={dump} onFocus={(e) => e.currentTarget.select()} />}
     </aside>
+  );
+}
+
+/** The Chronicle: every action so far, newest week first, with net changes coloured by quantity. */
+export function ChronicleOverlay() {
+  const { store, snap } = useGame();
+  const state = snap.state;
+  const weeks = chronicleByWeek(snap.log);
+  const dateOf = (week: number) => {
+    if (state === null) return `Week ${week + 1}`;
+    const cal = getCalendar({ ...state, elapsedWeeks: Math.min(week, store.config.calendar.totalWeeks) }, store.config);
+    return `Week ${cal.weekOfMonth + 1} of ${MONTHS[cal.currentMonth]}, ${cal.displayYear}`;
+  };
+  return (
+    <Modal className="chronicle panel--wide" title="Chronicle" actions={<Button primary onClick={() => store.closeOverlay()}>Close</Button>}>
+      {weeks.length === 0 ? <p className="muted">Nothing yet: the Chronicle fills as the weeks pass.</p> : (
+        <div className="chronicle__list" tabIndex={0} aria-label="Chronicle entries, newest first">
+          {weeks.map(({ week, entries }) => (
+            <section key={week} className="chronicle__week">
+              <h3 className="chronicle__date">{dateOf(week)}</h3>
+              {entries.map((e, i) => (
+                <div key={i} className="chronicle__entry">
+                  <div className="chronicle__title">{e.title}{e.detail !== undefined && <span className="chronicle__detail"> — {e.detail}</span>}</div>
+                  {e.rows.length > 0 && (
+                    <div className="chronicle__rows">
+                      {e.rows.map((r) => (
+                        <span key={r.quantity} className={quantityClass(r.quantity)}>{QUANTITY_LABEL[r.quantity]} {signed(r.amount)}</span>
+                      ))}
+                    </div>
+                  )}
+                  {e.notes.length > 0 && <div className="chronicle__notes">{e.notes.join(' ')}</div>}
+                </div>
+              ))}
+            </section>
+          ))}
+        </div>
+      )}
+    </Modal>
   );
 }

@@ -219,6 +219,11 @@ export function signed(n: number): string {
  * stature), Laboratores beat Oratores (supplies, dirty tricks), Oratores beat
  * Bellatores (the Church binds the nobility). No task-shaped lines.
  */
+/** "A Bellatores threat", "An Oratores threat". */
+export function threatLabel(estate: Estate): string {
+  return `${ESTATE_LABEL[estate].startsWith('O') ? 'An' : 'A'} ${ESTATE_LABEL[estate]} threat`;
+}
+
 export const THREAT_FLAVOUR: Record<Estate, readonly string[]> = {
   bellatores: [
     'A robber knight bars the road, sword drawn.',

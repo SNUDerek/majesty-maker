@@ -15,6 +15,7 @@ import {
   type RulesConfig,
 } from '../../core/index.js';
 import { sameAction } from './activities.js';
+import { chronicleEntry, type ChronicleEntry } from './chronicle.js';
 import { SLOTS, deleteSave, readSlot, writeSave, type SaveStorage, type SlotId, type SlotInfo } from './persistence.js';
 import type { UiState } from './screen.js';
 import { summarize } from './summarize.js';
@@ -24,6 +25,8 @@ export interface GameSnapshot {
   readonly ui: UiState;
   readonly lastEvents: readonly GameEvent[];
   readonly error: string | null;
+  /** The Chronicle: one entry per applied action, saved with the game. */
+  readonly log: readonly ChronicleEntry[];
 }
 
 const INITIAL_UI: UiState = { menu: 'title', homeView: 'hub' };
@@ -38,7 +41,7 @@ export class GameStore {
   readonly config: RulesConfig;
   private readonly storage: SaveStorage | null;
   private readonly now: () => Date;
-  private snapshot: GameSnapshot = { state: null, ui: INITIAL_UI, lastEvents: [], error: null };
+  private snapshot: GameSnapshot = { state: null, ui: INITIAL_UI, lastEvents: [], error: null, log: [] };
   private readonly listeners = new Set<() => void>();
 
   constructor(config: RulesConfig, storage: SaveStorage | null, now: () => Date = () => new Date()) {
@@ -62,7 +65,7 @@ export class GameStore {
   private autosave(state: CampaignState): void {
     if (this.storage === null) return;
     try {
-      writeSave(this.storage, 'auto', state, this.config, this.now());
+      writeSave(this.storage, 'auto', state, this.config, this.now(), this.snapshot.log);
     } catch {
       this.set({ error: 'Autosave failed (storage full or blocked).' });
     }
@@ -84,7 +87,7 @@ export class GameStore {
   newGame(options: CreateCampaignOptions): void {
     const state = createCampaign(options, this.config);
     const { devSeed } = this.snapshot.ui;
-    this.set({ state, ui: { menu: 'game', homeView: 'hub', ...(devSeed === undefined ? {} : { devSeed }) }, lastEvents: [], error: null });
+    this.set({ state, ui: { menu: 'game', homeView: 'hub', ...(devSeed === undefined ? {} : { devSeed }) }, lastEvents: [], error: null, log: [] });
     this.autosave(state);
   }
 
@@ -96,7 +99,7 @@ export class GameStore {
       this.set({ error: info.status === 'empty' ? 'That slot is empty.' : 'That save is corrupt.' });
       return false;
     }
-    this.set({ state: info.save.state, ui: { menu: 'game', homeView: 'hub' }, lastEvents: [], error: null });
+    this.set({ state: info.save.state, ui: { menu: 'game', homeView: 'hub' }, lastEvents: [], error: null, log: info.save.log ?? [] });
     return true;
   }
 
@@ -104,7 +107,7 @@ export class GameStore {
     const { state } = this.snapshot;
     if (state === null || this.storage === null) return;
     try {
-      writeSave(this.storage, slot, state, this.config, this.now());
+      writeSave(this.storage, slot, state, this.config, this.now(), this.snapshot.log);
       this.set({}); // slot listings changed
     } catch {
       this.set({ error: 'Saving failed (storage full or blocked).' });
@@ -164,12 +167,13 @@ export class GameStore {
     const nextUi: UiState = { ...ui, ...(isHomeActivity ? { homeView: 'hub' as const } : {}) };
     delete nextUi.pendingResult;
     if (summary !== null) nextUi.pendingResult = summary;
-    this.set({ state: result.state, ui: nextUi, lastEvents: result.events, error: null });
+    const entry = chronicleEntry(state, action, result.events, result.state, this.config);
+    this.set({ state: result.state, ui: nextUi, lastEvents: result.events, error: null, log: [...this.snapshot.log, entry] });
     this.autosave(result.state);
   }
 
   /** Back to the title screen; the autosave keeps the campaign. */
   quitToTitle(): void {
-    this.set({ state: null, ui: INITIAL_UI, lastEvents: [], error: null });
+    this.set({ state: null, ui: INITIAL_UI, lastEvents: [], error: null, log: [] });
   }
 }
