@@ -202,3 +202,55 @@ export function signed(n: number): string {
   if (n < 0) return `−${Math.abs(n)}`;
   return '0';
 }
+
+// ---------------------------------------------------------------------------
+// Pilgrimage
+// ---------------------------------------------------------------------------
+
+/** Three flavour lines per threat Estate, rotated by encounter index. */
+export const THREAT_FLAVOUR: Record<Estate, readonly string[]> = {
+  bellatores: ['Brigands block the road.', 'A robber knight demands a duel.', 'Deserters lie in ambush at the ford.'],
+  oratores: ['A suspicious friar bars the abbey gate.', 'A heresy-hunter questions every traveller.', 'Pilgrims whisper of a cursed shrine ahead.'],
+  laboratores: ['A toll-keeper wants more than his due.', 'A broken bridge needs mending.', 'A crafty pedlar offers a bargain too good to trust.'],
+};
+
+export const MATCHUP_LABEL: Record<'advantage' | 'neutral' | 'disadvantage', string> = {
+  advantage: 'Advantage',
+  neutral: 'Even',
+  disadvantage: 'Disadvantage',
+};
+
+/** What the segment's (locked) moon does on the road. */
+export function roadMoonLabel(phase: LunarPhase, config: RulesConfig): string {
+  const { newMoon, fullMoon } = config.astrology;
+  switch (phase) {
+    case 'new':
+      return newMoon.skipFee === null
+        ? `${LUNAR_LABEL.new}: no effect on the road`
+        : `${LUNAR_LABEL.new}: may bribe past one encounter for ${newMoon.skipFee} carried Coin`;
+    case 'full':
+      return `${LUNAR_LABEL.full}: advantage ${times(fullMoon.advantageMultiplierPct)}, failed Bellatores/Oratores strain ${times(fullMoon.pilgrimageBurdenPenaltyPct)}`;
+    default:
+      return `${LUNAR_LABEL[phase]}: no effect on the road`;
+  }
+}
+
+/** `{resource:'fatigue', amount:15}` → `+15 Fatigue`; coin → `−7 carried Coin`. */
+export function penaltyLabel(penalty: { resource: 'fatigue' | 'melancholy' | 'coin'; amount: number }): string {
+  if (penalty.resource === 'coin') return `${signed(-penalty.amount)} carried Coin`;
+  return `${signed(penalty.amount)} ${penalty.resource === 'fatigue' ? 'Fatigue' : 'Melancholy'}`;
+}
+
+/** Effect text for an item definition from the catalog. */
+export function itemEffectLabel(item: { effect: string; amount: number; estate: Estate | null }): string {
+  const estate = item.estate === null ? '' : ESTATE_LABEL[item.estate];
+  switch (item.effect) {
+    case 'reduce_fatigue': return `Removes ${item.amount} Fatigue on the road`;
+    case 'reduce_melancholy': return `Removes ${item.amount} Melancholy on the road`;
+    case 'reroll_failed_check': return 'Reroll one failed encounter';
+    case 'reduce_failure_fatigue': return `Failed ${estate} approaches cost ${item.amount} less Fatigue`;
+    case 'success_bonus_vs_threat': return `+${item.amount}% when facing ${estate} threats`;
+    case 'coin_penalty_pct': return `Failed ${estate} approaches lose ${item.amount}% of the usual Coin`;
+    default: return item.effect;
+  }
+}

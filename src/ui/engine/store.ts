@@ -125,7 +125,8 @@ export class GameStore {
       throw error;
     }
     const summary = summarize(action, result.events);
-    const isHomeActivity = action.type === 'TRAIN' || action.type === 'WORK' || action.type === 'REST';
+    const isHomeActivity = action.type === 'TRAIN' || action.type === 'WORK' || action.type === 'REST'
+      || action.type === 'BEGIN_PILGRIMAGE';
     const nextUi: UiState = { ...ui, ...(isHomeActivity ? { homeView: 'hub' as const } : {}) };
     delete nextUi.pendingResult;
     if (summary !== null) nextUi.pendingResult = summary;

@@ -68,7 +68,70 @@ function collectRows(events: readonly GameEvent[]): ResultRow[] {
   });
 }
 
-function headline(action: GameAction, events: readonly GameEvent[]): Pick<ResultSummary, 'title' | 'detail' | 'tone'> {
+function lastOf<T extends GameEvent['type']>(events: readonly GameEvent[], type: T): Extract<GameEvent, { type: T }> | undefined {
+  for (let i = events.length - 1; i >= 0; i--) {
+    const event = events[i]!;
+    if (event.type === type) return event as Extract<GameEvent, { type: T }>;
+  }
+  return undefined;
+}
+
+type Headline = Pick<ResultSummary, 'title' | 'detail' | 'tone'>;
+
+const WIPEOUT_DETAIL = {
+  coin: 'She could not pay what the road demanded.',
+  fatigue: 'Exhausted, she collapsed on the road.',
+  melancholy: 'Despairing, she collapsed on the road.',
+  both: 'Body and spirit gave out on the road.',
+} as const;
+
+/** Headline for pilgrimage results, or null when the action isn't a road event. */
+function roadHeadline(action: GameAction, events: readonly GameEvent[]): Headline | null {
+  const find = <T extends GameEvent['type']>(type: T) => lastOf(events, type);
+  const resolved = find('encounter_resolved');
+  const reroll = find('reroll_used');
+  const roll = resolved === undefined ? undefined
+    : `${reroll === undefined ? 'Rolled' : 'Metheglin reroll: rolled'} ${resolved.roll} against ${resolved.probability}%.`;
+  if (find('victory') !== undefined) return { title: 'Victory!', detail: 'The Final Gauntlet is won.', tone: 'good' };
+  const wipeout = find('wipeout');
+  if (wipeout !== undefined) {
+    return { title: 'Wipeout', detail: [roll, WIPEOUT_DETAIL[wipeout.cause]].filter(Boolean).join(' '), tone: 'bad' };
+  }
+  const waystation = find('waystation_reached');
+  const reached = waystation === undefined ? '' : ` — Waystation ${waystation.waystation} reached`;
+  if (find('encounter_skipped') !== undefined) {
+    return { title: `Slipped past under the New Moon${reached}`, tone: 'good' };
+  }
+  if (resolved !== undefined) {
+    return resolved.success
+      ? { title: `Encounter won${reached}`, ...(roll === undefined ? {} : { detail: roll }), tone: 'good' }
+      : { title: `Encounter lost${reached}`, ...(roll === undefined ? {} : { detail: roll }), tone: 'bad' };
+  }
+  switch (action.type) {
+    case 'ACCEPT_RESULT': return { title: `Failure accepted${reached}`, tone: 'bad' };
+    case 'RETREAT': return { title: 'Retreat', detail: 'She turns for home.', tone: 'neutral' };
+    case 'RETURN_HOME': return { title: 'Home from the road', detail: 'The waystation is secured; she returns home.', tone: 'good' };
+    default: return null;
+  }
+}
+
+/** Actions that only reveal the next threat (or use a remedy in place): no result panel. */
+function isSilent(action: GameAction, events: readonly GameEvent[]): boolean {
+  switch (action.type) {
+    case 'BEGIN_PILGRIMAGE':
+    case 'CONTINUE_ENCOUNTER':
+    case 'CONTINUE_SEGMENT':
+      return true;
+    case 'USE_CONSUMABLE':
+      return !events.some((e) => e.type === 'reroll_used');
+    default:
+      return false;
+  }
+}
+
+function headline(action: GameAction, events: readonly GameEvent[]): Headline {
+  const road = roadHeadline(action, events);
+  if (road !== null) return road;
   const job = events.find((e): e is Extract<GameEvent, { type: 'job_resolved' }> => e.type === 'job_resolved');
   if (job !== undefined) {
     const name = ACTIVITY_LABEL[job.job];
@@ -93,7 +156,7 @@ function headline(action: GameAction, events: readonly GameEvent[]): Pick<Result
 
 /** Builds the result panel for one action. Returns null when there is nothing worth a panel. */
 export function summarize(action: GameAction, events: readonly GameEvent[]): ResultSummary | null {
-  if (events.length === 0) return null;
+  if (events.length === 0 || isSilent(action, events)) return null;
   const reasons = events.flatMap((e) => (e.type === 'week_spent' ? [e.reason] : []));
   const notes: string[] = [];
   let { title, detail, tone } = headline(action, events);
@@ -109,6 +172,18 @@ export function summarize(action: GameAction, events: readonly GameEvent[]): Res
     title = `${title} — collapse!`;
     tone = 'bad';
   }
+  const failed = lastOf(events, 'encounter_resolved');
+  const charged = events.some((e) => e.type === 'wipeout'
+    || (e.type === 'burden_changed' && e.source === 'encounter_penalty')
+    || (e.type === 'coin_changed' && e.source === 'laboratores_penalty'));
+  if (action.type === 'CHOOSE_APPROACH' && failed !== undefined && !failed.success && !charged
+    && !events.some((e) => e.type === 'waystation_reached' || e.type === 'victory')) {
+    // Metheglin in the slot: the failure is pending until rerolled or accepted.
+    notes.push('The failure is not yet charged: drink Metheglin to reroll, or accept it.');
+  }
+  const waystation = events.find((e) => e.type === 'waystation_reached');
+  if (waystation?.type === 'waystation_reached') notes.push(`Waystation ${waystation.waystation} is secured: future pilgrimages start beyond it.`);
+  if (events.some((e) => e.type === 'convalescence' && e.cause === 'wipeout')) notes.push('She was carried home to convalesce.');
   if (events.some((e) => e.type === 'deadline')) {
     notes.push('Her sixteenth birthday has come. The Conjunction is upon the realm.');
     tone = 'bad';
