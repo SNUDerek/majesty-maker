@@ -103,31 +103,30 @@ describe('default config', () => {
 describe('unresolved-parameter register', () => {
   const unresolved = getUnresolved(loadContentConfig());
 
-  it('lists exactly the parameters from the T0.3 table, with their defaults', () => {
+  it('lists exactly the non-confirmed default parameters, with their legacy-control values', () => {
     const table: Record<string, { status: string; value: unknown }> = {
       'route.regularSegments': { status: 'experimental', value: 5 },
       'route.encountersPerSegment': { status: 'experimental', value: 5 },
       'route.finalEncounters': { status: 'experimental', value: 8 },
       'route.finalRoadBonus': { status: 'experimental', value: -20 },
       'classes.tutorBurden': {
-        status: 'tbd',
+        status: 'experimental',
         value: {
           hedge_knight: { fatigue: 5, melancholy: 0 },
           hermit: { fatigue: 0, melancholy: 5 },
           smuggler: { fatigue: 5, melancholy: 5 },
         },
       },
-      'astrology.newMoon.activityBonus': { status: 'tbd', value: 0 },
-      'astrology.fullMoon.surge': { status: 'tbd', value: 0 },
-      'astrology.newMoon.skipFee': { status: 'tbd', value: null },
-      'astrology.waxing.mode': { status: 'tbd', value: 'single' },
-      'astrology.waning.appliesToRestAtHome': { status: 'tbd', value: false },
+      'astrology.solar.squareTutorFatiguePct': { status: 'experimental', value: 100 },
+      'astrology.newMoon.activityBonus': { status: 'experimental', value: 0 },
+      'astrology.fullMoon.surge': { status: 'experimental', value: 0 },
+      'astrology.newMoon.skipFee': { status: 'experimental', value: null },
+      'astrology.waxing.bonusPct': { status: 'experimental', value: 110 },
       'failure.retreatLootRetentionPct': { status: 'experimental', value: 50 },
       'failure.retreatToll': { status: 'experimental', value: 5 },
-      'failure.wipeoutBurdenReset': { status: 'tbd', value: 'zero' },
-      'failure.homeCollapse': { status: 'tbd', value: { forcedWeek: true, recovery: 15 } },
-      'failure.purseProtection.appliesToLabFailures': { status: 'tbd', value: false },
-      'items.acquisition': { status: 'tbd', value: 'disabled' },
+      'failure.wipeoutBurdenReset': { status: 'experimental', value: 'zero' },
+      'failure.homeCollapse': { status: 'experimental', value: { forcedWeek: true, recovery: 15, fee: 0 } },
+      'failure.purseProtection.appliesToLabFailures': { status: 'experimental', value: false },
       'items.testRewardTable': {
         status: 'experimental',
         value: { theriac: 1, st_johns_wort: 1, metheglin: 1, gambeson: 1, saints_relic: 1, weighted_coin: 1 },
@@ -213,6 +212,28 @@ describe('validateConfig', () => {
 
   it('rejects invalid enum values', () => {
     expectConfigError(() => loadWith((r) => (r.astrology.waxing.mode = 'stacking')), 'astrology.waxing.mode');
+  });
+
+  it('accepts legacy and bounded wipeout recovery forms, and rejects anything else (Q13)', () => {
+    for (const mode of ['zero', 'unchanged', { recovery: 0 }, { recovery: 35 }]) {
+      expect(loadWith((r) => (r.failure.wipeoutBurdenReset = mode)).failure.wipeoutBurdenReset).toEqual(mode);
+    }
+    for (const bad of ['partial', { recovery: -1 }, { recovery: 2.5 }, { recovery: 35, extra: 1 }, {}, null]) {
+      expectConfigError(() => loadWith((r) => (r.failure.wipeoutBurdenReset = bad)), 'failure.wipeoutBurdenReset');
+    }
+  });
+
+  it('defaults new T2/T3 fields to legacy behavior and validates them', () => {
+    const config = loadContentConfig();
+    expect(config.astrology.solar.squareTutorFatiguePct).toBe(100);
+    expect(config.failure.homeCollapse.fee).toBe(0);
+    // A snapshot overlay written before these fields existed still loads through the defaults.
+    const snapshot = structuredClone(readContentJson('rules.default.json')) as Record<string, any>;
+    delete snapshot.astrology.solar.squareTutorFatiguePct;
+    delete snapshot.failure.homeCollapse.fee;
+    expect(hashConfig(withOverrides(config, snapshot))).toBe(hashConfig(config));
+    expectConfigError(() => loadWith((r) => (r.failure.homeCollapse.fee = -1)), 'failure.homeCollapse.fee');
+    expectConfigError(() => loadWith((r) => (r.astrology.solar.squareTutorFatiguePct = 1.5)), 'squareTutorFatiguePct');
   });
 
   it('rejects a broken matchup cycle', () => {
