@@ -8,7 +8,7 @@ import { ActivityScreen } from './screens/Activity.js';
 import { IntroScreen, SetupScreen, TitleScreen } from './screens/FrontDoor.js';
 import { Gallery } from './screens/Gallery.js';
 import { HomeHub } from './screens/Home.js';
-import { CreditsOverlay, DevPanel, SaveLoadOverlay } from './screens/Menus.js';
+import { ChronicleOverlay, CreditsOverlay, DevPanel, SaveLoadOverlay } from './screens/Menus.js';
 import { OutcomeScreen } from './screens/Outcome.js';
 import { EncounterScreen, PrepScreen, WaystationScreen } from './screens/Road.js';
 import { browserStorage } from './storage.js';
@@ -41,6 +41,7 @@ function Game({ dev }: { dev?: { configId: ConfigId; onConfig: (id: ConfigId) =>
       {pendingResult !== undefined && overlay === undefined && <ResultPanel summary={pendingResult} onDismiss={() => store.dismissResult()} />}
       {overlay === 'saveload' && <SaveLoadOverlay />}
       {overlay === 'credits' && <CreditsOverlay />}
+      {overlay === 'chronicle' && <ChronicleOverlay />}
       {snap.error !== null && <Toast message={snap.error} onClose={clearError} />}
       {dev !== undefined && <DevPanel configId={dev.configId} onConfig={dev.onConfig} />}
     </>

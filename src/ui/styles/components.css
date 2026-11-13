@@ -336,7 +336,8 @@
 .field select { padding: 3px 6px; border: 1px solid var(--ink-muted); background: #fffaf0; }
 .summary-line { font-size: var(--text-sm); font-style: italic; margin-top: var(--space-2); }
 
-.hud .btn { min-height: 38px; min-width: 80px; font-size: var(--text-sm); }
+.hud .btn { min-height: 34px; min-width: 104px; font-size: var(--text-sm); padding-top: 0; padding-bottom: 2px; }
+.hud__buttons { display: grid; gap: 4px; }
 
 /* ---------- Front door ---------- */
 /* Unframed parchment (intro, tutorial): content padded inside the torn edge. */
@@ -405,3 +406,15 @@
 .st--laboratores { color: var(--laboratores); }
 .st--cost { color: var(--muted-cost); }
 .stat-line { display: block; }
+
+/* ---------- Chronicle ---------- */
+.modal.chronicle { width: 820px; }
+.modal.chronicle .modal__title { margin-bottom: var(--space-3); }
+.chronicle__list { max-height: 430px; overflow-y: auto; padding-right: 8px; }
+.chronicle__week { margin: 0 0 var(--space-3); }
+.chronicle__date { font-family: var(--font-body); font-style: italic; font-size: var(--text-md); color: var(--ink-muted); border-bottom: 1px solid var(--parchment-dark); margin-bottom: 4px; }
+.chronicle__entry { margin: 0 0 6px; padding-left: 12px; }
+.chronicle__title { font-size: var(--text-md); }
+.chronicle__detail, .chronicle__notes { font-size: var(--text-sm); color: var(--ink-muted); }
+.chronicle__rows { font-size: var(--text-sm); }
+.chronicle__rows > span + span::before { content: ' · '; color: var(--ink-muted); }

@@ -1,6 +1,6 @@
 /** Browser regression checks. Requires Playwright + Chromium and a running dev server.
  * Run: node scripts/check-ui.cjs [URL]. NODE_PATH may point to an existing Playwright installation.
- * Covers New Game → intro (letter reveal, reduced motion) → setup → home activities, modal focus, parchment insets, gauges and stage scaling.
+ * Covers New Game → intro (letter reveal, reduced motion) → setup → home activities, modal focus, the Chronicle, parchment insets, gauges and stage scaling.
  */
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
@@ -128,6 +128,12 @@ async function assertInsideParchment(page, where) {
         await page.getByRole('button', { name: 'Commit week' }).click();
         await page.getByRole('dialog').getByRole('button', { name: 'Continue' }).click();
       }
+      // The Chronicle lists the three weeks just played (Tutoring, Work, Rest), newest first.
+      await page.getByRole('button', { name: 'Chronicle', exact: true }).click();
+      assert.equal(await page.locator('.chronicle__entry').count(), 3);
+      assert.match(await page.locator('.chronicle__title').first().innerText(), /^Rest at Home|^Convalescence/);
+      await assertInsideParchment(page, 'chronicle');
+      await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
       await page.getByRole('button', { name: 'Pilgrimage', exact: true }).click();
       await assertInsideParchment(page, 'pilgrimage prep');
       await page.keyboard.press('Escape');
