@@ -74,6 +74,32 @@ Screen navigation must not itself advance time; only successful submission of a 
 **Assets:** Available intro illustrations (roughly 3–4 panels if supplied), one portrait of the daughter, zodiac symbols or simple typographic alternatives, common dialogue frame.  
 **Notes:** A single framed illustration region with changing artwork/text is sufficient. Do not block gameplay on elaborate transitions. Starting age/year/month/96-week duration must follow the finalized backend data; design currently assumes age 14, starting in her birth month around 1450.
 
+#### placeholder intro text
+
+numbers refer to the intro image number.
+
+01A: One score and four years ago, the good king Cornelius brought peace to these lands.
+
+01B: His was a fair and just rule, and he loved all his subjects, as they loved him.
+
+02: But the King loved no one above his bride, the kind-hearted Queen Isolde.
+
+03: On the day of the Conjunction, their child was born, a daughter. The kingdom was overcome with joy.
+
+04A: But the jealous courtier Vortigan, spurned by Queen Isolde, plotted to overthrow king Cornelius. 
+
+04B: (skip for now)
+
+04C: He led a treasonous band of knights against the king. Vortigan himself smote the king on the field of battle.
+
+05: But you know this, of course, as it was you, brave knight, who fled the castle with the king's child.
+
+06: Though your holdings are modest, you have raised her well these last fourteen years, as if she were your own. 
+
+07: But now, My Lord, the next Conjunction approaches, and I feel a great foreboding in my breast.
+
+08: In dreams I see a great fire welling in your daughter, but to what end, I cannot know... 
+
 ### 4.3 Home / weekly scheduling hub — **highest priority**
 
 **Purpose:** Main point of orientation and activity selection.  
