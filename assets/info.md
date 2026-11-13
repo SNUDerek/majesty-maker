@@ -4,7 +4,9 @@ all art is super-placeholder right now. just enough to get some flavor.
 
 ## backgrounds
 
-1920x1080 webp. one for each main 'screen'
+1920x1080 webp. one for each main 'screen'.
+
+`background_waystation` and `background_capital` are temporary copies (of the pilgrimage background and title page) to be overwritten with proper placeholders.
 
 ## fonts
 
@@ -58,9 +60,11 @@ https://opengameart.org/content/2-moon-phases-sets
 
 one 360x720 3/4 shot of the princess
 
-then headshot profile pics of princess, tutors, and some miscellaneous figures (260x540), all facing right.
+then headshot profile pics of princess, tutors, and some miscellaneous figures (360x540), all facing right.
 
 right now, no transparent versions except for main princess body shot.
+
+`portrait_princess_right` is a temporary copy of `portrait_damsel_right`.
 
 ## ui
 

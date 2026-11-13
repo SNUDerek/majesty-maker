@@ -70,7 +70,7 @@ import {
   type ZodiacSign,
 } from './types.js';
 
-type HomeKind = 'tutor' | 'job' | 'rest';
+export type HomeKind = 'tutor' | 'job' | 'rest';
 type HomeAction = Extract<GameAction, { type: 'TRAIN' | 'WORK' | 'REST' }>;
 type ConvalescenceCause = NonNullable<CampaignState['pendingConvalescence']>;
 
@@ -148,8 +148,8 @@ function activityOf(action: HomeAction, config: RulesConfig): ActivityId {
   return id;
 }
 
-/** This week's astrology modifiers for a home activity. */
-function homeModifiers(state: CampaignState, activityId: ActivityId, kind: HomeKind, config: RulesConfig): ModifierSet {
+/** This week's astrology modifiers for a home activity (also used by previews). */
+export function homeModifiers(state: CampaignState, activityId: ActivityId, kind: HomeKind, config: RulesConfig): ModifierSet {
   const calendar = getCalendar(state, config);
   return collectModifiers(
     {
