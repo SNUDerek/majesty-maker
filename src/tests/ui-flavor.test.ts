@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyAction, createCampaign, type CampaignState, type GameEvent, type JobId, type TutorId } from '../core/index.js';
+import { applyAction, createCampaign, type CampaignState, type GameEvent, type JobId, type RestId, type TutorId } from '../core/index.js';
 import { FLAVOR, fillNames, pickLine, resultFlavor, thoughtLine, type FlavorContent } from '../ui/engine/flavor.js';
 import { GameStore } from '../ui/engine/store.js';
 import { loadShippedConfig } from './support/config.js';
@@ -11,6 +11,7 @@ const fresh = (seed = 1234): CampaignState => createCampaign({
 
 const TUTORS: TutorId[] = ['hedge_knight', 'hermit', 'smuggler'];
 const JOBS: JobId[] = ['stables', 'alehouse', 'village_watch', 'scriptorium'];
+const RESTS: RestId[] = ['rest_home', 'bathhouse', 'shrine', 'banquet'];
 
 describe('content/flavor.json', () => {
   it('has the minimum line counts', () => {
@@ -20,6 +21,7 @@ describe('content/flavor.json', () => {
       // Stables never fails, so it needs no failure lines.
       if (job !== 'stables') expect(FLAVOR.job[job].failure.length, `${job} failure`).toBeGreaterThanOrEqual(4);
     }
+    for (const rest of RESTS) expect(FLAVOR.rest[rest].length, rest).toBeGreaterThanOrEqual(3);
     expect(FLAVOR.thought.idle.length).toBeGreaterThanOrEqual(1);
     expect(FLAVOR.thought.talk_ready.length).toBeGreaterThanOrEqual(1);
   });
@@ -27,9 +29,11 @@ describe('content/flavor.json', () => {
   it('only uses real activity ids and known placeholders', () => {
     expect(Object.keys(FLAVOR.tutor).sort()).toEqual([...TUTORS].sort());
     expect(Object.keys(FLAVOR.job).sort()).toEqual([...JOBS].sort());
+    expect(Object.keys(FLAVOR.rest).sort()).toEqual([...RESTS].sort());
     const all = [
       ...Object.values(FLAVOR.tutor).flat(),
       ...Object.values(FLAVOR.job).flatMap((j) => [...j.success, ...j.failure]),
+      ...Object.values(FLAVOR.rest).flat(),
       ...Object.values(FLAVOR.thought).flat(),
     ];
     for (const line of all) {
@@ -70,6 +74,7 @@ describe('resultFlavor', () => {
       village_watch: { success: [], failure: [] },
       scriptorium: { success: [], failure: [] },
     },
+    rest: { rest_home: ['hearth {scion}'], bathhouse: [], shrine: [], banquet: [] },
     thought: { idle: ['idle'], talk_ready: ['ready'] },
   };
   const resolved = (success: boolean): GameEvent[] => [{
@@ -87,7 +92,15 @@ describe('resultFlavor', () => {
     const state = fresh();
     expect(resultFlavor(state, { type: 'TRAIN', tutor: 'hedge_knight' }, [], content)).toBe('knight Elaine');
     expect(resultFlavor(state, { type: 'TRAIN', tutor: 'hermit' }, [], content)).toBeUndefined();
-    expect(resultFlavor(state, { type: 'REST', rest: 'rest_home' }, [], content)).toBeUndefined();
+    expect(resultFlavor(state, { type: 'RETREAT' }, [], content)).toBeUndefined();
+  });
+
+  it('uses rest lines for REST, but not for the forced recovery rest', () => {
+    const state = fresh();
+    expect(resultFlavor(state, { type: 'REST', rest: 'rest_home' }, [], content)).toBe('hearth Elaine');
+    expect(resultFlavor(state, { type: 'REST', rest: 'bathhouse' }, [], content)).toBeUndefined();
+    expect(resultFlavor({ ...state, pendingConvalescence: 'home_collapse' }, { type: 'REST', rest: 'rest_home' }, [], content))
+      .toBeUndefined();
   });
 });
 
@@ -113,6 +126,14 @@ describe('flavor in the store', () => {
     resultFlavor(work.state!, { type: 'WORK', job: 'stables' }, work.lastEvents);
     thoughtLine(work.state!);
     expect(work.state!.rng).toEqual(rng);
+  });
+
+  it('adds flavor to rest results', () => {
+    const store = new GameStore(config, null);
+    store.newGame({ seed: 78, birthSign: 'aries', playerName: { first: 'Aldous', last: 'Wyke' }, scionName: 'Elaine' });
+    const before = store.getSnapshot().state!;
+    store.dispatch({ type: 'REST', rest: 'rest_home' });
+    expect(FLAVOR.rest.rest_home.map((l) => fillNames(l, before))).toContain(store.getSnapshot().ui.pendingResult?.flavor);
   });
 
   it('gives the same thought for the same week and seed', () => {

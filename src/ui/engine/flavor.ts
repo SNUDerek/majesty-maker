@@ -3,12 +3,13 @@
  * Pure; no React. Lines are picked by hashing the seed and week, never from
  * the core's RNG streams, so they don't disturb simulations and survive reloads.
  */
-import type { CampaignState, GameAction, GameEvent, JobId, TutorId } from '../../core/index.js';
+import type { CampaignState, GameAction, GameEvent, JobId, RestId, TutorId } from '../../core/index.js';
 import content from '../../../content/flavor.json';
 
 export interface FlavorContent {
   tutor: Record<TutorId, string[]>;
   job: Record<JobId, { success: string[]; failure: string[] }>;
+  rest: Record<RestId, string[]>;
   thought: { idle: string[]; talk_ready: string[] };
 }
 
@@ -41,13 +42,17 @@ function lineFor(state: CampaignState, lines: readonly string[] | undefined, slo
 }
 
 /**
- * Flavor for a TRAIN or WORK result. `before` is the state the action was
- * applied to; job success or failure comes from the `job_resolved` event.
+ * Flavor for a TRAIN, WORK or REST result. `before` is the state the action
+ * was applied to; job success or failure comes from the `job_resolved` event.
+ * The forced recovery rest gets none: it isn't a chosen outing.
  */
 export function resultFlavor(
   before: CampaignState, action: GameAction, events: readonly GameEvent[], flavor: FlavorContent = FLAVOR,
 ): string | undefined {
   if (action.type === 'TRAIN') return lineFor(before, flavor.tutor[action.tutor], `tutor:${action.tutor}`);
+  if (action.type === 'REST') {
+    return before.pendingConvalescence === undefined ? lineFor(before, flavor.rest[action.rest], `rest:${action.rest}`) : undefined;
+  }
   if (action.type !== 'WORK') return undefined;
   const job = events.find((e): e is Extract<GameEvent, { type: 'job_resolved' }> => e.type === 'job_resolved');
   if (job === undefined) return undefined;

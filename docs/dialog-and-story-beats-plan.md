@@ -88,7 +88,7 @@ Names, files and rewards above are suggestions; the content PR (T5) may change t
 
 ### 4.3 Where it shows
 
-- **Result popup:** `ResultSummary` gets an optional `flavor?: string`. `summarize` stays the same; the store fills `flavor` for `TRAIN` and `WORK` results (success or failure from the `job_resolved` event). `ResultPanel` shows it in italics under the title. Rest and pilgrimage results get no flavor text in this pass.
+- **Result popup:** `ResultSummary` gets an optional `flavor?: string`. `summarize` stays the same; the store fills `flavor` for `TRAIN` and `WORK` results (success or failure from the `job_resolved` event). `ResultPanel` shows it in italics under the title. Rest results were added later (`rest.<rest_id>` lists, 3+ lines each), except the forced recovery rest. Pilgrimage results get no flavor text in this pass.
 - **Thought box:** a small parchment box under `home-princess` on `HomeHub`. It shows a `thought.idle` line for the current week, or a `thought.talk_ready` line when a father–daughter beat is ready (§6.4). It is hidden during the forced recovery week.
 
 ## 5. Dialog scenes (ink)

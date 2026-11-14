@@ -69,6 +69,28 @@
       ]
     }
   },
+  "rest": {
+    "rest_home": [
+      "{scion} slept late, then spent the afternoon mending by the hearth.",
+      "A quiet week. {scion} read aloud to {player} by candlelight.",
+      "Rain all week. {scion} watched it from the window and did nothing at all, gladly."
+    ],
+    "bathhouse": [
+      "{scion} came home pink-cheeked and smelling of rosemary.",
+      "The bath-wife scrubbed {scion} raw and charged double for the soap.",
+      "Steam, gossip and hot stones. Her aching shoulders finally loosened."
+    ],
+    "shrine": [
+      "{scion} lit a candle and sat in the cool dark until her thoughts stilled.",
+      "The old priest blessed her, then asked after {player}'s health.",
+      "She left a coin at the altar, and somehow felt lighter for it."
+    ],
+    "banquet": [
+      "Roast swan, honeyed figs and minstrels. {scion} danced until the candles guttered.",
+      "{scion} ate too much marchpane and regretted none of it.",
+      "A lord's son asked {scion} to dance. She trod on his feet, twice."
+    ]
+  },
   "thought": {
     "idle": [
       "I wonder what lies beyond the hills...",
