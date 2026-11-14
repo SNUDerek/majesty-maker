@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createCampaign, getCalendar, type ZodiacSign } from '../../core/index.js';
 import { BACKGROUND, IMAGES, INTRO_PANEL } from '../assets.js';
+import { prefersReducedMotion } from '../engine/motion.js';
 import { Button, CoinAmount, Panel } from '../components/basic.js';
 import { ZodiacGlyph } from '../components/chrome.js';
 import { StatBlock } from '../components/meters.js';
@@ -43,10 +44,6 @@ const INTRO_LINES = INTRO.map((l) => l.text);
 const REVEAL_RATE = 40;
 /** Picture fade duration, matching `.intro__picture` in components.css. */
 const FADE_MS = 300;
-
-function prefersReducedMotion(): boolean {
-  return typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
 
 /**
  * Prologue on an unframed parchment over black: picture near the top, text

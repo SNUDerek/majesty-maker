@@ -177,3 +177,19 @@ player's first name. Selection is deterministic for the campaign seed, week, and
 text slot, independent of gameplay RNG. Tutor/job result popups show narration;
 the home thought box is hidden during forced recovery. Talk-ready thoughts are
 reserved for the later Social/story-beat integration.
+
+### Dialogue preview
+
+Run `npm run dev` and open `?gallery`. Select a scene and click **Play scene**.
+Use the small arrow, Enter, or Space to advance; choices appear as buttons.
+
+Self-contained `content/story/*.ink` files compile through the shared Vite/Vitest
+plugin using pinned inkjs 2.3.2. Declare `scion`, `player`, `bellatores`, `oratores`,
+and `laboratores` in each file. Add an `# order: 10` tag to a knot to list it in
+the Gallery. Known character IDs followed by `:` produce speech; parenthesized
+speech is a thought; other text is narration. `bg`, `left`, and `right` tags set
+background and portrait IDs. See `sample.ink` for a short branching example.
+Files can also be previewed in Inky. `INCLUDE` is unsupported in this pass.
+The player resets Ink for each scene; Gallery previews do not grant rewards.
+Activity triggers and persistent story progression are separate follow-up tasks.
+`node scripts/check-dialog.cjs [URL]` plays the sample scene in the browser (same Playwright prerequisites).
