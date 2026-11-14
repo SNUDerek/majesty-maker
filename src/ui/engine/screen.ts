@@ -3,6 +3,7 @@
  * function of the engine state plus a little unsaved UI state.
  */
 import type { CampaignState } from '../../core/index.js';
+import type { BeatActivity } from './story.js';
 import type { ResultSummary } from './summarize.js';
 
 export type HomeView = 'hub' | 'tutor' | 'job' | 'rest' | 'prep';
@@ -14,6 +15,8 @@ export interface UiState {
   homeView: HomeView;
   /** Shown over the current scene until dismissed. */
   pendingResult?: ResultSummary;
+  /** A story beat's dialog scene, drawn above everything; `pendingResult` waits behind it. Not saved. */
+  pendingDialog?: { beatId: string; activity: BeatActivity };
   /** Save/Load or Credits drawn over the current scene. */
   overlay?: Overlay;
   /** Dev panel: fixed seed for the next New Game. */

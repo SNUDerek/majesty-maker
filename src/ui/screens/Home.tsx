@@ -48,7 +48,8 @@ export function HomeHub({ convalescence }: { convalescence: boolean }) {
   const state = snap.state!;
   const derived = getDerivedStats(state, store.config);
   const blocker = departureBlocker(state, store.config);
-  const thought = convalescence ? undefined : thoughtLine(state);
+  const talk = convalescence ? undefined : store.socialBeat();
+  const thought = convalescence ? undefined : thoughtLine(state, talk === undefined ? 'idle' : 'talk_ready');
   const restHome = activityOptions(state, 'rest', store.config).find((o) => o.preview.activityId === 'rest_home')!;
   return (
     <Scene image={BACKGROUND.home}>
@@ -78,7 +79,8 @@ export function HomeHub({ convalescence }: { convalescence: boolean }) {
               <Button disabled={blocker !== null} title={blocker ?? undefined} onClick={() => store.setUi({ homeView: 'prep' })}>
                 Pilgrimage
               </Button>
-              <Button disabled title="Social visits come later">Social (later)</Button>
+              <Button disabled={talk === undefined} title={talk === undefined ? 'Nothing to talk about yet' : undefined}
+                onClick={() => store.startTalk()}>Social</Button>
             </div>
           )}
           {!convalescence && blocker !== null && <p className="home-note" style={{ marginTop: 8 }}>Pilgrimage: {blocker}.</p>}
