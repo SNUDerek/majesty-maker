@@ -1,103 +1,85 @@
 {
   "tutor": {
     "hedge_knight": [
-      "Sir Hedge drilled {scion} at the pell until her arms ached. \"Again,\" he said, and again she struck.",
-      "{scion} came home with a split lip and a grin. \"I nearly disarmed him, Father.\"",
-      "The old knight spoke little today, but watched her footwork with something close to approval."
+      "This week's lessons were on archery. Apparently, {scion} is a deft shot.",
+      "The trainees spent the week sparring. You've caught some boys in town staring at {scion} while rubbing their bruises.",
+      "The Hedge Knight has had {scion} doing calisthenics all week. Last night, she made you carry her to bed like a child.",
+      "This week was jousting practice. {scion} limped back home, rubbing her shoulder. \"It looks so easy at the tournaments\""
     ],
     "hermit": [
-      "The hermit set {scion} to copying psalms by candlelight, and corrected every crooked letter.",
-      "\"Silence is also a prayer,\" the hermit told her. {scion} found it the hardest lesson yet.",
-      "{scion} returned smelling of woodsmoke and beeswax, her head full of saints' lives."
+      "The Hermit put {scion} to work trancribing some of the ancient texts. Her fingertips are stained with ink.",
+      "{scion} asked the Hermit whether dogs go to Heaven. He answered, \"Moo!\"",
+      "The Hermit instructed {scion} in Latin. When you asked her what she learned, all she said was\"semper ubi sub ubi\"",
+      "\"Do, or do not,\" the Hermit sagely instructed, \"there is no 'try'.\""
     ],
     "smuggler": [
-      "The smuggler taught {scion} to weigh a coin by its ring on the table. She learned quickly. Too quickly, perhaps.",
-      "\"Never look at the purse,\" the smuggler said. \"Look at the hand that holds it.\"",
-      "{scion} haggled a fishwife down to half price, then felt a little guilty about it."
+      "The Smuggler worked with {scion} on the arts of legerdemain. He said that she took to it naturally, perhaps a little much.",
+      "The Smuggler had {scion} practicing her prestidigitation down by the docks. Apparently the town guard were not amused.",
+      "\"Always watch the hands and the eyes,\" the Smuggler advised. \"that's the fastest way to read a man's intent.\"",
+      "{scion} and the Smuggler practiced running cons in the marketplace. The two swore they returned all the money taken."
     ]
   },
   "job": {
     "stables": {
       "success": [
         "{scion} mucked out every stall and earned a nuzzle from the grey mare.",
-        "Hard work, honest pay. {scion} came home smelling of hay and horse.",
-        "The stablemaster grunted his thanks. From him, that is high praise.",
-        "A foal was born in the night, and {scion} was there to see it stand."
+        "Hard work, honest pay. {scion} came home smelling of hay and horse."
       ],
       "failure": []
     },
     "alehouse": {
       "success": [
         "{scion} carried a dozen tankards at once and spilled not a drop.",
-        "The regulars sang her praises, and their tips were generous.",
-        "The alewife let {scion} keep the coins from a dice game she refereed fairly.",
-        "A drunken tinker tried to cheat the house. {scion} caught him at it."
+        "The regulars sang her praises, and their tips were generous."
       ],
       "failure": [
         "{scion} broke three cups and a stool. The alewife docked her wages.",
-        "A brawl broke out, and {scion} hid behind the barrels until it was over.",
-        "She mixed up the orders all night. Nobody was pleased.",
-        "A patron slipped away without paying, and the loss came out of her pay."
+        "A brawl broke out, and {scion} hid behind the barrels until it was over."
       ]
     },
     "village_watch": {
       "success": [
         "{scion} walked the walls till dawn and caught a pig thief red-handed.",
-        "The watch captain let {scion} carry the lantern at the head of the patrol.",
-        "A quiet night. {scion} kept her eyes open and the captain noticed.",
-        "{scion} talked two drunk ploughmen out of a fight before it started."
+        "The watch captain let {scion} carry the lantern at the head of the patrol."
       ],
       "failure": [
         "{scion} fell asleep at her post. The captain was not amused.",
-        "A fox got into the hen coops on her watch. The farmers blamed the girl.",
-        "She chased a shadow into the mire and came home soaked and empty-handed.",
-        "The captain caught {scion} gossiping instead of watching the road."
+        "A fox got into the hen coops on her watch. The farmers blamed the girl."
       ]
     },
     "scriptorium": {
       "success": [
         "{scion}'s lettering drew a nod from the Brother Librarian himself.",
-        "She finished a page of the psalter without a single blot.",
-        "{scion} found a misfiled charter, and the abbot was grateful.",
-        "The monks let {scion} grind the precious blue for the illuminators."
+        "She finished a page of the psalter without a single blot."
       ],
       "failure": [
         "{scion} knocked over an inkwell onto a fresh page. The Brother sighed deeply.",
-        "She dozed during vespers and was sent home early.",
-        "A misspelled saint's name cost her the day's wages.",
-        "{scion} smudged the gilding. Gold leaf is not cheap."
+        "She dozed during vespers and was sent home early."
       ]
     }
   },
   "rest": {
     "rest_home": [
       "{scion} slept late, then spent the afternoon mending by the hearth.",
-      "A quiet week. {scion} read aloud to {player} by candlelight.",
-      "Rain all week. {scion} watched it from the window and did nothing at all, gladly."
+      "A quiet week. {scion} read aloud to {player} by candlelight."
     ],
     "bathhouse": [
       "{scion} came home pink-cheeked and smelling of rosemary.",
-      "The bath-wife scrubbed {scion} raw and charged double for the soap.",
-      "Steam, gossip and hot stones. Her aching shoulders finally loosened."
+      "The bath-wife scrubbed {scion} raw and charged double for the soap."
     ],
     "shrine": [
       "{scion} lit a candle and sat in the cool dark until her thoughts stilled.",
-      "The old priest blessed her, then asked after {player}'s health.",
-      "She left a coin at the altar, and somehow felt lighter for it."
+      "The old priest blessed her, then asked after {player}'s health."
     ],
     "banquet": [
       "Roast swan, honeyed figs and minstrels. {scion} danced until the candles guttered.",
-      "{scion} ate too much marchpane and regretted none of it.",
-      "A lord's son asked {scion} to dance. She trod on his feet, twice."
+      "{scion} ate too much marchpane and regretted none of it."
     ]
   },
   "thought": {
     "idle": [
       "I wonder what lies beyond the hills...",
-      "Father looks tired lately.",
-      "Do I dream of fire because of the stories, or the other way round?",
-      "If I could be anything at all... what would I choose?",
-      "The swallows are back. Or are they leaving?"
+      "Father looks tired lately."
     ],
     "talk_ready": [
       "I have something on my mind..."
