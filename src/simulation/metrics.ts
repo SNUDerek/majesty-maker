@@ -49,6 +49,7 @@ export type CoinCategory = 'earned' | 'spent' | 'lost' | 'transfer';
 export const COIN_CATEGORY: Readonly<Record<CoinSource, CoinCategory>> = {
   job_payout: 'earned',
   encounter_reward: 'earned',
+  story_reward: 'earned',
   tutor_fee: 'spent',
   rest_fee: 'spent',
   departure_fee: 'spent',

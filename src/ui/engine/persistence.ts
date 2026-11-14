@@ -89,6 +89,7 @@ function hasPlayableState(state: CampaignState): boolean {
       state.furthestWaystation, state.waxingStreak].every(natural)
     && record(state.stats) && ['bellatores', 'oratores', 'laboratores'].every((key) => natural(state.stats[key as keyof typeof state.stats]))
     && record(state.inventory) && Object.values(state.inventory).every(natural)
+    && (state.storyBeats === undefined || (record(state.storyBeats) && Object.values(state.storyBeats).every(natural)))
     && record(state.rng) && ['jobs', 'encounters', 'rewards'].every((key) => {
       const value = state.rng[key as keyof typeof state.rng];
       return natural(value) && value <= 0xffff_ffff;

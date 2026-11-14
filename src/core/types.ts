@@ -88,6 +88,8 @@ export interface CampaignState {
   /** Consecutive repeated activities, reserved for an optional compounding Waxing rule. */
   waxingStreak: number;
   pendingConvalescence?: 'home_collapse' | 'wipeout';
+  /** Story beat id -> the elapsed week it played. Absent in older saves (read as none played). */
+  storyBeats?: Record<string, number>;
   outcome?: 'victory' | 'deadline';
 }
 
@@ -108,7 +110,12 @@ export type GameAction =
   | { type: 'CONTINUE_ENCOUNTER' }
   | { type: 'RETREAT' }
   | { type: 'RETURN_HOME' }
-  | { type: 'CONTINUE_SEGMENT' };
+  | { type: 'CONTINUE_SEGMENT' }
+  /**
+   * Records a played story beat and grants its reward. Home phase only; spends
+   * no week and draws no randomness. Not listed by `getAvailableActions`.
+   */
+  | { type: 'STORY_BEAT'; beatId: string; reward?: { coin?: number; items?: string[] } };
 
 /**
  * What `getAvailableActions` returns. Identical to `GameAction` except that
@@ -116,7 +123,7 @@ export type GameAction =
  * `[minCarry, maxCarry]` (and optional item ids) to build the concrete action.
  */
 export type AvailableAction =
-  | Exclude<GameAction, { type: 'BEGIN_PILGRIMAGE' }>
+  | Exclude<GameAction, { type: 'BEGIN_PILGRIMAGE' | 'STORY_BEAT' }>
   | {
       type: 'BEGIN_PILGRIMAGE';
       minCarry: number;
@@ -161,7 +168,9 @@ export type CoinSource =
   | 'wipeout_lost'
   | 'medical_fee'
   /** Home-collapse physician fee (Q13), distinct from the pilgrimage medical fee. */
-  | 'physician_fee';
+  | 'physician_fee'
+  /** Coin granted by a story beat. */
+  | 'story_reward';
 
 export type StatSource = 'tutor' | 'tutor_opposing' | 'job' | 'zodiac' | 'item';
 
@@ -237,6 +246,7 @@ export type GameEvent =
       /** Use both when both burdens have reached their ceilings. */
       cause: 'fatigue' | 'melancholy' | 'both' | 'coin';
     })
+  | (EventBase & { type: 'story_beat'; beatId: string })
   | (EventBase & { type: 'victory' })
   | (EventBase & { type: 'deadline' });
 

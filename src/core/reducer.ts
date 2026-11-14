@@ -39,7 +39,7 @@
 
 import { collectModifiers, solarAspect } from './astrology.js';
 import { getCalendar } from './calendar.js';
-import { addBurden, collapseCause } from './conditions.js';
+import { addBurden, clampTreasury, collapseCause } from './conditions.js';
 import type { RulesConfig } from './config.js';
 import {
   applyActivityDeltas,
@@ -208,7 +208,7 @@ export const applyAction: ApplyAction<RulesConfig> = (input, action, config) => 
   }
   const type = (action as { type?: unknown } | null)?.type;
   if (typeof type !== 'string' || !(HOME_ACTIONS.has(type as GameAction['type'])
-    || PILGRIMAGE_ACTIONS.has(type as GameAction['type']) || type === 'BEGIN_PILGRIMAGE')) {
+    || PILGRIMAGE_ACTIONS.has(type as GameAction['type']) || type === 'BEGIN_PILGRIMAGE' || type === 'STORY_BEAT')) {
     throw new RuleError('INVALID_ACTION', `unknown action ${JSON.stringify(type)}`);
   }
 
@@ -235,8 +235,52 @@ export const applyAction: ApplyAction<RulesConfig> = (input, action, config) => 
     }
     return applyPilgrimageAction(input, action, config);
   }
+  if (action.type === 'STORY_BEAT') return applyStoryBeat(structuredClone(input), action, config);
   return applyHomeAction(structuredClone(input), action as HomeAction, config);
 };
+
+/**
+ * STORY_BEAT (docs/dialog-and-story-beats-plan.md §7): records the beat and
+ * grants its reward. The engine trusts the reward the UI passes, but checks
+ * its shape. No week, no RNG, and the Waxing chain is left alone. Granted
+ * items ignore `items.acquisition`, which only governs pilgrimage drops.
+ */
+function applyStoryBeat(state: CampaignState, action: Extract<GameAction, { type: 'STORY_BEAT' }>, config: RulesConfig) {
+  const { beatId, reward } = action;
+  if (state.pendingConvalescence !== undefined) {
+    throw new RuleError(
+      'INVALID_ACTION',
+      `a ${state.pendingConvalescence} convalescence is pending; only REST ${CONVALESCENCE_REST} is allowed`,
+    );
+  }
+  if (typeof beatId !== 'string' || beatId === '') throw new RuleError('INVALID_ACTION', 'STORY_BEAT: beatId must be a non-empty string');
+  if (state.storyBeats !== undefined && Object.hasOwn(state.storyBeats, beatId)) {
+    throw new RuleError('INVALID_ACTION', `STORY_BEAT: ${JSON.stringify(beatId)} has already played`);
+  }
+  const coin = reward?.coin ?? 0;
+  if (!Number.isSafeInteger(coin) || coin < 0) throw new RuleError('INVALID_ACTION', `STORY_BEAT: coin must be a non-negative integer, got ${coin}`);
+  const items = reward?.items ?? [];
+  if (!Array.isArray(items)) throw new RuleError('INVALID_ITEM', 'STORY_BEAT: items must be a list of item ids');
+  for (const itemId of items) {
+    if (typeof itemId !== 'string' || !Object.hasOwn(config.items.catalog, itemId)) {
+      throw new RuleError('INVALID_ITEM', `STORY_BEAT: unknown item ${JSON.stringify(itemId)}`);
+    }
+  }
+
+  const week = state.elapsedWeeks;
+  const events: GameEvent[] = [{ type: 'story_beat', week, beatId }];
+  state.storyBeats = { ...state.storyBeats, [beatId]: week };
+  const gained = clampTreasury(state.treasury + coin, config) - state.treasury;
+  if (gained > 0) {
+    state.treasury += gained;
+    events.push({ type: 'coin_changed', week, account: 'treasury', amount: gained, source: 'story_reward' });
+  }
+  for (const itemId of items) {
+    state.inventory[itemId] = (state.inventory[itemId] ?? 0) + 1;
+    events.push({ type: 'item_changed', week, itemId, amount: 1, source: 'reward' });
+  }
+  return { state, events };
+}
 
 function applyHomeAction(state: CampaignState, action: HomeAction, config: RulesConfig) {
   const events: GameEvent[] = [];
