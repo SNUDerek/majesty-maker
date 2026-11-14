@@ -1,37 +1,85 @@
-/** Requires Playwright and a running dev server. */
+/**
+ * Dialog scenes and story beats in the browser. Requires Playwright and a
+ * running dev server: `node scripts/check-dialog.cjs [URL]`.
+ * Uses the placeholder beats in content/story (knight_1, father_1).
+ */
 const assert = require('node:assert/strict');
 const { chromium } = require('playwright');
+
+const BASE = process.argv[2] || 'http://127.0.0.1:5182';
+
+/** Advances with Enter until a choice appears or the scene closes. */
+async function advance(page, dialog) {
+  for (let i = 0; i < 30; i++) {
+    if (await dialog.count() === 0) return 'closed';
+    if (await dialog.locator('.dialog__choices').count() > 0) return 'choice';
+    await page.keyboard.press('Enter');
+    await page.waitForTimeout(50);
+  }
+  throw new Error('scene did not end');
+}
+
 (async () => {
   const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_PATH });
   try {
     for (const reducedMotion of ['reduce', 'no-preference']) {
-      const page = await browser.newPage({ reducedMotion });
+      const page = await browser.newPage({ reducedMotion, viewport: { width: 1280, height: 720 } });
       const errors = [];
-      page.on('pageerror', error => errors.push(error.message));
-      await page.goto(`${process.argv[2] || 'http://127.0.0.1:5182'}/?gallery`);
+      page.on('pageerror', (error) => errors.push(error.message));
+
+      // Gallery preview: plays any scene without its conditions.
+      await page.goto(`${BASE}/?gallery`);
+      await page.getByRole('combobox').selectOption('knight.ink/knight_1');
       await page.getByRole('button', { name: 'Play scene' }).click();
       const dialog = page.getByRole('dialog', { name: 'Story scene' });
       await dialog.waitFor();
-      assert.match(await dialog.innerText(), /A steady hand, Elaine/);
-      await page.keyboard.press('Enter');
-      assert.match(await dialog.innerText(), /He makes it sound so easy/);
-      await page.keyboard.press('Space');
-      assert.match(await dialog.innerText(), /courtyard falls silent/);
-      await dialog.getByRole('button', { name: 'Advance dialog' }).click();
-      assert.match(await dialog.innerText(), /Shall we try a bout/);
-      assert.equal(await page.locator('.dialog__portrait--right').evaluate(el => getComputedStyle(el).transform), 'matrix(-1, 0, 0, 1, 0, 0)');
-      await page.keyboard.press('Enter');
-      await dialog.getByRole('button', { name: 'Ask for advice' }).click();
-      assert.match(await dialog.innerText(), /Show me how you hold your guard/);
-      await page.keyboard.press('Enter');
-      assert.match(await dialog.innerText(), /Enough chatter/);
-      await page.keyboard.press('Enter');
-      await dialog.waitFor({ state: 'detached' });
-      await page.getByRole('button', { name: 'Play scene' }).click();
-      assert.match(await dialog.innerText(), /A steady hand, Elaine/);
+      assert.match(await dialog.innerText(), /You hold that sword like a ladle, Elaine/);
+      assert.equal(await advance(page, dialog), 'choice');
+      assert.equal(await page.locator('.dialog__portrait--right').evaluate((el) => getComputedStyle(el).transform), 'matrix(-1, 0, 0, 1, 0, 0)');
+      await dialog.getByRole('button', { name: 'Ignore him' }).click();
+      assert.match(await dialog.innerText(), /Better not to rise to it/);
+      assert.equal(await advance(page, dialog), 'closed');
+
+      // A new game: the Social button is open and the daughter hints at it.
+      await page.goto(BASE);
+      await page.evaluate(() => localStorage.clear());
+      await page.reload();
+      await page.getByRole('button', { name: 'New Game', exact: true }).click();
+      await page.getByRole('button', { name: 'Skip', exact: true }).click();
+      await page.getByRole('button', { name: 'Begin', exact: true }).click();
+      const social = page.getByRole('button', { name: 'Social', exact: true });
+      await social.waitFor();
+      assert.equal(await social.isEnabled(), true);
+      assert.match(await page.locator('.home-thought').innerText(), /something on my mind/);
+      const week = await page.locator('.topbar').first().innerText();
+      await social.click();
+      await dialog.waitFor();
+      assert.match(await dialog.innerText(), /Father\? Can I ask you something/);
+      assert.equal(await advance(page, dialog), 'closed');
+      assert.equal(await page.getByRole('dialog').count(), 0, 'a talk shows no result panel');
+      assert.equal(await page.locator('.topbar').first().innerText(), week, 'a talk spends no week');
+      assert.equal(await social.isEnabled(), false);
+
+      // A lesson with the Hedge Knight plays knight_1, then the result panel.
+      await page.getByRole('button', { name: 'Tutoring', exact: true }).click();
+      await page.getByText('The Hedge Knight').first().click();
+      await page.getByRole('button', { name: 'Commit week' }).click();
+      await dialog.waitFor();
+      assert.match(await dialog.innerText(), /like a ladle/);
+      assert.equal(await advance(page, dialog), 'choice');
+      await dialog.getByRole('button', { name: 'Accept the challenge' }).click();
+      assert.equal(await advance(page, dialog), 'closed');
+      const result = page.getByRole('dialog');
+      await result.waitFor();
+      assert.match(await result.innerText(), /Lessons with The Hedge Knight/);
+      await result.getByRole('button', { name: 'Continue' }).click();
+      await page.getByRole('button', { name: 'Chronicle', exact: true }).click();
+      assert.match(await page.getByRole('dialog').innerText(), /A story: The Hedge Knight's Squire/);
       assert.deepEqual(errors, []);
       await page.close();
     }
-    console.log('Dialog browser checks passed (normal and reduced motion).');
-  } finally { await browser.close(); }
-})().catch(error => { console.error(error); process.exitCode = 1; });
+    console.log('Dialog and story beat browser checks passed (normal and reduced motion).');
+  } finally {
+    await browser.close();
+  }
+})().catch((error) => { console.error(error); process.exitCode = 1; });
