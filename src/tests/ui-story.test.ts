@@ -65,6 +65,19 @@ describe('loadBeats', () => {
     ]));
   });
 
+  it('rejects unsafe numeric tags and overflowing combined rewards before playback', () => {
+    const unsafe = '9007199254740992';
+    for (const tag of [`order: ${unsafe}`, `month: ${unsafe}`, `stat: bellatores ${unsafe}`, `reward: coin ${unsafe}`]) {
+      const loaded = loadBeats({ 'unsafe.ink': ink(`-> END\n${knot('a', `# order: 10\n# activity: stables\n# ${tag}`.replace('# order: 10\n', tag.startsWith('order:') ? '' : '# order: 10\n'))}`) });
+      expect(loaded.beats, tag).toEqual([]);
+      expect(loaded.errors.length, tag).toBeGreaterThan(0);
+    }
+    const combined = loadBeats({ 'sum.ink': ink(`-> END\n${knot('a', '# order: 10\n# activity: stables\n# reward: coin 9007199254740991\n# reward: coin 1')}`) });
+    expect(combined.beats).toEqual([]);
+    expect(combined.errors).toContain('sum/a: total coin reward exceeds safe integer range');
+    expect(loadBeats({ 'cool.ink': ink(`# cooldown: ${unsafe}\n-> END\n${knot('a', '# order: 10\n# activity: stables')}`) }).beats).toEqual([]);
+  });
+
   it('validates ids and duplicate orders', () => {
     const { beats } = loadBeats({
       'x.ink': ink(`-> END\n${knot('a', '# order: 10\n# activity: jousting\n# reward: item excalibur\n# bg: moon\n# left: dragon')}`

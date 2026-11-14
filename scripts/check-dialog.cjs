@@ -54,11 +54,17 @@ async function advance(page, dialog) {
       const week = await page.locator('.topbar').first().innerText();
       await social.click();
       await dialog.waitFor();
+      assert.equal(await page.locator('.scene').evaluate(el => el.inert), true, 'background is inert during story');
+      for (const key of ['Tab', 'Shift+Tab']) {
+        await page.keyboard.press(key);
+        assert.equal(await dialog.evaluate(el => el.contains(document.activeElement)), true);
+      }
       assert.match(await dialog.innerText(), /Father\? Can I ask you something/);
       assert.equal(await advance(page, dialog), 'closed');
       assert.equal(await page.getByRole('dialog').count(), 0, 'a talk shows no result panel');
       assert.equal(await page.locator('.topbar').first().innerText(), week, 'a talk spends no week');
       assert.equal(await social.isEnabled(), false);
+      assert.equal(await page.locator('.scene').evaluate(el => el.inert), false, 'background is restored after story');
 
       // A lesson with the Hedge Knight plays knight_1, then the result panel.
       await page.getByRole('button', { name: 'Tutoring', exact: true }).click();

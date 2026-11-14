@@ -46,7 +46,9 @@ function tagMap(tags: readonly string[] | null): Map<string, string[]> {
 }
 
 function wholeNumber(text: string | undefined): number | undefined {
-  return text !== undefined && /^\d+$/.test(text) ? Number(text) : undefined;
+  if (text === undefined || !/^\d+$/.test(text)) return undefined;
+  const value = Number(text);
+  return Number.isSafeInteger(value) ? value : undefined;
 }
 
 /**
@@ -90,6 +92,9 @@ export function loadBeats(stories: Readonly<Record<string, string>>): { beats: B
         if (kind === 'coin' && amount !== undefined && amount > 0 && rest.length === 0) rewards.push({ kind: 'coin', amount });
         else if (kind === 'item' && value !== undefined && rest.length === 0) rewards.push({ kind: 'item', id: value });
         else problems.push(`bad reward ${JSON.stringify(text)}`);
+      }
+      if (!Number.isSafeInteger(rewards.reduce((sum, reward) => sum + (reward.kind === 'coin' ? reward.amount : 0), 0))) {
+        problems.push('total coin reward exceeds safe integer range');
       }
       if (problems.length > 0 || cooldown === undefined) {
         errors.push(...problems.map((p) => `${id}: ${p}`));

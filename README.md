@@ -202,6 +202,8 @@ beat with id `<file>/<knot>` (docs/dialog-and-story-beats-plan.md §5.5–§6). 
 `# month:` (earliest month, default 1), `# stat: <estate> <min>` and
 `# reward: coin <n>` / `# reward: item <id>` (both repeatable), plus `# bg:` and
 `# left:`. A file-level `# cooldown: <weeks>` (default 2) spaces a thread's beats.
+Numeric tags and the combined Coin reward must fit non-negative safe integers;
+malformed values are reported by the content test before playback.
 
 After a lesson, job or rest, the thread's next unplayed beat plays if its activity,
 month, post-activity stats and cooldown all match, at most one beat per week; the
