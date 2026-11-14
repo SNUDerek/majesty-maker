@@ -174,8 +174,8 @@ describe('unresolved-parameter register', () => {
     expect(getUnresolved(config).find(({ path }) => path === 'route.finalRoadBonus')?.value).toBe(-30);
   });
 
-  it('is documented in docs/unresolved-parameters.md', () => {
-    const doc = readFileSync(new URL('../../docs/unresolved-parameters.md', import.meta.url), 'utf8');
+  it('is documented in docs/archive/unresolved-parameters.md', () => {
+    const doc = readFileSync(new URL('../../docs/archive/unresolved-parameters.md', import.meta.url), 'utf8');
     for (const { path } of unresolved) {
       expect(doc, path).toContain(`\`${path}\``);
     }

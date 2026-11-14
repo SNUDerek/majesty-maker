@@ -16,6 +16,7 @@ import {
 } from '../../core/index.js';
 import { sameAction } from './activities.js';
 import { chronicleEntry, type ChronicleEntry } from './chronicle.js';
+import { resultFlavor } from './flavor.js';
 import { SLOTS, deleteSave, readSlot, writeSave, type SaveStorage, type SlotId, type SlotInfo } from './persistence.js';
 import type { UiState } from './screen.js';
 import { summarize } from './summarize.js';
@@ -166,7 +167,10 @@ export class GameStore {
       || action.type === 'BEGIN_PILGRIMAGE';
     const nextUi: UiState = { ...ui, ...(isHomeActivity ? { homeView: 'hub' as const } : {}) };
     delete nextUi.pendingResult;
-    if (summary !== null) nextUi.pendingResult = summary;
+    if (summary !== null) {
+      const flavor = resultFlavor(state, action, result.events);
+      nextUi.pendingResult = flavor === undefined ? summary : { ...summary, flavor };
+    }
     const entry = chronicleEntry(state, action, result.events, result.state, this.config);
     this.set({ state: result.state, ui: nextUi, lastEvents: result.events, error: null, log: [...this.snapshot.log, entry] });
     this.autosave(result.state);

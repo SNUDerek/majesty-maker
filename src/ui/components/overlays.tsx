@@ -91,6 +91,7 @@ export function ResultPanel({ summary, onDismiss }: { summary: ResultSummary; on
         <div className="result__head">
           <h2>{summary.title}</h2>
           {summary.detail !== undefined && <p>{summary.detail}</p>}
+          {summary.flavor !== undefined && <p className="result__flavor">{summary.flavor}</p>}
         </div>
       }
       actions={<Button primary onClick={onDismiss}>Continue</Button>}

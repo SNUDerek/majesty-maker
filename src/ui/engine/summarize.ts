@@ -31,6 +31,8 @@ export interface ResultSummary {
   weeks: { count: number; reasons: WeekReason[] };
   /** Extra lines such as a collapse or the deadline. */
   notes: string[];
+  /** A random line of flavor text (tutor and job results only), filled in by the store. */
+  flavor?: string;
 }
 
 const ROW_ORDER: readonly Quantity[] = ['bellatores', 'oratores', 'laboratores', 'fatigue', 'melancholy', 'treasury', 'carried'];

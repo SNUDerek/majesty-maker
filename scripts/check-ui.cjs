@@ -90,6 +90,10 @@ async function assertInsideParchment(page, where) {
       await page.getByRole('button', { name: 'Continue', exact: true }).click();
       await page.getByRole('button', { name: 'Tutoring', exact: true }).waitFor();
       await assertInsideParchment(page, 'home');
+      assert.ok((await page.locator('.home-thought').innerText()).trim().length > 0);
+      const thought = await page.locator('.home-thought').boundingBox();
+      const portrait = await page.locator('.home-princess').boundingBox();
+      assert.ok(thought.y > portrait.y + portrait.height / 2, 'thought sits near the portrait bottom');
       await page.getByRole('button', { name: 'Menu', exact: true }).click();
       await assertInsideParchment(page, 'save/load');
       await page.getByRole('dialog').getByRole('button', { name: 'Close', exact: true }).click();
@@ -106,6 +110,8 @@ async function assertInsideParchment(page, where) {
       await dialog.waitFor();
       assert.equal(await dialog.getAttribute('aria-labelledby') !== null, true);
       await assertInsideParchment(page, 'result');
+      assert.ok((await dialog.locator('.result__flavor').innerText()).trim().length > 0);
+      assert.equal(await dialog.locator('.result__flavor').evaluate(el => getComputedStyle(el).fontStyle), 'italic');
       for (const key of ['Tab', 'Tab', 'Shift+Tab', 'Shift+Tab']) {
         await page.keyboard.press(key);
         assert.equal(await page.evaluate(() => document.activeElement.closest('[role="dialog"]') !== null), true);
