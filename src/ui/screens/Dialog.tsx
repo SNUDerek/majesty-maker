@@ -41,7 +41,15 @@ export function Dialog({ json, knot, inputs, onFinish, background = 'home', left
   const buttonRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     const previous = document.activeElement;
-    return () => { if (previous instanceof HTMLElement && previous.isConnected) previous.focus(); };
+    const modal = dialogRef.current;
+    const siblings = Array.from(modal?.parentElement?.children ?? [])
+      .filter((element): element is HTMLElement => element instanceof HTMLElement && element !== modal);
+    const inertBefore = siblings.map(element => element.inert);
+    siblings.forEach(element => { element.inert = true; });
+    return () => {
+      siblings.forEach((element, index) => { element.inert = inertBefore[index]!; });
+      if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
+    };
   }, []);
   useEffect(() => { buttonRef.current?.focus(); }, [view.step.kind]);
   useEffect(() => {

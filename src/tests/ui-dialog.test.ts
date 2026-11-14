@@ -3,7 +3,7 @@
 import { describe, expect, it } from 'vitest';
 import { Story } from 'inkjs';
 import { Compiler } from 'inkjs/full';
-import sample from '../../content/story/sample.ink';
+import sample from './fixtures/sample.ink';
 import { openScene } from '../ui/engine/dialog.js';
 import { inkPlugin } from '../../scripts/vite-plugin-ink.js';
 

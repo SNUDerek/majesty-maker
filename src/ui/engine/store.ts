@@ -19,6 +19,7 @@ import { chronicleEntry, type ChronicleEntry } from './chronicle.js';
 import { resultFlavor } from './flavor.js';
 import { SLOTS, deleteSave, readSlot, writeSave, type SaveStorage, type SlotId, type SlotInfo } from './persistence.js';
 import type { UiState } from './screen.js';
+import { actionActivity, beatReward, nextBeat, type Beat } from './story.js';
 import { summarize } from './summarize.js';
 
 export interface GameSnapshot {
@@ -42,13 +43,16 @@ export class GameStore {
   readonly config: RulesConfig;
   private readonly storage: SaveStorage | null;
   private readonly now: () => Date;
+  /** Story beats from content/story (empty in tests that don't load them). */
+  readonly beats: readonly Beat[];
   private snapshot: GameSnapshot = { state: null, ui: INITIAL_UI, lastEvents: [], error: null, log: [] };
   private readonly listeners = new Set<() => void>();
 
-  constructor(config: RulesConfig, storage: SaveStorage | null, now: () => Date = () => new Date()) {
+  constructor(config: RulesConfig, storage: SaveStorage | null, now: () => Date = () => new Date(), beats: readonly Beat[] = []) {
     this.config = config;
     this.storage = storage;
     this.now = now;
+    this.beats = beats;
   }
 
   subscribe = (listener: () => void): (() => void) => {
@@ -147,7 +151,8 @@ export class GameStore {
   dispatch(action: GameAction): void {
     const { state, ui } = this.snapshot;
     if (state === null) return;
-    if (ui.pendingResult !== undefined || ui.overlay !== undefined) return; // the player hasn't seen the last result yet
+    // The player hasn't seen the last result (or scene) yet.
+    if (ui.pendingResult !== undefined || ui.pendingDialog !== undefined || ui.overlay !== undefined) return;
     if (!isAvailable(state, action, this.config)) {
       this.set({ error: 'That action is not available now.' });
       return;
@@ -171,8 +176,70 @@ export class GameStore {
       const flavor = resultFlavor(state, action, result.events);
       nextUi.pendingResult = flavor === undefined ? summary : { ...summary, flavor };
     }
+    const beat = this.beatAfter(state, action, result.state, result.events);
+    if (beat !== undefined) nextUi.pendingDialog = { beatId: beat.id, activity: actionActivity(action)! };
     const entry = chronicleEntry(state, action, result.events, result.state, this.config);
     this.set({ state: result.state, ui: nextUi, lastEvents: result.events, error: null, log: [...this.snapshot.log, entry] });
+    this.autosave(result.state);
+  }
+
+  /**
+   * The beat triggered by a home activity (§6.3), skipped after the forced
+   * recovery rest, a collapse, or when the campaign has left the home phase.
+   */
+  private beatAfter(before: CampaignState, action: GameAction, after: CampaignState, events: readonly GameEvent[]): Beat | undefined {
+    const activity = actionActivity(action);
+    if (activity === undefined || before.pendingConvalescence !== undefined || after.phase !== 'home'
+      || events.some((e) => e.type === 'collapse')) return undefined;
+    return nextBeat(this.beats, after, activity, this.config);
+  }
+
+  /** The father–daughter talk the Social button would start, if any (§6.4). */
+  socialBeat(): Beat | undefined {
+    const { state } = this.snapshot;
+    if (state === null || state.phase !== 'home' || state.pendingConvalescence !== undefined) return undefined;
+    return nextBeat(this.beats, state, 'socialize', this.config);
+  }
+
+  /** Opens the Social talk. Free: it spends no week and shows no result panel. */
+  startTalk(): void {
+    const { ui } = this.snapshot;
+    const beat = this.socialBeat();
+    if (beat === undefined || ui.pendingResult !== undefined || ui.pendingDialog !== undefined || ui.overlay !== undefined) return;
+    this.setUi({ pendingDialog: { beatId: beat.id, activity: 'socialize' } });
+  }
+
+  beat(id: string): Beat | undefined {
+    return this.beats.find((b) => b.id === id);
+  }
+
+  /**
+   * Called when the dialog scene ends: records the beat and grants its reward
+   * through the engine (STORY_BEAT), then lets the waiting result panel show.
+   */
+  finishBeat(): void {
+    const { state, ui } = this.snapshot;
+    const { pendingDialog, ...rest } = ui;
+    if (state === null || pendingDialog === undefined) return;
+    const beat = this.beat(pendingDialog.beatId);
+    if (beat === undefined) {
+      this.set({ ui: rest });
+      return;
+    }
+    const reward = beatReward(beat);
+    const action: GameAction = { type: 'STORY_BEAT', beatId: beat.id, ...(reward === undefined ? {} : { reward }) };
+    let result;
+    try {
+      result = applyAction(state, action, this.config);
+    } catch (error) {
+      if (error instanceof RuleError) {
+        this.set({ ui: rest, error: error.message });
+        return;
+      }
+      throw error;
+    }
+    const entry = { ...chronicleEntry(state, action, result.events, result.state, this.config), title: `A story: ${beat.title}` };
+    this.set({ state: result.state, ui: rest, lastEvents: result.events, error: null, log: [...this.snapshot.log, entry] });
     this.autosave(result.state);
   }
 

@@ -189,8 +189,30 @@ plugin using pinned inkjs 2.3.2. Declare `scion`, `player`, `bellatores`, `orato
 and `laboratores` in each file. Add an `# order: 10` tag to a knot to list it in
 the Gallery. Known character IDs followed by `:` produce speech; parenthesized
 speech is a thought; other text is narration. `bg`, `left`, and `right` tags set
-background and portrait IDs. See `sample.ink` for a short branching example.
+background and portrait IDs. See `src/tests/fixtures/sample.ink` for a short branching example.
 Files can also be previewed in Inky. `INCLUDE` is unsupported in this pass.
 The player resets Ink for each scene; Gallery previews do not grant rewards.
-Activity triggers and persistent story progression are separate follow-up tasks.
-`node scripts/check-dialog.cjs [URL]` plays the sample scene in the browser (same Playwright prerequisites).
+
+### Story beats
+
+Each `content/story/*.ink` file is a thread; each knot with an `# order:` tag is a
+beat with id `<file>/<knot>` (docs/dialog-and-story-beats-plan.md §5.5–§6). Knot tags:
+`# title:` (Chronicle name, default the knot), `# order:` (position in the thread),
+`# activity:` (space-separated activity ids, or `socialize` for the Social button),
+`# month:` (earliest month, default 1), `# stat: <estate> <min>` and
+`# reward: coin <n>` / `# reward: item <id>` (both repeatable), plus `# bg:` and
+`# left:`. A file-level `# cooldown: <weeks>` (default 2) spaces a thread's beats.
+Numeric tags and the combined Coin reward must fit non-negative safe integers;
+malformed values are reported by the content test before playback.
+
+After a lesson, job or rest, the thread's next unplayed beat plays if its activity,
+month, post-activity stats and cooldown all match, at most one beat per week; the
+result panel waits behind the scene. Beats are skipped after the forced recovery
+week, a collapse, or the deadline. **Social** opens the next father–daughter talk
+for free and is greyed out otherwise; the daughter's thought hints when one is
+ready. The end of a scene applies the core `STORY_BEAT` action (rewards, Chronicle
+entry "A story: <title>"); quitting mid-scene leaves the beat unplayed.
+`src/tests/ui-story.test.ts` validates every beat's tags against the real ids.
+
+`node scripts/check-dialog.cjs [URL]` plays a Gallery scene, a Social talk and a
+lesson's beat in the browser (same Playwright prerequisites).

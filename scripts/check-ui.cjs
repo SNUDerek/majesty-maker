@@ -106,6 +106,15 @@ async function assertInsideParchment(page, where) {
       assert.match(await gauge.innerText(), /71 → 76 \/ 78/);
       assert.doesNotMatch(await gauge.innerText(), /Collapse!/);
       await page.getByRole('button', { name: 'Commit week' }).click();
+      const story = page.getByRole('dialog', { name: 'Story scene' });
+      await story.waitFor();
+      for (let i = 0; i < 30 && await story.count(); i++) {
+        const choice = story.locator('.dialog__choices button').first();
+        if (await choice.count()) await choice.click();
+        else await page.keyboard.press('Enter');
+        await page.waitForTimeout(50);
+      }
+      await story.waitFor({ state: 'detached' });
       const dialog = page.getByRole('dialog');
       await dialog.waitFor();
       assert.equal(await dialog.getAttribute('aria-labelledby') !== null, true);
@@ -134,9 +143,10 @@ async function assertInsideParchment(page, where) {
         await page.getByRole('button', { name: 'Commit week' }).click();
         await page.getByRole('dialog').getByRole('button', { name: 'Continue' }).click();
       }
-      // The Chronicle lists the three weeks just played (Tutoring, Work, Rest), newest first.
+      // The Chronicle lists three activities and the completed lesson story, newest first.
       await page.getByRole('button', { name: 'Chronicle', exact: true }).click();
-      assert.equal(await page.locator('.chronicle__entry').count(), 3);
+      assert.equal(await page.locator('.chronicle__entry').count(), 4);
+      assert.match(await page.locator('.chronicle').innerText(), /A story: The Hedge Knight's Squire/);
       assert.match(await page.locator('.chronicle__title').first().innerText(), /^Rest at Home|^Convalescence/);
       await assertInsideParchment(page, 'chronicle');
       await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click();
