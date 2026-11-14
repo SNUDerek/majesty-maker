@@ -143,7 +143,7 @@ hedge_knight: You hold that sword like a ladle, {scion}.
 -> END
 ```
 
-- **The five `VAR` lines are required** in every file, exactly as above. The values are only for previewing in Inky; the game replaces them before each scene (see "Names" below).
+- **The five `VAR` lines are required** in every file, exactly as above. The values are only for previewing in Inky. Before **every scene** (every beat, not once per file), the game resets ink and copies in the daughter's name, the player's name and her stats *as they are at that moment*. So `{bellatores}` in a late beat shows her late-game stat (see "Names" below).
 - **The `-> END` before the first knot is required.** It stops the file's top section from running straight into the first scene.
 - **No `INCLUDE`.** Each file must stand alone, and the build rejects `INCLUDE`.
 - The file name (without `.ink`) is the **thread name**. A beat's id is `<file>/<knot>`, e.g. `knight/knight_1`. The save stores these ids, so **don't rename a knot or file once beats have shipped**, or old saves will think that beat hasn't played.
@@ -205,6 +205,37 @@ Write these directly under the `=== knot ===` line, one per line.
 **Global tag** (top of the file): `# cooldown: 3` is the minimum number of weeks between two beats of this thread. The default is 2.
 
 Rewards are shown to the player as a last line ("Received: 25 Coin, Gambeson"). You don't write that line yourself.
+
+### Every beat has its own trigger
+
+The knot tags belong to **that knot only**. Nothing is inherited from the first knot or from the file, except `# cooldown`. Every beat needs at least `# order` and `# activity`, and can add its own `# month`, `# stat` and `# reward`:
+
+```ink
+=== knight_1 ===
+# order: 10
+# activity: hedge_knight village_watch
+hedge_knight: You hold that sword like a ladle.
+-> END
+
+=== knight_2 ===
+# order: 20
+# activity: hedge_knight
+# month: 4
+# stat: bellatores 30
+# reward: coin 25
+hedge_knight: Better. Much better.
+-> END
+```
+
+Here, once `knight_1` has played, `knight_2` plays after a Hedge Knight lesson, but only when **all** of these hold:
+
+- it is month 4 or later;
+- her Bellatores is at least 30 after that lesson;
+- at least 2 weeks (the thread's cooldown) have passed since `knight_1` played.
+
+Watch duty no longer counts, because `knight_2` only lists `hedge_knight`.
+
+A beat with **only** `# order` and `# activity` has no month gate (it defaults to month 1) and no stat gate. So it simply plays on the next matching activity once the cooldown has passed.
 
 ### What `# order` does
 
