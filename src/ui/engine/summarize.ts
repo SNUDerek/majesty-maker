@@ -127,6 +127,7 @@ function isSilent(action: GameAction, events: readonly GameEvent[]): boolean {
     case 'BEGIN_PILGRIMAGE':
     case 'CONTINUE_ENCOUNTER':
     case 'CONTINUE_SEGMENT':
+    case 'STORY_BEAT': // the dialog scene itself shows the reward
       return true;
     case 'USE_CONSUMABLE':
       return !events.some((e) => e.type === 'reroll_used');

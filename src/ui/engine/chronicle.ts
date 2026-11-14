@@ -49,6 +49,10 @@ function silentHeadline(before: CampaignState, action: GameAction, events: reado
       return { title: threat ?? 'Pressed on' };
     case 'USE_CONSUMABLE':
       return { title: `Used ${itemName(action.itemId, config)}` };
+    case 'STORY_BEAT': {
+      const items = (action.reward?.items ?? []).map((id) => itemName(id, config));
+      return { title: `A story: ${action.beatId}`, ...(items.length === 0 ? {} : { detail: `Received ${items.join(', ')}.` }) };
+    }
     default:
       return { title: 'Done' };
   }

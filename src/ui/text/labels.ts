@@ -127,6 +127,7 @@ export const COIN_SOURCE_LABEL: Record<CoinSource, string> = {
   departure_fee: 'departure fee',
   carry_out: 'carried out',
   encounter_reward: 'reward',
+  story_reward: 'story reward',
   laboratores_penalty: 'lost on the road',
   skip_fee: 'bribe',
   bank_carried: 'banked',
