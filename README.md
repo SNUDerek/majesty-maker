@@ -172,12 +172,12 @@ UI review regressions: with the dev server running and Playwright/Chromium avail
 Run `node scripts/check-menus.cjs [URL]` for save/load, confirmation focus, corrupt-save recovery, and dev-input keyboard regressions. Run `node scripts/check-road.cjs [URL]` against the Vite dev server for engine-generated reroll, wipeout, remedy, retreat and New Moon bribe fixtures. Both use the same Playwright prerequisites.
 
 Flavor text is authored in `content/flavor.json`: tutor lines, job success/failure
-lines, and idle/talk-ready thoughts. Lists can grow without code changes; Stables
+lines, rest lines (one list per rest), and idle/talk-ready thoughts. Lists can grow without code changes; Stables
 needs no failure lines. `{scion}` inserts the daughter's name and `{player}` the
 player's first name. Selection is deterministic for the campaign seed, week, and
-text slot, independent of gameplay RNG. Tutor/job result popups show narration;
-the home thought box is hidden during forced recovery. Talk-ready thoughts are
-reserved for the later Social/story-beat integration.
+text slot, independent of gameplay RNG. Tutor, job and rest result popups show
+narration (not the forced recovery rest); the home thought box is hidden during
+forced recovery and shows a talk-ready thought when a Social talk is waiting.
 
 ### Dialogue preview
 
