@@ -1,3 +1,4 @@
+import { prefersReducedMotion } from '../engine/motion.js';
 import { useEffect, useRef, useState } from 'react';
 import { createCampaign, getCalendar, type ZodiacSign } from '../../core/index.js';
 import { BACKGROUND, IMAGES, INTRO_PANEL } from '../assets.js';
@@ -44,9 +45,7 @@ const REVEAL_RATE = 40;
 /** Picture fade duration, matching `.intro__picture` in components.css. */
 const FADE_MS = 300;
 
-function prefersReducedMotion(): boolean {
-  return typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
+
 
 /**
  * Prologue on an unframed parchment over black: picture near the top, text

@@ -1,3 +1,5 @@
+import { Story } from 'inkjs';
+import { Dialog } from './Dialog.js';
 import { useState } from 'react';
 import { createCampaign, type RulesConfig } from '../../core/index.js';
 import { BACKGROUND } from '../assets.js';
@@ -8,6 +10,14 @@ import { Modal, ResultPanel, Toast } from '../components/overlays.js';
 import { Scene } from '../components/Stage.js';
 import type { ResultSummary } from '../engine/summarize.js';
 import { ESTATES, SIGNS_IN_SHEET_ORDER } from '../text/labels.js';
+
+const stories = import.meta.glob<string>('../../../content/story/*.ink', { eager: true, import: 'default' });
+const scenes = Object.entries(stories).flatMap(([file, json]) => {
+  const story = new Story(json);
+  return [...story.mainContentContainer.namedContent.keys()]
+    .filter(knot => story.TagsForContentAtPath(knot)?.some(tag => tag.startsWith('order:')))
+    .map(knot => ({ id: `${file.split('/').pop()}/${knot}`, knot, json }));
+});
 
 const SAMPLE_RESULT: ResultSummary = {
   title: 'The Alehouse: failure — collapse!',
@@ -24,6 +34,9 @@ const SAMPLE_RESULT: ResultSummary = {
 
 /** `?gallery`: every component on one screen, for eyeballing styles. */
 export function Gallery({ config }: { config: RulesConfig }) {
+  const [sceneId, setSceneId] = useState(scenes[0]?.id ?? '');
+  const [playing, setPlaying] = useState(false);
+  const selected = scenes.find(scene => scene.id === sceneId);
   const [overlay, setOverlay] = useState<'none' | 'modal' | 'result' | 'toast'>('none');
   const state = createCampaign(
     { seed: 1, birthSign: 'leo', playerName: { first: 'Aldous', last: 'Wyke' }, scionName: 'Elaine' }, config);
@@ -43,6 +56,12 @@ export function Gallery({ config }: { config: RulesConfig }) {
           <p>Coin <CoinAmount amount={50} /> <CoinAmount amount={-20} sign /></p>
           <p>{ESTATES.map((e) => <EstateIcon key={e} estate={e} size={64} />)}</p>
           <RouteStrip furthest={2} total={config.route.regularSegments} />
+        </Panel>
+        <Panel title="Dialog preview">
+          <label>Scene <select value={sceneId} onChange={event => setSceneId(event.target.value)}>
+            {scenes.map(scene => <option key={scene.id} value={scene.id}>{scene.id}</option>)}
+          </select></label>
+          <Button disabled={!selected} onClick={() => setPlaying(true)}>Play scene</Button>
         </Panel>
         <Panel variant="inset" title="Buttons">
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -64,6 +83,8 @@ export function Gallery({ config }: { config: RulesConfig }) {
           </div>
         </Panel>
       </div>
+      {playing && selected && <Dialog key={selected.id} json={selected.json} knot={selected.knot}
+        inputs={{ scion: state.scionName, player: state.playerName.first, ...state.stats }} onFinish={() => setPlaying(false)} />}
       {overlay === 'modal' && (
         <Modal title="Depart?" actions={<><Button onClick={() => setOverlay('none')}>Back</Button><Button primary onClick={() => setOverlay('none')}>Depart</Button></>}>
           <p>Costs 1 week and a 10 Coin fee.</p>
