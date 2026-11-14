@@ -99,7 +99,7 @@ export function Dialog({ json, knot, inputs, onFinish, background = 'home', left
         <button ref={buttonRef} className="dialog__advance" aria-label="Advance dialog" disabled={closing} onClick={() => advanceRef.current()}><img src={arrow} alt="" /></button>
       </>}
       {step.kind === 'choice' && <div className="dialog__choices">{step.options.map((choice, i) =>
-        <button ref={i === 0 ? buttonRef : undefined} key={choice.index} disabled={closing} onClick={() => show(cursor.choose(choice.index))}>{choice.text}</button>)}</div>}
+        <button type="button" className="btn" ref={i === 0 ? buttonRef : undefined} key={choice.index} disabled={closing} onClick={() => show(cursor.choose(choice.index))}>{choice.text}</button>)}</div>}
     </div>
   </div>;
 }

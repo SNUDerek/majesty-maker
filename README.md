@@ -184,3 +184,4 @@ background and portrait IDs. See `sample.ink` for a short branching example.
 Files can also be previewed in Inky. `INCLUDE` is unsupported in this pass.
 The player resets Ink for each scene; Gallery previews do not grant rewards.
 Activity triggers and persistent story progression are separate follow-up tasks.
+`node scripts/check-dialog.cjs [URL]` plays the sample scene in the browser (same Playwright prerequisites).
