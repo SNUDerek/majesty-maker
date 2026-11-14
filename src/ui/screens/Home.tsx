@@ -5,6 +5,7 @@ import { RouteStrip, TopBar } from '../components/chrome.js';
 import { ConditionGauge, StatBlock } from '../components/meters.js';
 import { Scene } from '../components/Stage.js';
 import { activityOptions } from '../engine/activities.js';
+import { thoughtLine } from '../engine/flavor.js';
 import { departureBlocker } from '../engine/road.js';
 import { ESTATES, SIGN_LABEL, criticalPeriodLabel, fullName } from '../text/labels.js';
 import { useGame } from '../useStore.js';
@@ -47,12 +48,14 @@ export function HomeHub({ convalescence }: { convalescence: boolean }) {
   const state = snap.state!;
   const derived = getDerivedStats(state, store.config);
   const blocker = departureBlocker(state, store.config);
+  const thought = convalescence ? undefined : thoughtLine(state);
   const restHome = activityOptions(state, 'rest', store.config).find((o) => o.preview.activityId === 'rest_home')!;
   return (
     <Scene image={BACKGROUND.home}>
       <TopBar state={state} config={store.config} onMenu={() => store.setUi({ overlay: 'saveload' })}
         onChronicle={() => store.setUi({ overlay: 'chronicle' })} />
       <img className="home-princess" src={IMAGES.princessFull} alt={state.scionName} />
+      {thought !== undefined && <p className="home-thought" aria-label={`${state.scionName}'s thoughts`}>{thought}</p>}
       <div className="home-centre">
         <Panel variant="parchment" title="How shall she spend this week?">
           {derived.nextCriticalSolarPeriod !== undefined && (
