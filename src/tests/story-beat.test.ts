@@ -16,9 +16,11 @@ const beat = (beatId: string, reward?: { coin?: number; items?: string[] }): Gam
   ({ type: 'STORY_BEAT', beatId, ...(reward === undefined ? {} : { reward }) });
 
 function rejects(state: CampaignState, action: GameAction, code: RuleError['code']): void {
+  const before = structuredClone(state);
   try {
     applyAction(state, action, config);
   } catch (error) {
+    expect(state).toEqual(before);
     expect(error).toBeInstanceOf(RuleError);
     expect((error as RuleError).code).toBe(code);
     return;
@@ -90,6 +92,25 @@ describe('STORY_BEAT', () => {
     rejects(start(), beat(''), 'INVALID_ACTION');
   });
 
+  it('rejects malformed runtime rewards without recording the beat or granting partial rewards', () => {
+    for (const reward of [null, [], 'gold', 5, { coin: null }, { coin: NaN }, { coin: Infinity },
+      { coin: Number.MAX_SAFE_INTEGER + 1 }]) {
+      rejects(start(), { type: 'STORY_BEAT', beatId: 'bad', reward } as GameAction, 'INVALID_ACTION');
+    }
+    for (const items of [null, 'gambeson', [null], ['gambeson', 'missing']]) {
+      rejects(start(), { type: 'STORY_BEAT', beatId: 'bad', reward: { coin: 30, items } } as GameAction, 'INVALID_ITEM');
+    }
+  });
+
+  it('records prototype-named beat ids as own properties and rejects their replay', () => {
+    for (const id of ['__proto__', 'constructor', 'toString']) {
+      const { state } = applyAction(start(), beat(id), config);
+      expect(Object.hasOwn(state.storyBeats!, id)).toBe(true);
+      expect(state.storyBeats![id]).toBe(0);
+      rejects(state, beat(id), 'INVALID_ACTION');
+    }
+  });
+
   it('is rejected outside home and during convalescence', () => {
     rejects(start({ pendingConvalescence: 'home_collapse' }), beat('x'), 'INVALID_ACTION');
     const departure = getAvailableActions(start(), config).find((a) => a.type === 'BEGIN_PILGRIMAGE');
@@ -132,7 +153,7 @@ describe('STORY_BEAT in the UI layer', () => {
 
   it('rejects malformed storyBeats as corrupt', () => {
     const storage = memoryStorage();
-    for (const storyBeats of [[], { a: -1 }, { a: 'x' }, null]) {
+    for (const storyBeats of [[], { a: -1 }, { a: 'x' }, { a: 1.5 }, { a: Number.MAX_SAFE_INTEGER + 1 }, null]) {
       writeSave(storage, 'slot2', start(), config, new Date());
       const save = JSON.parse(storage.getItem(slotKey('slot2'))!);
       save.state.storyBeats = storyBeats;

@@ -257,9 +257,12 @@ function applyStoryBeat(state: CampaignState, action: Extract<GameAction, { type
   if (state.storyBeats !== undefined && Object.hasOwn(state.storyBeats, beatId)) {
     throw new RuleError('INVALID_ACTION', `STORY_BEAT: ${JSON.stringify(beatId)} has already played`);
   }
-  const coin = reward?.coin ?? 0;
+  if (reward !== undefined && (typeof reward !== 'object' || reward === null || Array.isArray(reward))) {
+    throw new RuleError('INVALID_ACTION', 'STORY_BEAT: reward must be an object');
+  }
+  const coin = reward?.coin === undefined ? 0 : reward.coin;
   if (!Number.isSafeInteger(coin) || coin < 0) throw new RuleError('INVALID_ACTION', `STORY_BEAT: coin must be a non-negative integer, got ${coin}`);
-  const items = reward?.items ?? [];
+  const items = reward?.items === undefined ? [] : reward.items;
   if (!Array.isArray(items)) throw new RuleError('INVALID_ITEM', 'STORY_BEAT: items must be a list of item ids');
   for (const itemId of items) {
     if (typeof itemId !== 'string' || !Object.hasOwn(config.items.catalog, itemId)) {
