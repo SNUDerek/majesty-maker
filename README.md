@@ -169,3 +169,11 @@ PR #29 review details are in the [B1–B3 delivery archive](docs/archive/balance
 UI review regressions: with the dev server running and Playwright/Chromium available, run `node scripts/check-ui.cjs` (optional URL argument; `NODE_PATH` can point to an existing Playwright installation). It checks the New Game flow, that parchment content stays inside the paper's drawn edge, gauge fills, projected condition ceilings, result-modal keyboard containment and focus return, and the home activity flow, the Chronicle and the pilgrimage guide (shown on the first Prep visit only, reopened by *?*) at 1280×720 and 1920×1080. `node scripts/playtest-ui.cjs [--seed N] [--size WxH] [--home-only] [--shots DIR] [--url URL]` plays one whole campaign through the UI, clicking only what a player sees, and prints the outcome (`--home-only` never departs, to reach the deadline). Save loading rejects malformed inventory, RNG and core state fields before entering the game.
 
 Run `node scripts/check-menus.cjs [URL]` for save/load, confirmation focus, corrupt-save recovery, and dev-input keyboard regressions. Run `node scripts/check-road.cjs [URL]` against the Vite dev server for engine-generated reroll, wipeout, remedy, retreat and New Moon bribe fixtures. Both use the same Playwright prerequisites.
+
+Flavor text is authored in `content/flavor.json`: tutor lines, job success/failure
+lines, and idle/talk-ready thoughts. Lists can grow without code changes; Stables
+needs no failure lines. `{scion}` inserts the daughter's name and `{player}` the
+player's first name. Selection is deterministic for the campaign seed, week, and
+text slot, independent of gameplay RNG. Tutor/job result popups show narration;
+the home thought box is hidden during forced recovery. Talk-ready thoughts are
+reserved for the later Social/story-beat integration.

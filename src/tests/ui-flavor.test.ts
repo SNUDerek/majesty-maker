@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createCampaign, type CampaignState, type GameEvent, type JobId, type TutorId } from '../core/index.js';
+import { applyAction, createCampaign, type CampaignState, type GameEvent, type JobId, type TutorId } from '../core/index.js';
 import { FLAVOR, fillNames, pickLine, resultFlavor, thoughtLine, type FlavorContent } from '../ui/engine/flavor.js';
 import { GameStore } from '../ui/engine/store.js';
 import { loadShippedConfig } from './support/config.js';
@@ -53,6 +53,14 @@ describe('pickLine', () => {
   });
 });
 
+describe('literal name substitution', () => {
+  it('preserves replacement tokens and does not expand placeholders inside names', () => {
+    const state = { ...fresh(), scionName: '$& {player}', playerName: { first: "$` $' $$", last: 'Wyke' } };
+    expect(fillNames('{scion} and {player}; {scion}.', state))
+      .toBe("$& {player} and $` $' $$; $& {player}.");
+  });
+});
+
 describe('resultFlavor', () => {
   const content: FlavorContent = {
     tutor: { hedge_knight: ['knight {scion}'], hermit: [], smuggler: [] },
@@ -90,12 +98,15 @@ describe('flavor in the store', () => {
     const before = store.getSnapshot().state!;
     store.dispatch({ type: 'TRAIN', tutor: 'hermit' });
     const after = store.getSnapshot();
+    expect(after.state).toEqual(applyAction(before, { type: 'TRAIN', tutor: 'hermit' }, config).state);
     expect(after.ui.pendingResult?.flavor).toBe(resultFlavor(before, { type: 'TRAIN', tutor: 'hermit' }, after.lastEvents));
     expect(FLAVOR.tutor.hermit.map((l) => fillNames(l, before))).toContain(after.ui.pendingResult?.flavor);
 
     store.dismissResult();
+    const beforeWork = store.getSnapshot().state!;
     store.dispatch({ type: 'WORK', job: 'stables' });
     const work = store.getSnapshot();
+    expect(work.state).toEqual(applyAction(beforeWork, { type: 'WORK', job: 'stables' }, config).state);
     expect(FLAVOR.job.stables.success.map((l) => fillNames(l, before))).toContain(work.ui.pendingResult?.flavor);
 
     const rng = { ...work.state!.rng };

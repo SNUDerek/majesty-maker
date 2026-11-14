@@ -31,7 +31,8 @@ export function pickLine(lines: readonly string[], key: string): string | undefi
 
 /** Replaces `{scion}` and `{player}` with the daughter's name and the player's first name. */
 export function fillNames(text: string, state: Pick<CampaignState, 'scionName' | 'playerName'>): string {
-  return text.replaceAll('{scion}', state.scionName).replaceAll('{player}', state.playerName.first);
+  return text.replace(/\{(scion|player)\}/g, (_, name: string) =>
+    name === 'scion' ? state.scionName : state.playerName.first);
 }
 
 function lineFor(state: CampaignState, lines: readonly string[] | undefined, slot: string): string | undefined {
