@@ -128,12 +128,27 @@ describe('flavor in the store', () => {
     expect(work.state!.rng).toEqual(rng);
   });
 
-  it('adds flavor to rest results', () => {
+  it.each(RESTS)('adds flavor to %s results without changing game state or RNG', (rest) => {
     const store = new GameStore(config, null);
     store.newGame({ seed: 78, birthSign: 'aries', playerName: { first: 'Aldous', last: 'Wyke' }, scionName: 'Elaine' });
     const before = store.getSnapshot().state!;
+    const action = { type: 'REST' as const, rest };
+    store.dispatch(action);
+    const after = store.getSnapshot();
+    expect(FLAVOR.rest[rest].map((l) => fillNames(l, before))).toContain(after.ui.pendingResult?.flavor);
+    expect(after.state).toEqual(applyAction(before, action, config).state);
+    expect(after.state!.rng).toEqual(before.rng);
+  });
+
+  it.each(['home_collapse', 'wipeout'] as const)('omits flavor from %s recovery in the store', (pendingConvalescence) => {
+    const store = new GameStore(config, null);
+    const before = { ...fresh(), pendingConvalescence };
+    store.devReplaceState(before);
     store.dispatch({ type: 'REST', rest: 'rest_home' });
-    expect(FLAVOR.rest.rest_home.map((l) => fillNames(l, before))).toContain(store.getSnapshot().ui.pendingResult?.flavor);
+    const after = store.getSnapshot();
+    expect(after.ui.pendingResult).toBeDefined();
+    expect(after.ui.pendingResult?.flavor).toBeUndefined();
+    expect(after.lastEvents.some(event => event.type === 'convalescence')).toBe(true);
   });
 
   it('gives the same thought for the same week and seed', () => {
