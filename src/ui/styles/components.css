@@ -431,3 +431,24 @@
 .tutorial__beats li { display: flex; align-items: center; gap: 6px; }
 .tutorial .modal__actions { margin-top: 0; }
 .tutorial__close { margin-right: auto; }
+
+/* Full-stage dialogue; shared by the Gallery and future story triggers. */
+.dialog { position: absolute; inset: 0; z-index: 100; background: #000; overflow: hidden; animation: dialog-in 300ms ease both; }
+.dialog--closing { animation: dialog-out 300ms ease both; pointer-events: none; }
+.dialog__background { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; animation: dialog-in 300ms ease both; }
+.dialog__portrait { position: absolute; bottom: 210px; width: 30%; height: 65%; }
+.dialog__portrait--left { left: 5%; }
+.dialog__portrait--right { right: 5%; transform: scaleX(-1); }
+.dialog__portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: bottom; animation: dialog-in 300ms ease both; }
+.dialog__dim { filter: brightness(.65); }
+.dialog__window { position: absolute; bottom: 24px; left: 4%; right: 4%; min-height: 190px; padding: 24px 64px 24px 28px; background: #211b17f2; border: 3px double #d6c298; border-radius: 8px; color: #f6ecd6; box-shadow: 0 4px 20px #0008; }
+.dialog__name { font-weight: bold; color: #e7ce95; margin-bottom: 12px; }
+.dialog__text { font-size: 24px; line-height: 1.5; margin: 0; }
+.dialog__text--narration, .dialog__text--thought { font-style: italic; }
+.dialog__advance { position: absolute; bottom: 16px; right: 16px; padding: 8px; background: transparent; border: 1px solid #d6c298; cursor: pointer; }
+.dialog__advance img { width: 24px; height: 24px; }
+.dialog__choices { display: flex; flex-direction: column; gap: 8px; }
+.dialog__choices button { text-align: left; }
+@keyframes dialog-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dialog-out { from { opacity: 1; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .dialog, .dialog * { animation: none !important; transition: none !important; } }
