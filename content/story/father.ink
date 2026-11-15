@@ -15,7 +15,7 @@ VAR melancholy = 0
 # month: 1
 # bg: home
 # left: player
-It is well past midnight. You find her in the courtyard, aggressively drilling sword forms by the light of a single lantern. # right: scion
+It is well past midnight. You see {scion} in the courtyard, aggressively drilling sword forms by the light of a single lantern. # right: scion
 { fatigue > 50:
     She looks exhausted, bags forming under her eyes, her strikes growing sloppy from sheer exertion.
 - else:
@@ -27,7 +27,8 @@ player: (She doesn't need to work this hard. The estate will be hers regardless.
 * [Soft]
     player: Why are you pushing yourself so relentlessly? You have nothing to prove to me.
 - scion: I don't know why. I just... I feel like I'm running out of time. Like there's a fire at my back and I have to be ready.
-player: (The Conjunction. She feels the pull of the stars, even if she doesn't know what it means.)
+player: (The Conjunction. So Diogenes spoke truth. She feels the pull of the stars, even if she doesn't know what it means.)
+player: (Oh {scion}, if only I could lift this burden from you...)
 player: The only thing you need to be ready for is tomorrow's chores. Put the sword away.
 -> END
 
