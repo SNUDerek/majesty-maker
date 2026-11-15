@@ -1,15 +1,14 @@
-# Serves the game through a Cloudflare Tunnel; no host ports are published.
-# Requires TUNNEL_TOKEN in .env (see README "Deploying").
+# Serves the game through the server's existing Cloudflare Tunnel: joins the
+# shared external `cloudflared-tunnel` network that the tunnel container is on.
+# Tunnel route: http://majesty-maker:80. No host ports are published.
 services:
   web:
     build: .
+    container_name: majesty-maker
     restart: unless-stopped
+    networks: [tunnel]
 
-  cloudflared:
-    image: cloudflare/cloudflared:latest
-    command: tunnel --no-autoupdate run
-    environment:
-      - TUNNEL_TOKEN=${TUNNEL_TOKEN:?set TUNNEL_TOKEN in .env}
-    restart: unless-stopped
-    depends_on:
-      - web
+networks:
+  tunnel:
+    external: true
+    name: cloudflared-tunnel

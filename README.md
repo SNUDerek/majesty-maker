@@ -39,12 +39,11 @@ URL switches:
 
 ## Deploying
 
-The game is a static build, so deployment is nginx serving `dist/` behind a Cloudflare Tunnel (`Dockerfile`, `docker-compose.yml`). No host ports are opened.
+The game is a static build, so deployment is nginx serving `dist/` (`Dockerfile`, `docker-compose.yml`). The compose file publishes no host ports; it joins the external Docker network `cloudflared-tunnel`, which an existing Cloudflare Tunnel container is attached to.
 
-1. In Cloudflare Zero Trust → Networks → Tunnels, create a tunnel and copy its token.
-2. `cp .env.example .env` and set `TUNNEL_TOKEN` (`.env` is git-ignored).
-3. Add a public hostname to the tunnel with service `http://web:80`.
-4. `docker compose up -d --build`
+1. Make sure the `cloudflared-tunnel` network exists and the tunnel's `cloudflared` container is on it (`docker network create cloudflared-tunnel`, then `docker network connect cloudflared-tunnel <cloudflared container>`).
+2. In Cloudflare Zero Trust → Networks → Tunnels, add a public hostname to the tunnel with service `http://majesty-maker:80`.
+3. `docker compose up -d --build`
 
 To update: `git pull && docker compose up -d --build`. Saves live in each player's browser, so redeploying does not affect them.
 
