@@ -1,6 +1,6 @@
 # Technical Plan: Flavor Text, Dialog Scenes and Story Beats
 
-**Status:** planning. Nothing here is implemented yet.
+**Status:** completed (T1–T5); archived after the dialog and story-beat review.
 **Scope:** the first "personality" pass on the POC. It covers presentation (flavor text, the daughter's thoughts, a visual-novel dialog player) and a minimal story-beat trigger system. Relationship stats and socializing mechanics are out of scope; §9 lists what is postponed.
 
 ## 1. Terms
@@ -119,6 +119,8 @@ VAR player = "Gerald"
 VAR bellatores = 15
 VAR oratores = 15
 VAR laboratores = 15
+VAR fatigue = 0
+VAR melancholy = 0
 ```
 
 The runtime sets these from `CampaignState` before each scene. Text uses `{scion}`. Ink conditions may use the stats (`{bellatores >= 40: ...}`), but they may only change wording, not the outcome.

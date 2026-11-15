@@ -105,6 +105,18 @@ Conditional blocks also work:
 }
 ```
 
+Fatigue and melancholy work the same way:
+
+```ink
+{ fatigue >= 60:
+    hedge_knight: You're dead on your feet. Sit.
+- else:
+    hedge_knight: Again. From the top.
+}
+```
+
+These are the raw values. Her collapse ceiling grows with Bellatores (fatigue) and Oratores (melancholy), so the same number is more serious early in the campaign. They count the activity that triggered the scene. They only change wording: a beat can't be gated on them (`# stat:` takes only the three estates).
+
 **Avoid sequences, cycles and shuffles** (`{a|b|c}`, `{&a|b}`, `{~a|b}`), and conditions on visit counts (`{knight_1: ...}`). The game resets ink before every scene, so a sequence always shows its first item and visit counts are always 0. Use stat conditions instead.
 
 ### Tags
@@ -131,6 +143,8 @@ VAR player = "Gerald"
 VAR bellatores = 15
 VAR oratores = 15
 VAR laboratores = 15
+VAR fatigue = 0
+VAR melancholy = 0
 # cooldown: 2
 -> END
 
@@ -143,7 +157,7 @@ hedge_knight: You hold that sword like a ladle, {scion}.
 -> END
 ```
 
-- **The five `VAR` lines are required** in every file, exactly as above. The values are only for previewing in Inky. Before **every scene** (every beat, not once per file), the game resets ink and copies in the daughter's name, the player's name and her stats *as they are at that moment*. So `{bellatores}` in a late beat shows her late-game stat (see "Names" below).
+- **The seven `VAR` lines are required** in every file, exactly as above. The values are only for previewing in Inky. Before **every scene** (every beat, not once per file), the game resets ink and copies in the daughter's name, the player's name, her stats, her fatigue and her melancholy *as they are at that moment*. A file missing one of them crashes when its scene opens (the tests catch this). So `{bellatores}` in a late beat shows her late-game stat (see "Names" below).
 - **The `-> END` before the first knot is required.** It stops the file's top section from running straight into the first scene.
 - **No `INCLUDE`.** Each file must stand alone, and the build rejects `INCLUDE`.
 - The file name (without `.ink`) is the **thread name**. A beat's id is `<file>/<knot>`, e.g. `knight/knight_1`. The save stores these ids, so **don't rename a knot or file once beats have shipped**, or old saves will think that beat hasn't played.
@@ -272,6 +286,7 @@ A thread that's been neglected for months catches up one beat at a time, with it
 | `{scion}` | the daughter's name | the save (chosen at New Game) |
 | `{player}` | the player's first name | the save |
 | `{bellatores}`, `{oratores}`, `{laboratores}` | her current stats | the save |
+| `{fatigue}`, `{melancholy}` | her current fatigue and melancholy | the save |
 | speaker `scion` | name plate shows the daughter's name | the save, plus the portrait from `characters.ts` |
 | speaker `father` | name plate shows the player's first name | the save, plus the portrait from `characters.ts` |
 | any other speaker id | name plate and portrait | `src/ui/text/characters.ts` |
