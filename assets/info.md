@@ -14,7 +14,7 @@ exported to woff2 for web export.
 
 for normal text, use IM FELL DW Pica.
 
-for headings, use canterbury.
+for headings, use rotunda.
 
 ## items
 

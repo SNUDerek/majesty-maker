@@ -5,7 +5,7 @@ import './styles/base.css';
 import './styles/components.css';
 import { App } from './App.js';
 
-const FONTS = ['18px "IM Fell English"', '22px "Canterbury"', '32px "Carrick Caps"'];
+const FONTS = ['18px "IM Fell English"', '22px "Rotunda"', '32px "Rotunda"'];
 
 /** Wait for the fonts (font-display: block) so the first frame isn't a fallback flash; give up after 3s. */
 async function fontsReady(): Promise<void> {
