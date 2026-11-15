@@ -12,7 +12,7 @@ import { loadShippedConfig } from './support/config.js';
 
 const config = loadShippedConfig();
 const OPTIONS = { seed: 1234, birthSign: 'aries' as const, playerName: { first: 'Aldous', last: 'Wyke' }, scionName: 'Elaine' };
-const HEADER = 'VAR scion = "Joan"\nVAR player = "Gerald"\nVAR bellatores = 15\nVAR oratores = 15\nVAR laboratores = 15\n';
+const HEADER = 'VAR scion = "Joan"\nVAR player = "Gerald"\nVAR bellatores = 15\nVAR oratores = 15\nVAR laboratores = 15\nVAR fatigue = 0\nVAR melancholy = 0\n';
 const ink = (source: string): string => new Compiler(HEADER + source).Compile().ToJson()!;
 const knot = (name: string, tags: string, line = 'Hello.') => `=== ${name} ===\n${tags}\n${line}\n-> END\n`;
 const fresh = (overrides: Partial<CampaignState> = {}): CampaignState => ({ ...createCampaign(OPTIONS, config), ...overrides });

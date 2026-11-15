@@ -3,6 +3,8 @@ VAR player = "Gerald"
 VAR bellatores = 15
 VAR oratores = 15
 VAR laboratores = 15
+VAR fatigue = 0
+VAR melancholy = 0
 # cooldown: 3
 -> END
 

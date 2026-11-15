@@ -5,9 +5,10 @@ import { Story } from 'inkjs';
 import { Compiler } from 'inkjs/full';
 import sample from './fixtures/sample.ink';
 import { openScene } from '../ui/engine/dialog.js';
+import { STORY } from '../ui/text/stories.js';
 import { inkPlugin } from '../../scripts/vite-plugin-ink.js';
 
-const inputs = { scion: 'Elaine', player: 'Aldous', bellatores: 35, oratores: 20, laboratores: 15 };
+const inputs = { scion: 'Elaine', player: 'Aldous', bellatores: 35, oratores: 20, laboratores: 15, fatigue: 70, melancholy: 10 };
 describe('Ink dialog cursor', () => {
   it('compiles real content, inserts names, and parses speech, thoughts, narration and tags', () => {
     const cursor = openScene(new Story(sample), 'sample_meeting', inputs);
@@ -40,13 +41,22 @@ VAR player = "Gerald"
 VAR bellatores = 15
 VAR oratores = 15
 VAR laboratores = 15
+VAR fatigue = 0
+VAR melancholy = 0
 -> END
 === test ===
 stranger: {bellatores >= 30:Strong.|Weak.}
+{fatigue >= 60:Tired.|Fresh.} {melancholy >= 60:Sad.|Cheerful.}
 -> END`).Compile();
     const cursor = openScene(story, 'test', inputs);
     expect(cursor.next()).toEqual({ kind: 'line', style: 'narration', text: 'stranger: Strong.' });
+    expect(cursor.next()).toEqual({ kind: 'line', style: 'narration', text: 'Tired. Cheerful.' });
     expect(() => cursor.choose(0)).toThrow('Invalid dialog choice');
+  });
+  it('every shipped beat opens with the full set of inputs', () => {
+    for (const beat of STORY.beats) {
+      expect(() => openScene(new Story(beat.json), beat.knot, inputs).next(), beat.id).not.toThrow();
+    }
   });
   it('fails compilation with the source filename and line', () => {
     const plugin = inkPlugin();

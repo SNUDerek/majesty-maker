@@ -84,7 +84,7 @@ export function Gallery({ config }: { config: RulesConfig }) {
         </Panel>
       </div>
       {playing && selected && <Dialog key={selected.id} json={selected.json} knot={selected.knot}
-        inputs={{ scion: state.scionName, player: state.playerName.first, ...state.stats }} onFinish={() => setPlaying(false)} />}
+        inputs={{ scion: state.scionName, player: state.playerName.first, ...state.stats, fatigue: state.fatigue, melancholy: state.melancholy }} onFinish={() => setPlaying(false)} />}
       {overlay === 'modal' && (
         <Modal title="Depart?" actions={<><Button onClick={() => setOverlay('none')}>Back</Button><Button primary onClick={() => setOverlay('none')}>Depart</Button></>}>
           <p>Costs 1 week and a 10 Coin fee.</p>

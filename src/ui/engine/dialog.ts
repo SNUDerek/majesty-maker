@@ -7,6 +7,8 @@ export interface DialogInputs {
   bellatores: number;
   oratores: number;
   laboratores: number;
+  fatigue: number;
+  melancholy: number;
 }
 export type DialogStep =
   | { kind: 'line'; style: 'speech' | 'thought' | 'narration'; speaker?: string; text: string;

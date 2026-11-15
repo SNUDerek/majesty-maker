@@ -36,7 +36,7 @@ function StoryScene({ beatId, activity }: { beatId: string; activity: BeatActivi
   if (beat === undefined || state === null) return null;
   return (
     <Dialog key={beat.id} json={beat.json} knot={beat.knot} onFinish={finish}
-      inputs={{ scion: state.scionName, player: state.playerName.first, ...state.stats }}
+      inputs={{ scion: state.scionName, player: state.playerName.first, ...state.stats, fatigue: state.fatigue, melancholy: state.melancholy }}
       background={(beat.bg as SceneId | undefined) ?? activityScene(activity, store.config)}
       left={beat.left ?? (activity === 'socialize' ? 'father' : 'scion')}
       rewards={rewardLines(beat, store.config)} />
