@@ -1,6 +1,14 @@
-# (Working Title) Medieval Princess Maker
+# (Working Title) Damosel Designer
 
-A time-management "raising sim" proof of concept: schedule a weekly activity for your adoptive daughter (work, study, socialize, rest, or adventure) to prepare her for the final encounter.
+A time-management "raising sim" (ala *Princess Maker*) proof of concept: schedule a weekly activity for your adoptive daughter (work, study, socialize, rest, or adventure) to prepare her for the final encounter.
+
+## Asset Licences
+
+all image assets are public domain, sourced from rawpixel.com, wikimedia commons, and opengameart.org.
+
+all included fonts are public domain or redistributed here under the SIL Open Font License.
+
+see assets/info.md for details.
 
 ## Requirements
 
