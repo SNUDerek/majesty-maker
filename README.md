@@ -37,6 +37,17 @@ URL switches:
 
 `npm run build` type-checks the UI and writes a static build to `dist/` (relative paths, so it can be opened from any static host).
 
+## Deploying
+
+The game is a static build, so deployment is nginx serving `dist/` behind a Cloudflare Tunnel (`Dockerfile`, `docker-compose.yml`). No host ports are opened.
+
+1. In Cloudflare Zero Trust → Networks → Tunnels, create a tunnel and copy its token.
+2. `cp .env.example .env` and set `TUNNEL_TOKEN` (`.env` is git-ignored).
+3. Add a public hostname to the tunnel with service `http://web:80`.
+4. `docker compose up -d --build`
+
+To update: `git pull && docker compose up -d --build`. Saves live in each player's browser, so redeploying does not affect them.
+
 ## Simulation CLI
 
 ```sh

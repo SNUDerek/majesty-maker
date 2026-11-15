@@ -4,3 +4,4 @@ coverage/
 *.tsbuildinfo
 .worktrees/
 dist/
+.env
