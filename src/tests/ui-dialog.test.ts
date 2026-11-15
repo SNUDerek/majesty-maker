@@ -47,11 +47,17 @@ VAR melancholy = 0
 === test ===
 stranger: {bellatores >= 30:Strong.|Weak.}
 {fatigue >= 60:Tired.|Fresh.} {melancholy >= 60:Sad.|Cheerful.}
+Burdens: {fatigue}, {melancholy}.
 -> END`).Compile();
     const cursor = openScene(story, 'test', inputs);
     expect(cursor.next()).toEqual({ kind: 'line', style: 'narration', text: 'stranger: Strong.' });
     expect(cursor.next()).toEqual({ kind: 'line', style: 'narration', text: 'Tired. Cheerful.' });
+    expect(cursor.next()).toMatchObject({ text: 'Burdens: 70, 10.' });
     expect(() => cursor.choose(0)).toThrow('Invalid dialog choice');
+    const reopened = openScene(story, 'test', { ...inputs, fatigue: 10, melancholy: 85 });
+    reopened.next();
+    expect(reopened.next()).toMatchObject({ text: 'Fresh. Sad.' });
+    expect(reopened.next()).toMatchObject({ text: 'Burdens: 10, 85.' });
   });
   it('every shipped beat opens with the full set of inputs', () => {
     for (const beat of STORY.beats) {
