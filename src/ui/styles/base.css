@@ -4,13 +4,8 @@
   font-display: block;
 }
 @font-face {
-  font-family: 'Canterbury';
-  src: url('../../../assets/fonts/canterbury/Canterbury.woff2') format('woff2');
-  font-display: block;
-}
-@font-face {
-  font-family: 'Carrick Caps';
-  src: url('../../../assets/fonts/carrick-caps/CarrickCaps.woff2') format('woff2');
+  font-family: 'Rotunda';
+  src: url('../../../assets/fonts/rotunda/Rotunda.woff2') format('woff2');
   font-display: block;
 }
 

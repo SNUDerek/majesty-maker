@@ -99,7 +99,7 @@ export function CreditsOverlay() {
     <Modal title="Credits" actions={<Button primary onClick={() => store.closeOverlay()}>Close</Button>}>
       <ul className="credits">
         <li>Interface: Kenney RPG UI pack (CC0), kenney.nl</li>
-        <li>Fonts: IM Fell English (Igino Marini, OFL), Canterbury and Carrick Caps (1001fonts licences)</li>
+        <li>Fonts: IM Fell English (Igino Marini, OFL), Rotunda (George Williams, OFL)</li>
         <li>Paintings, woodcuts and portraits: public-domain works; per-image sources to follow</li>
         <li>Credits screen content is a placeholder until provenance is recorded (docs/archive/ui-technical-plan.md §11).</li>
       </ul>

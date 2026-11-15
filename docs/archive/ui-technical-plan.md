@@ -34,7 +34,7 @@ Audio, animation beyond short CSS fades, Settings beyond a "reset save" button, 
 | Calendar / Inventory / Map | No separate screens. Calendar + astrology live in the Home header; inventory is a small list in the Home side panel; the route is a strip widget reused on Home, Prep and Encounter. |
 | Result data | **Events** returned by `applyAction` drive result panels (`GameEvent[]` already carries every delta with a source tag). No before/after diffing. |
 | Save points | Any state. `CampaignState` is plain JSON including RNG streams, and the screen is derived from it (§5.2), so loading mid-pilgrimage just works. Autosave after every successful action. |
-| Typography | Body: **IM Fell English** (`assets/fonts/im-fell-english`; the handoff's "DW Pica" is not in the repo — see §11). Headings: **Canterbury**. Title wordmark only: **Carrick Caps**. Numbers in stat blocks use body font with `font-variant-numeric: tabular-nums` (falls back gracefully if unsupported). |
+| Typography | Body: **IM Fell English** (`assets/fonts/im-fell-english`; the handoff's "DW Pica" is not in the repo — see §11). Headings: **Rotunda**. Title wordmark only: **Carrick Caps**. Numbers in stat blocks use body font with `font-variant-numeric: tabular-nums` (falls back gracefully if unsupported). |
 | Audio | None in this build. |
 | State library | None. A small store built on `useSyncExternalStore` (§5.3). |
 | Rules for previews | A new pure, additive `src/core/preview.ts` (§4.2). The UI never re-implements probability or cost formulas. |
@@ -61,7 +61,7 @@ Audio, animation beyond short CSS fades, Settings beyond a "reset save" button, 
 | Items | `items/item_{theriac,st_johns_wort,metheglin,gambeson,saints_relic,weighted_coin}.png` | One per item id in `content/items.json`; filename = `item_<id>.png`. |
 | Coin | `items/gold/gold_pile*.png` | `gold_pile.png` as the Coin glyph; pick a larger pile for big amounts if cheap (optional). |
 | UI pack | `ui/PNG/*` (Kenney RPG, CC0) | Panels (100×100), long buttons (190×49), bars (9/18×18 caps + mid), arrows, check/cross icons. |
-| Fonts | `fonts/{canterbury,carrick-caps,im-fell-english,junicode,blackchancery}/*.woff2` | §2. |
+| Fonts | `fonts/{rotunda,im-fell-english,junicode,blackchancery}/*.woff2` | §2. |
 
 ### 3.2 Style note on the Kenney pack
 
@@ -385,13 +385,13 @@ interface SaveFile {
   --good: #2f6b2c;          --bad: #a3271f;
   --focus: #f2c14e;
   --font-body: 'IM Fell English', Georgia, serif;
-  --font-head: 'Canterbury', 'IM Fell English', serif;
-  --font-title: 'Carrick Caps', 'Canterbury', serif;
+  --font-head: 'Rotunda', 'IM Fell English', serif;
+  --font-title: 'Rotunda', serif;
   --text-sm: 15px; --text-md: 18px; --text-lg: 22px; --text-xl: 32px;
 }
 ```
 
-- Minimum body size 15 logical px (≥ ~15 real px at 1280×720). Canterbury only ≥ 22 px; it is not legible small.
+- Minimum body size 15 logical px (≥ ~15 real px at 1280×720). Rotunda only ≥ 22 px; it is not legible small.
 - Text over backgrounds always sits on a parchment panel or a ≥ 70% dark scrim.
 - Focus ring: 3 px `--focus` outline + 2 px offset on every interactive element; buttons are real `<button>`s.
 - Fonts declared with `font-display: block` and the app waits on `document.fonts.ready` before first render to avoid a fallback flash.

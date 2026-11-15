@@ -73,7 +73,7 @@ Measured on `assets/misc/parchment_1600x1080.webp` (alpha scan through the middl
 
 ### P5. Home side panel
 
-- "Estates" and "Condition" headings in Canterbury (`--font-head`), not italic.
+- "Estates" and "Condition" headings in Rotunda (`--font-head`), not italic.
 - Name line shows the full name: `scionName + ' ' + playerName.last` (e.g. "Elaine Wyke"), via one `fullName(state)` helper used anywhere the daughter is named in full.
 
 ### P6. Encounter flavour lines

@@ -10,8 +10,8 @@
   --board: #97714a;         /* Kenney panel_brown interior, under the parchment's torn edge */
   --scrim: rgba(18, 12, 6, 0.72);
   --font-body: 'IM Fell English', Georgia, serif;
-  --font-head: 'Canterbury', 'IM Fell English', serif;
-  --font-title: 'Carrick Caps', 'Canterbury', serif;
+  --font-head: 'Rotunda', 'IM Fell English', serif;
+  --font-title: 'Rotunda', serif;
   --text-sm: 15px; --text-md: 18px; --text-lg: 22px; --text-xl: 32px;
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px;
   color-scheme: light;

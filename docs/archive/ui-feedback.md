@@ -29,7 +29,7 @@ um, i wanna rework this but it's the least important part in my opinion. so let'
 ## home screen
 
 - especially since we plan to add more activities (at least social encounters), maybe we can arrange the choices in a single column instead of a 2x2 rectangle?
-- on right side panel, instead of italics, let's make "Estates" and "Condition" in Canterbury. also, let's show the daughter's full name (daughter name + house name).
+- on right side panel, instead of italics, let's make "Estates" and "Condition" in Rotunda. also, let's show the daughter's full name (daughter name + house name).
 
 ## tutor screen
 
