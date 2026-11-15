@@ -1,4 +1,4 @@
-# (Working Title) Damosel Designer
+# (Working Title) Damosel Developer
 
 A time-management "raising sim" (ala *Princess Maker*) proof of concept: schedule a weekly activity for your adoptive daughter (work, study, socialize, rest, or adventure) to prepare her for the final encounter.
 
