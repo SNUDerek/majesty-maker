@@ -303,11 +303,11 @@ The ink only ever uses ids. To change a character's display name or portrait, ed
 | `scion` | the daughter's name |
 | `father` | the player's first name |
 | `hedge_knight` | Hedge Knight |
-| `watch_captain` | Watch Captain |
+| `guard_captain` | Watch Captain |
 | `squire` | Squire |
 | `hermit` | Hermit |
-| `brother_librarian` | Brother Librarian |
-| `novice` | Heretic Novice |
+| `deacon` | Deacon (Scriptorium boss) |
+| `novice` | Church Novice |
 | `smuggler` | Smuggler |
 | `alewife` | Alewife |
 | `urchin` | Urchin |

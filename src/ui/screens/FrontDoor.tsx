@@ -111,9 +111,9 @@ export function IntroScreen() {
 
 export function SetupScreen() {
   const { store, snap } = useGame();
-  const [scionName, setScion] = useState('Elaine');
-  const [first, setFirst] = useState('Aldous');
-  const [last, setLast] = useState('Wyke');
+  const [scionName, setScion] = useState('Mathilda');
+  const [first, setFirst] = useState('Albert');
+  const [last, setLast] = useState('Lowenstein');
   const [sign, setSign] = useState<ZodiacSign>('aries');
   // Starting stats come from the engine, never a frontend formula.
   const preview = createCampaign({ seed: 1, birthSign: sign, playerName: { first, last }, scionName }, store.config);
