@@ -6,7 +6,7 @@
 import { Story } from 'inkjs';
 import { getCalendar, type ActivityId, type CampaignState, type Estate, type RulesConfig } from '../../core/index.js';
 
-/** `socialize` is the Social button (father–daughter talks). */
+/** `socialize` is the "Talk with her" button (father–daughter talks). */
 export type BeatActivity = ActivityId | 'socialize';
 export type Reward = { kind: 'coin'; amount: number } | { kind: 'item'; id: string };
 
@@ -140,9 +140,11 @@ export function validateBeats(beats: readonly Beat[], known: KnownIds): string[]
 }
 
 /**
- * The beat to play after `activity` (§6.2), or undefined. Only each thread's
- * first unplayed beat is considered; stats are read from `state`, which is
- * the state after the activity. At most one beat plays per week.
+ * The beat to play after `activity` (§6.2), or undefined. Each thread offers
+ * its first unplayed beat, plus the activity's intro (the thread's first beat
+ * for that activity) if unplayed, so e.g. a job's first scene isn't locked
+ * behind a tutor's. Stats are read from `state`, which is the state after the
+ * activity. At most one beat plays per week.
  */
 export function nextBeat(beats: readonly Beat[], state: CampaignState, activity: BeatActivity, config: RulesConfig): Beat | undefined {
   const played = state.storyBeats ?? {};
@@ -153,12 +155,15 @@ export function nextBeat(beats: readonly Beat[], state: CampaignState, activity:
   for (const beat of beats) threads.set(beat.thread, [...(threads.get(beat.thread) ?? []), beat]);
   for (const thread of [...threads.keys()].sort()) {
     const chain = threads.get(thread)!;
-    const next = chain.find((b) => !Object.hasOwn(played, b.id));
-    if (next === undefined) continue;
+    const first = chain.find((b) => !Object.hasOwn(played, b.id));
+    if (first === undefined) continue;
+    const intro = chain.find((b) => b.activities.includes(activity));
     const lastPlayed = Math.max(-Infinity, ...chain.filter((b) => Object.hasOwn(played, b.id)).map((b) => played[b.id]!));
-    if (next.activities.includes(activity) && month >= next.month
-      && next.stats.every(([estate, min]) => state.stats[estate] >= min)
-      && week - lastPlayed >= next.cooldown) return next;
+    for (const next of [first, intro]) {
+      if (next !== undefined && !Object.hasOwn(played, next.id) && next.activities.includes(activity) && month >= next.month
+        && next.stats.every(([estate, min]) => state.stats[estate] >= min)
+        && week - lastPlayed >= next.cooldown) return next;
+    }
   }
   return undefined;
 }

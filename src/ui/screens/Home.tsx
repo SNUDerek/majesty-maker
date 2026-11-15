@@ -56,7 +56,7 @@ export function HomeHub({ convalescence }: { convalescence: boolean }) {
       <TopBar state={state} config={store.config} onMenu={() => store.setUi({ overlay: 'saveload' })}
         onChronicle={() => store.setUi({ overlay: 'chronicle' })} />
       <img className="home-princess" src={IMAGES.princessFull} alt={state.scionName} />
-      {thought !== undefined && <p className="home-thought" aria-label={`${state.scionName}'s thoughts`}>{thought}</p>}
+      {thought !== undefined && <p className={`home-thought${talk === undefined ? '' : ' home-thought--talk'}`} aria-label={`${state.scionName}'s thoughts`}>{thought}</p>}
       <div className="home-centre">
         <Panel variant="parchment" title="How shall she spend this week?">
           {derived.nextCriticalSolarPeriod !== undefined && (
@@ -79,8 +79,9 @@ export function HomeHub({ convalescence }: { convalescence: boolean }) {
               <Button disabled={blocker !== null} title={blocker ?? undefined} onClick={() => store.setUi({ homeView: 'prep' })}>
                 Pilgrimage
               </Button>
-              <Button disabled={talk === undefined} title={talk === undefined ? 'Nothing to talk about yet' : undefined}
-                onClick={() => store.startTalk()}>Social</Button>
+              <Button className="btn--free" disabled={talk === undefined}
+                title={talk === undefined ? 'Nothing to talk about yet' : 'Free: does not spend the week'}
+                onClick={() => store.startTalk()}>Talk with her</Button>
             </div>
           )}
           {!convalescence && blocker !== null && <p className="home-note" style={{ marginTop: 8 }}>Pilgrimage: {blocker}.</p>}

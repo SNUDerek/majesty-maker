@@ -200,7 +200,7 @@ The player resets Ink for each scene; Gallery previews do not grant rewards.
 Each `content/story/*.ink` file is a thread; each knot with an `# order:` tag is a
 beat with id `<file>/<knot>` (docs/archive/dialog-and-story-beats-plan.md §5.5–§6). Knot tags:
 `# title:` (Chronicle name, default the knot), `# order:` (position in the thread),
-`# activity:` (space-separated activity ids, or `socialize` for the Social button),
+`# activity:` (space-separated activity ids, or `socialize` for the "Talk with her" button),
 `# month:` (earliest month, default 1), `# stat: <estate> <min>` and
 `# reward: coin <n>` / `# reward: item <id>` (both repeatable), plus `# bg:` and
 `# left:`. A file-level `# cooldown: <weeks>` (default 2) spaces a thread's beats.
@@ -209,10 +209,12 @@ malformed values are reported by the content test before playback.
 
 After a lesson, job or rest, the thread's next unplayed beat plays if its activity,
 month, post-activity stats and cooldown all match, at most one beat per week; the
-result panel waits behind the scene. Beats are skipped after the forced recovery
-week, a collapse, or the deadline. **Social** opens the next father–daughter talk
-for free and is greyed out otherwise; the daughter's thought hints when one is
-ready. The end of a scene applies the core `STORY_BEAT` action (rewards, Chronicle
+result panel waits behind the scene. An activity's first beat in a thread (its
+intro, e.g. a job's first scene) may also play ahead of earlier beats under the
+same checks. Beats are skipped after the forced recovery
+week, a collapse, or the deadline. **Talk with her** (a blue button, since it is
+free) opens the next father–daughter talk and is greyed out otherwise; the
+daughter's thought turns red when one is ready. The end of a scene applies the core `STORY_BEAT` action (rewards, Chronicle
 entry "A story: <title>"); quitting mid-scene leaves the beat unplayed.
 `src/tests/ui-story.test.ts` validates every beat's tags against the real ids.
 

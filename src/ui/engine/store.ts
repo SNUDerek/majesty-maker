@@ -194,14 +194,14 @@ export class GameStore {
     return nextBeat(this.beats, after, activity, this.config);
   }
 
-  /** The father–daughter talk the Social button would start, if any (§6.4). */
+  /** The father–daughter talk the "Talk with her" button would start, if any (§6.4). */
   socialBeat(): Beat | undefined {
     const { state } = this.snapshot;
     if (state === null || state.phase !== 'home' || state.pendingConvalescence !== undefined) return undefined;
     return nextBeat(this.beats, state, 'socialize', this.config);
   }
 
-  /** Opens the Social talk. Free: it spends no week and shows no result panel. */
+  /** Opens the "Talk with her" talk. Free: it spends no week and shows no result panel. */
   startTalk(): void {
     const { ui } = this.snapshot;
     const beat = this.socialBeat();
