@@ -125,6 +125,24 @@ describe('nextBeat', () => {
     expect(nextBeat(FIXTURE, fresh({ elapsedWeeks: 5, storyBeats: { 'knight/k1': 5 } }), 'socialize', config)).toBeUndefined();
     expect(nextBeat(FIXTURE, fresh({ elapsedWeeks: 6, storyBeats: { 'knight/k1': 5 } }), 'socialize', config)?.id).toBe('father/talk');
   });
+
+  it("plays an activity's intro ahead of the thread's earlier beats", () => {
+    const chain = loadBeats({
+      'c.ink': ink(`-> END\n${knot('a', '# order: 10\n# activity: smuggler')}${knot('b', '# order: 20\n# activity: alehouse')}`
+        + knot('c', '# order: 30\n# activity: alehouse\n# month: 2')),
+    }).beats;
+    expect(nextBeat(chain, fresh({ elapsedWeeks: 3 }), 'alehouse', config)?.id).toBe('c/b');
+    // Only the intro jumps the queue; later alehouse beats wait for the chain.
+    const afterIntro = fresh({ elapsedWeeks: 9, storyBeats: { 'c/b': 3 } });
+    expect(nextBeat(chain, afterIntro, 'alehouse', config)).toBeUndefined();
+    expect(nextBeat(chain, afterIntro, 'smuggler', config)?.id).toBe('c/a');
+    // The thread cooldown still applies to the intro.
+    expect(nextBeat(chain, fresh({ elapsedWeeks: 3, storyBeats: { 'c/a': 2 } }), 'alehouse', config)).toBeUndefined();
+  });
+
+  it('opens the shipped alehouse job scene before any smuggler lesson', () => {
+    expect(nextBeat(STORY.beats, fresh({ elapsedWeeks: 1 }), 'alehouse', config)?.id).toBe('alley/alley_2');
+  });
 });
 
 describe('GameStore story flow', () => {
@@ -188,7 +206,7 @@ describe('GameStore story flow', () => {
     expect(deadline.getSnapshot().ui.pendingDialog).toBeUndefined();
   });
 
-  it('Social talks spend no week and show no result panel', () => {
+  it('"Talk with her" talks spend no week and show no result panel', () => {
     const store = newStore();
     const before = store.getSnapshot().state!;
     expect(store.socialBeat()?.id).toBe('father/talk');
@@ -204,7 +222,7 @@ describe('GameStore story flow', () => {
     expect(getAvailableActions(after.state!, config)).toEqual(getAvailableActions(before, config));
   });
 
-  it('offers no Social talk during the forced recovery week', () => {
+  it('offers no "Talk with her" talk during the forced recovery week', () => {
     const store = newStore();
     store.devReplaceState({ ...store.getSnapshot().state!, pendingConvalescence: 'home_collapse' });
     expect(store.socialBeat()).toBeUndefined();

@@ -40,17 +40,19 @@ async function advance(page, dialog) {
       assert.match(await dialog.innerText(), /Better not to rise to it/);
       assert.equal(await advance(page, dialog), 'closed');
 
-      // A new game: the Social button is open and the daughter hints at it.
+      // A new game: the Talk with her button is open and the daughter hints at it.
       await page.goto(BASE);
       await page.evaluate(() => localStorage.clear());
       await page.reload();
       await page.getByRole('button', { name: 'New Game', exact: true }).click();
       await page.getByRole('button', { name: 'Skip', exact: true }).click();
       await page.getByRole('button', { name: 'Begin', exact: true }).click();
-      const social = page.getByRole('button', { name: 'Social', exact: true });
+      const social = page.getByRole('button', { name: 'Talk with her', exact: true });
       await social.waitFor();
       assert.equal(await social.isEnabled(), true);
       assert.match(await page.locator('.home-thought').innerText(), /something on my mind/);
+      assert.equal(await page.locator('.home-thought--talk').count(), 1, 'a ready talk turns the thought red');
+      if (reducedMotion === 'reduce') await page.screenshot({ path: process.env.SHOT || 'home-talk.png' });
       const week = await page.locator('.topbar').first().innerText();
       await social.click();
       await dialog.waitFor();
@@ -64,6 +66,7 @@ async function advance(page, dialog) {
       assert.equal(await page.getByRole('dialog').count(), 0, 'a talk shows no result panel');
       assert.equal(await page.locator('.topbar').first().innerText(), week, 'a talk spends no week');
       assert.equal(await social.isEnabled(), false);
+      assert.equal(await page.locator('.home-thought--talk').count(), 0, 'no red thought without a talk');
       assert.equal(await page.locator('.scene').evaluate(el => el.inert), false, 'background is restored after story');
 
       // A lesson with the Hedge Knight plays knight_1, then the result panel.

@@ -59,6 +59,14 @@
 .btn--primary:active:not(:disabled) {
   border-image-source: url('../../../assets/ui/PNG/buttonLong_brown_pressed.png');
 }
+/* A free action (spends no week), e.g. "Talk with her". */
+.btn--free {
+  border-image-source: url('../../../assets/ui/PNG/buttonLong_blue.png');
+  color: #fbf1da;
+}
+.btn--free:active:not(:disabled) {
+  border-image-source: url('../../../assets/ui/PNG/buttonLong_blue_pressed.png');
+}
 .btn:disabled {
   border-image-source: url('../../../assets/ui/PNG/buttonLong_grey.png');
   color: #6d6a64;
@@ -207,6 +215,8 @@
   background: var(--parchment); color: var(--ink); box-shadow: 0 2px 8px rgb(0 0 0 / 0.35);
   font-style: italic; font-size: var(--text-md);
 }
+/* She has something to talk about. */
+.home-thought--talk { color: var(--bad); border-left: 4px solid var(--bad); }
 .home-side {
   position: absolute; top: 68px; right: 12px; bottom: 12px; width: 340px;
   display: flex; flex-direction: column; gap: var(--space-2);
