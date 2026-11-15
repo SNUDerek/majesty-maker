@@ -3,86 +3,217 @@
     "hedge_knight": [
       "This week's lessons were on archery. Apparently, {scion} is a deft shot.",
       "The trainees spent the week sparring. You've caught some boys in town staring at {scion} while rubbing their bruises.",
-      "The Hedge Knight has had {scion} doing calisthenics all week. Last night, she made you carry her to bed like a child.",
-      "This week was jousting practice. {scion} limped back home, rubbing her shoulder. \"It looks so easy at the tournaments\""
+      "Ser Bedivere has had {scion} doing calisthenics all week. Last night, she made you carry her to bed like a child.",
+      "This week was jousting practice. {scion} limped back home, rubbing her shoulder. \"It looks so easy at the tournaments\"",
+      "Ser Bedivere spent the week drilling {scion} in footwork. By his own account, he once out-stepped thirty men at Oakhaven.",
+      "{scion} reports that Ser Bedivere's stand at Oakhaven now features forty men and a bear.",
+      "Ser Bedivere taught {scion} how to fall without breaking anything. She demonstrated on the stairs at supper.",
+      "Sebastian bested {scion} at the pell twice this week. She bested him on the third day, and has mentioned it several times since.",
+      "\"A knight is a shield before she is a sword,\" Ser Bedivere told {scion}. Then he had her carry one around the yard until dusk.",
+      "{scion} spent a day polishing Ser Bedivere's breastplate. Every dent has a story, and he told her all of them.",
+      "Ser Bedivere showed {scion} how to hold a line beside others. She talked about flanks and shield-walls all through supper.",
+      "Ser Bedivere's knee gave out mid-lesson. {scion} pretended not to notice, and he pretended he was resting it on purpose."
     ],
     "hermit": [
-      "The Hermit put {scion} to work trancribing some of the ancient texts. Her fingertips are stained with ink.",
-      "{scion} asked the Hermit whether dogs go to Heaven. He answered, \"Moo!\"",
-      "The Hermit instructed {scion} in Latin. When you asked her what she learned, all she said was\"semper ubi sub ubi\"",
-      "\"Do, or do not,\" the Hermit sagely instructed, \"there is no 'try'.\""
+      "Diogenes put {scion} to work transcribing some of the ancient texts. Her fingertips are stained with ink.",
+      "{scion} asked Diogenes whether dogs go to Heaven. He answered, \"Moo!\"",
+      "Diogenes instructed {scion} in Latin. When you asked her what she learned, all she said was, \"semper ubi sub ubi\"",
+      "\"Do, or do not,\" Diogenes sagely instructed, \"there is no 'try'.\"",
+      "Diogenes held this week's lessons from the mouth of his barrel. {scion} says the view is better than you would think.",
+      "Diogenes sent {scion} through the market at noon with a lit lantern, looking for an honest man. She did not find one either.",
+      "{scion} asked Diogenes what a ruler needs most. He told her to stand out of his sunlight. She is still deciding if that was the answer.",
+      "Diogenes and Serena argued doctrine all week. {scion} says she learned more from the arguing than from the lessons.",
+      "Diogenes had {scion} sit in silence for an entire afternoon. She came home unusually thoughtful, and unusually hungry.",
+      "Diogenes made {scion} copy the same psalm three times, then asked her what it meant. She is still working on it.",
+      "Diogenes grumbled that {scion} asks too many questions. Then he lent her a book he swears he never owned.",
+      "{scion} brought Diogenes a loaf of bread. He gave half to a stray dog and called it the best lesson of the week."
     ],
     "smuggler": [
-      "The Smuggler worked with {scion} on the arts of legerdemain. He said that she took to it naturally, perhaps a little much.",
-      "The Smuggler had {scion} practicing her prestidigitation down by the docks. Apparently the town guard were not amused.",
-      "\"Always watch the hands and the eyes,\" the Smuggler advised. \"that's the fastest way to read a man's intent.\"",
-      "{scion} and the Smuggler practiced running cons in the marketplace. The two swore they returned all the money taken."
+      "Hancock worked with {scion} on the arts of legerdemain. He said that she took to it naturally, perhaps a little much.",
+      "Hancock had {scion} practicing her prestidigitation down by the docks. Apparently the town guard were not amused.",
+      "\"Always watch the hands and the eyes,\" Hancock advised. \"that's the fastest way to read a man's intent.\"",
+      "{scion} and Hancock practiced running cons in the marketplace. The two swore they returned all the money taken.",
+      "Hancock taught {scion} to pick a lock with a hairpin. You have started counting your hairpins.",
+      "Hancock had {scion} slip through the crowded market without brushing a single elbow. Nicole tagged along and made it a race.",
+      "{scion} learned to spot loaded dice this week. Hancock says every ruler needs that skill, especially around tax collectors.",
+      "Hancock taught {scion} the thieves' cant. She has been leaving chalk marks on the gatepost.",
+      "Hancock claims he once outran a magistrate's whole cavalry on a stolen mule. {scion} believes about half of it.",
+      "{scion} watched Hancock haggle a fishmonger down to nothing, then quietly pay the man double on the way out.",
+      "Hancock taught {scion} to read a room: who is armed, who is drunk, and who is pretending to be both.",
+      "{scion} came home with a purse you don't recognize. She swears Hancock gave it to her as a \"teaching aid.\""
     ]
   },
   "job": {
     "stables": {
       "success": [
         "{scion} mucked out every stall and earned a nuzzle from the grey mare.",
-        "Hard work, honest pay. {scion} came home smelling of hay and horse."
+        "Hard work, honest pay. {scion} came home smelling of hay and horse.",
+        "Olaf told {scion} a joke about a bishop and a goat. She will not repeat it, but she hasn't stopped smiling.",
+        "{scion} broke nothing and lost nothing, which Olaf says puts her ahead of the last three stablehands.",
+        "The grey mare let {scion} brush her mane this week. Olaf claims he trained the horse to do that. He did not.",
+        "{scion} spent the week hauling water and pitching hay. She ate two helpings at supper and fell asleep at the table.",
+        "Olaf somehow lost a wager to a draft horse. {scion} would not explain, but she laughed all through supper.",
+        "{scion} rode one of the post horses around the paddock while Olaf wasn't looking. Or while he pretended not to.",
+        "A merchant's courser threw a shoe in the yard, and {scion} calmed it before Olaf had finished swearing.",
+        "\"Horses are like lords,\" Olaf told {scion}. \"Feed them, brush them, and follow behind with a shovel.\""
       ],
       "failure": []
     },
     "alehouse": {
       "success": [
         "{scion} carried a dozen tankards at once and spilled not a drop.",
-        "The regulars sang her praises, and their tips were generous."
+        "The regulars sang her praises, and their tips were generous.",
+        "Helga taught {scion} to carry four tankards on one arm. She managed three, and Helga called it a fine start.",
+        "{scion} learned every regular's usual this week. Helga says that's the whole job, really.",
+        "Two mercenaries started a brawl. {scion} saved the good chairs first, just as Helga taught her.",
+        "{scion} came home with a pocketful of coppers and a song about a one-eyed miller stuck in her head.",
+        "Helga let {scion} help in the kitchen. The mutton stew was, by every account, edible.",
+        "{scion} talked a drunk tinker out of a fight and into a bowl of stew. Helga gave her the last honey cake.",
+        "Nicole stopped by the alehouse, and the two of them worked the floor like they were children running the market again.",
+        "A traveling minstrel played all night, and {scion} kept the ale flowing without spilling a drop."
       ],
       "failure": [
-        "{scion} broke three cups and a stool. The alewife docked her wages.",
-        "A brawl broke out, and {scion} hid behind the barrels until it was over."
+        "{scion} broke three cups and a stool. Helga docked her wages.",
+        "A brawl broke out, and {scion} hid behind the barrels until it was over.",
+        "{scion} brought table four the mutton. Table four had ordered fish. Then table four started a fight.",
+        "A mercenary pinched {scion}, and she emptied a tankard over his head. Helga approved. The owner docked her wages.",
+        "{scion} watered down the regulars' ale by mistake. The regulars noticed. Regulars always notice.",
+        "{scion} slipped on a spilled pint and took a tray of bowls down with her. Helga laughed, then handed her the broom.",
+        "{scion} got so caught up in a sailor's story that the whole east side of the room went dry.",
+        "{scion} forgot to tap the new cask, and the alehouse ran out of ale on market day.",
+        "{scion} lost count of a drovers' tab, and they slipped out before anyone noticed.",
+        "A brawl broke out, and {scion} saved the cheap chairs. Helga has not let her forget it."
       ]
     },
     "village_watch": {
       "success": [
         "{scion} walked the walls till dawn and caught a pig thief red-handed.",
-        "The watch captain let {scion} carry the lantern at the head of the patrol."
+        "Captain Baldwin let {scion} carry the lantern at the head of the patrol.",
+        "Captain Baldwin found {scion}'s halberd polished and her boots laced at dawn inspection. He nodded once, which is apparently high praise.",
+        "{scion} turned back a pair of drunken drovers at the gate without raising her voice.",
+        "{scion} spent the week on the walls. She now knows every loose stone and every guard's snore by heart.",
+        "Baldwin drilled the watch until they could bar the gate in under a minute. {scion} was first to her post every time.",
+        "{scion} found a lost child out past curfew and walked her home instead of writing her up. Baldwin pretended not to hear about it.",
+        "A cart overturned on the bridge, and {scion} had the road clear before the captain arrived.",
+        "{scion} came home smelling of torch smoke and cold iron, and recited all thirty watch rules at supper.",
+        "Sebastian and {scion} walked the night patrol together. Nothing happened, and they argued about it all the way."
       ],
       "failure": [
-        "{scion} fell asleep at her post. The captain was not amused.",
-        "A fox got into the hen coops on her watch. The farmers blamed the girl."
+        "{scion} fell asleep at her post. Captain Baldwin was not amused.",
+        "A fox got into the hen coops on her watch. The farmers blamed the girl.",
+        "{scion} let a peddler through the gate without checking his cart. Baldwin checked it later, and found a goat.",
+        "{scion} forgot the password and challenged Baldwin himself at the gate. He made her recite it a hundred times.",
+        "{scion} dropped her halberd off the wall. It landed point-down in the reeve's turnip patch.",
+        "Baldwin caught {scion} chatting with the gatekeeper instead of watching the road. Extra drill for a week.",
+        "{scion}'s lantern went out on night patrol, and she spent an hour lost in a lane she has known since she was six.",
+        "A drunk talked his way past {scion} with a story about his sick mother. His mother lives in the alehouse.",
+        "{scion} rang the alarm bell at a shadow. The shadow was a cow. The whole village is awake, and the cow is fine.",
+        "Baldwin lectured {scion} for an hour on how the law is a wall. She says she understood it after the first ten minutes."
       ]
     },
     "scriptorium": {
       "success": [
-        "{scion}'s lettering drew a nod from the Brother Librarian himself.",
-        "She finished a page of the psalter without a single blot."
+        "{scion}'s lettering drew a nod from Deacon Jerome himself.",
+        "She finished a page of the psalter without a single blot.",
+        "Deacon Jerome found no errors in {scion}'s copy of the psalter. He checked it twice to be sure.",
+        "{scion} illuminated her first capital letter, a little gold-leafed dragon. Deacon Jerome called it \"adequate,\" which the brothers say is unheard of.",
+        "{scion} copied a whole chapter of the lives of the saints. She can now recite most of them, whether you ask or not.",
+        "Serena quizzed {scion} on doctrine all week. {scion} got most of the answers right, and argued about the rest.",
+        "{scion} mixed a batch of oak-gall ink that Deacon Jerome declared fit for a bishop's letters.",
+        "{scion} found a misplaced psalm in an old codex. Deacon Jerome took the credit, but he did say thank you.",
+        "The scriptorium was quiet as snow all week. {scion} came home with steady hands and a calm mind.",
+        "{scion} mended a cracked binding with glue and patience. The brothers say she could take the cowl if she wanted."
       ],
       "failure": [
-        "{scion} knocked over an inkwell onto a fresh page. The Brother sighed deeply.",
-        "She dozed during vespers and was sent home early."
+        "{scion} knocked over an inkwell onto a fresh page. Deacon Jerome sighed deeply.",
+        "She dozed during vespers and was sent home early.",
+        "Deacon Jerome caught {scion} copying one of Diogenes' quips into the margin. She spent the rest of the week scraping vellum.",
+        "{scion} misspelled \"Jerusalem\" three times on one page. Deacon Jerome had her write it out fifty times.",
+        "{scion} drew a little horse in the margin of the gospels. Deacon Jerome did not find it charming.",
+        "{scion} asked Deacon Jerome why the Church says one thing and Diogenes another. She was sent to scrub the floor.",
+        "A candle tipped onto {scion}'s page and burned straight through a saint. Deacon Jerome prayed for the saint, then for her.",
+        "{scion} spent the week copying the wrong book. Deacon Jerome didn't notice for two days, and was furious with both of them.",
+        "{scion} sneezed on a fresh sheet of gold leaf. It is now somewhere in the rafters.",
+        "Serena reported {scion} for laughing during vespers. {scion} insists Serena started it."
       ]
     }
   },
   "rest": {
     "rest_home": [
       "{scion} slept late, then spent the afternoon mending by the hearth.",
-      "A quiet week. {scion} read aloud to {player} by candlelight."
+      "A quiet week. {scion} read aloud to {player} by candlelight.",
+      "{scion} helped you mend the fence, then told you exactly how Ser Bedivere would have done it.",
+      "A rainy week at home. You and {scion} played draughts by the fire. She cheated, and so did you.",
+      "{scion} slept until noon three days running. You let her.",
+      "{scion} cooked supper. It was mostly edible, and she was very proud of it.",
+      "Nicole came by, and the two of them spent the afternoon on the roof, talking about nothing and everything.",
+      "{scion} asked you about her mother. You told her what you could.",
+      "{scion} spent the week in the garden, and came in each evening with dirt under her nails and color in her cheeks.",
+      "You told {scion} a story from your soldiering days. She has heard it before, but she listened anyway."
     ],
     "bathhouse": [
       "{scion} came home pink-cheeked and smelling of rosemary.",
-      "The bath-wife scrubbed {scion} raw and charged double for the soap."
+      "The bath-wife scrubbed {scion} raw and charged double for the soap.",
+      "{scion} soaked until the water went cold, and came home loose-limbed and yawning.",
+      "According to the bathhouse gossip, the reeve's cook is in love with the miller's wife. {scion} reported all of it in detail.",
+      "{scion} had her hair washed in chamomile. She smells like a meadow, and she knows it.",
+      "The steam left {scion} so drowsy she nodded off on the walk home. You carried her the last stretch.",
+      "Helga was at the bathhouse too. {scion} says it is strange to see her without four tankards in hand.",
+      "An old bath-wife with hands like iron worked the knots out of {scion}'s shoulders. She swears she grew an inch.",
+      "The bathhouse was nearly empty, and {scion} had the hot pool to herself all afternoon.",
+      "Someone stole {scion}'s shoes at the bathhouse. Thanks to Hancock's lessons, she got them back before she left."
     ],
     "shrine": [
       "{scion} lit a candle and sat in the cool dark until her thoughts stilled.",
-      "The old priest blessed her, then asked after {player}'s health."
+      "The old priest blessed her, then asked after {player}'s health.",
+      "{scion} lit a candle for the old king. She did not say why, and you did not ask.",
+      "{scion} kept vigil at the shrine through the night, and came home lighter.",
+      "The shrine-keeper taught {scion} a hymn for the Conjunction. She hums it while she works.",
+      "{scion} left a coin at the shrine for everyone she knows. It cost more than she expected.",
+      "Diogenes was at the shrine too, arguing with a statue. {scion} says he seemed to be winning.",
+      "{scion} prayed for patience with Serena. Then, after a moment, for Serena's patience with her.",
+      "{scion} walked the pilgrims' path to the hilltop shrine and watched the sun set over the valley.",
+      "A week of quiet prayer. {scion} doesn't know if anyone was listening, but she feels better for having spoken."
     ],
     "banquet": [
       "Roast swan, honeyed figs and minstrels. {scion} danced until the candles guttered.",
-      "{scion} ate too much marchpane and regretted none of it."
+      "{scion} ate too much marchpane and regretted none of it.",
+      "{scion} danced with a minor baron's son, who stepped on her toes nine times. She counted.",
+      "Ser Bedivere told the tale of Oakhaven to the whole banquet hall. By the end, it was sixty men.",
+      "{scion} tried every dish on the table, including one that may have been a peacock.",
+      "The minstrels played until dawn, and {scion} now knows all the bawdy verses. You have decided not to ask where from.",
+      "A visiting abbess sat beside {scion} and asked her opinion on everything. {scion} is still flattered.",
+      "Sebastian and Serena came to the banquet too, and {scion} survived a whole evening of capital manners.",
+      "{scion} won a game of riddles with a joke she learned from Olaf. The bishop at the high table pretended not to understand it.",
+      "A juggler set his own sleeve on fire, and {scion} laughed so hard she had to be helped from the table."
     ]
   },
   "thought": {
     "idle": [
       "I wonder what lies beyond the hills...",
-      "Father looks tired lately."
+      "Father looks tired lately.",
+      "Ser Bedivere's stories get longer every time he tells them.",
+      "Nicole hasn't come by in a while...",
+      "Do the stars really care when the Conjunction comes?",
+      "I had that dream again. The one with the fire.",
+      "Sebastian thinks he's so clever. Serena actually is.",
+      "I'd like to see the capital someday.",
+      "What makes someone a good ruler, anyway?",
+      "Diogenes says a person needs very little. I think he's mostly right.",
+      "Hancock still owes me a copper. I'm sure of it.",
+      "Olaf's jokes are terrible. I laugh anyway."
     ],
     "talk_ready": [
-      "I have something on my mind..."
+      "I have something on my mind...",
+      "Father, do you have a moment?",
+      "There's something I want to ask Father.",
+      "I should talk to Father tonight.",
+      "Maybe Father will know what to say...",
+      "I need to tell Father something.",
+      "Father always listens. I should go find him.",
+      "I can't stop thinking about something. I should talk to Father.",
+      "I wonder if Father has time to talk...",
+      "I've been meaning to say something to Father..."
     ]
   }
 }

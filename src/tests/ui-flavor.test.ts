@@ -15,15 +15,15 @@ const RESTS: RestId[] = ['rest_home', 'bathhouse', 'shrine', 'banquet'];
 
 describe('content/flavor.json', () => {
   it('has the minimum line counts', () => {
-    for (const tutor of TUTORS) expect(FLAVOR.tutor[tutor].length, tutor).toBeGreaterThanOrEqual(3);
+    for (const tutor of TUTORS) expect(FLAVOR.tutor[tutor].length, tutor).toBeGreaterThanOrEqual(10);
     for (const job of JOBS) {
-      expect(FLAVOR.job[job].success.length, `${job} success`).toBeGreaterThanOrEqual(4);
+      expect(FLAVOR.job[job].success.length, `${job} success`).toBeGreaterThanOrEqual(10);
       // Stables never fails, so it needs no failure lines.
-      if (job !== 'stables') expect(FLAVOR.job[job].failure.length, `${job} failure`).toBeGreaterThanOrEqual(4);
+      if (job !== 'stables') expect(FLAVOR.job[job].failure.length, `${job} failure`).toBeGreaterThanOrEqual(10);
     }
-    for (const rest of RESTS) expect(FLAVOR.rest[rest].length, rest).toBeGreaterThanOrEqual(3);
-    expect(FLAVOR.thought.idle.length).toBeGreaterThanOrEqual(1);
-    expect(FLAVOR.thought.talk_ready.length).toBeGreaterThanOrEqual(1);
+    for (const rest of RESTS) expect(FLAVOR.rest[rest].length, rest).toBeGreaterThanOrEqual(10);
+    expect(FLAVOR.thought.idle.length).toBeGreaterThanOrEqual(10);
+    expect(FLAVOR.thought.talk_ready.length).toBeGreaterThanOrEqual(10);
   });
 
   it('only uses real activity ids and known placeholders', () => {

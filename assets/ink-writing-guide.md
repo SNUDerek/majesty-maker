@@ -275,7 +275,7 @@ Further rules:
 - **No beat plays** after the forced recovery week, a week that ends in collapse, or the final deadline.
 - The scene plays **before** the result popup. When it ends, the beat is saved and its reward granted.
 - If the player **quits mid-scene**, the beat is not recorded and plays again after the next matching activity.
-- **Social talks** (`socialize`) follow the same rules, but they are free: no week passes and no result popup appears. The Social button is greyed out until a talk is ready. While one is ready, the daughter's thought box reads "I have something on my mind...".
+- **Social talks** (`socialize`) follow the same rules, but they are free: no week passes and no result popup appears. The Social button is greyed out until a talk is ready. While one is ready, the daughter's thought box shows one of the `talk_ready` lines in `content/flavor.json`, such as "I have something on my mind...".
 
 A thread that's been neglected for months catches up one beat at a time, with its cooldown between beats.
 
@@ -298,20 +298,24 @@ The ink only ever uses ids. To change a character's display name or portrait, ed
 
 **Character ids** (`src/ui/text/characters.ts`; add new ones there):
 
-| Id | Name plate |
-|---|---|
-| `scion` | the daughter's name |
-| `father` | the player's first name |
-| `hedge_knight` | Hedge Knight |
-| `guard_captain` | Watch Captain |
-| `squire` | Squire |
-| `hermit` | Hermit |
-| `deacon` | Deacon (Scriptorium boss) |
-| `novice` | Church Novice |
-| `smuggler` | Smuggler |
-| `alewife` | Alewife |
-| `urchin` | Urchin |
-| `stablemaster` | Stablemaster |
+| Id | Name plate | Role |
+|---|---|---|
+| `scion` | the daughter's name | the daughter |
+| `father` | the player's first name | the father |
+| `player` | the player's first name | same as `father` |
+| `hedge_knight` | Bedivere | Bellatores tutor |
+| `squire` | Sebastian | Bellatores storyline |
+| `watch_captain` | Baldwin | Village Watch captain |
+| `hermit` | Diogenes | Oratores tutor |
+| `novice` | Serena | Oratores storyline |
+| `deacon` | Jerome | Scriptorium boss |
+| `brother_librarian` | Brother Librarian | Scriptorium |
+| `smuggler` | Hancock | Laboratores tutor |
+| `urchin` | Nicole | Laboratores storyline |
+| `alewife` | Helga | Alehouse keeper |
+| `stablemaster` | Olaf | Stables |
+| `merchant` | Merchant | minor (Laboratores storyline) |
+| `baker` | Baker | minor (Bellatores storyline) |
 
 **Backgrounds:** `home`, `school`, `job`, `pilgrimage`, `waystation`, `capital`, `title`
 
