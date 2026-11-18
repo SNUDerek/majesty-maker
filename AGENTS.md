@@ -27,8 +27,8 @@
 - roles:
   | role      | command |
   |-----------|---------|
-  | implement | `claude -p --dangerously-skip-permissions "<prompt>"` |
-  | review    | `codex exec --dangerously-bypass-approvals-and-sandbox "<prompt>"` |
+  | implement | `claude -p --permission-mode auto --model opus --effort medium "<prompt>"` |
+  | review    | `codex exec -c model="gpt-6.2-sol" -c model_reasoning_effort="medium" -c hide_agent_reasoning=true --approve-for-me --trust --ephemeral "<prompt>"` |
 - read the given plan in ./docs and derive tasks + dependencies. start a task only when all its dependencies are merged into main.
 - launch each job detached in its own tmux window named after the worktree, logging to .worktrees/.logs/<name>.log.
 - worker prompts are pointers only, e.g. `You are the implementer for task T3 in docs/plan-x.md. Follow AGENTS.md.`
